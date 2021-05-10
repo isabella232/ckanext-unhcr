@@ -7,6 +7,8 @@ import random
 from ckan import model
 import ckan.plugins.toolkit as toolkit
 from ckanext.unhcr import helpers, mailer
+from ckanext.unhcr.blueprints import dataset
+from ckanext.unhcr.blueprints import resource
 from ckanext.unhcr.utils import require_user
 log = logging.getLogger(__name__)
 
@@ -15,11 +17,12 @@ unhcr_deposited_dataset_blueprint = Blueprint(
     'unhcr_deposited_dataset',
     __name__,
     url_prefix=u'/deposited-dataset',
+    url_defaults={u'package_type': u'deposited-dataset'},
 )
 
 
 @require_user
-def approve(dataset_id):
+def approve(package_type, dataset_id):
     user_id = getattr(toolkit.c.userobj, 'id', None)
 
     # Get curation data
@@ -70,7 +73,7 @@ def approve(dataset_id):
 
 
 @require_user
-def assign(dataset_id):
+def assign(package_type, dataset_id):
     user_id = getattr(toolkit.c.userobj, 'id', None)
 
     # Get curation data
@@ -130,7 +133,7 @@ def assign(dataset_id):
 
 
 @require_user
-def request_changes(dataset_id):
+def request_changes(package_type, dataset_id):
     user_id = getattr(toolkit.c.userobj, 'id', None)
 
     # Get curation data
@@ -178,7 +181,7 @@ def request_changes(dataset_id):
 
 
 @require_user
-def request_review(dataset_id):
+def request_review(package_type, dataset_id):
     user_id = getattr(toolkit.c.userobj, 'id', None)
 
     # Get curation data
@@ -221,7 +224,7 @@ def request_review(dataset_id):
 
 
 @require_user
-def reject(dataset_id):
+def reject(package_type, dataset_id):
     user_id = getattr(toolkit.c.userobj, 'id', None)
 
     # Get curation data
@@ -263,7 +266,7 @@ def reject(dataset_id):
 
 
 @require_user
-def submit(dataset_id):
+def submit(package_type, dataset_id):
     user_id = getattr(toolkit.c.userobj, 'id', None)
 
     # Get curation data
@@ -307,7 +310,7 @@ def submit(dataset_id):
 
 
 @require_user
-def withdraw(dataset_id):
+def withdraw(package_type, dataset_id):
     user_id = getattr(toolkit.c.userobj, 'id', None)
 
     # Get curation data
@@ -382,6 +385,22 @@ unhcr_deposited_dataset_blueprint.add_url_rule(
     rule=u'/<dataset_id>/withdraw',
     view_func=withdraw,
     methods=['POST',],
+)
+
+# re-register duplicates of other custom dataset/resource routes
+unhcr_deposited_dataset_blueprint.add_url_rule(
+    rule=u'/publish/<dataset_id>',
+    view_func=dataset.publish,
+)
+unhcr_deposited_dataset_blueprint.add_url_rule(
+    rule=u'/copy/<dataset_id>',
+    endpoint='dataset_copy',
+    view_func=dataset.copy,
+)
+unhcr_deposited_dataset_blueprint.add_url_rule(
+    rule=u'/<dataset_id>/resource_copy/<resource_id>',
+    endpoint='resource_copy',
+    view_func=resource.copy,
 )
 
 
