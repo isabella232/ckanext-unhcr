@@ -1,13 +1,10 @@
 {% ckan_extends %}
 
-{% if pkg and dataset_type == 'deposited-dataset' %}
-  {% set curation = h.get_deposited_dataset_user_curation_status(pkg, c.userobj.id) %}
-{% endif %}
-
 {% block secondary %}
 <aside class="secondary col-sm-3">
   {% block secondary_content %}
     {% if pkg and dataset_type == 'deposited-dataset' %}
+      {% set curation = h.get_deposited_dataset_user_curation_status(pkg, c.userobj.id) %}
       {% snippet "package/snippets/curation_sidebar.html", pkg=pkg, curation=curation, editing=True %}
     {% elif pkg and h.check_access('sysadmin') %}
       {% snippet "package/snippets/publish_sidebar.html", pkg=pkg, editing=True %}
@@ -25,6 +22,7 @@
 {% block footer %}
   {{ super() }}
   {% if pkg and dataset_type == 'deposited-dataset' %}
+    {% set curation = h.get_deposited_dataset_user_curation_status(pkg, c.userobj.id) %}
     {% snippet "package/snippets/curation_modals.html", pkg=pkg, curation=curation %}
   {% elif pkg and h.check_access('sysadmin') %}
     {% snippet "package/snippets/publish_modals.html", pkg=pkg, editing=True %}
