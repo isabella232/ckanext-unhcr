@@ -38,7 +38,7 @@ class ExtendedPackageController(PackageController):
 
         # Get organizations
         orgs = toolkit.get_action('organization_list_for_user')(
-            context, {'permission': 'create_dataset'})
+            context.copy(), {'permission': 'create_dataset'})
         org_ids = [org['id'] for org in orgs]
 
         # Check access
@@ -48,7 +48,7 @@ class ExtendedPackageController(PackageController):
 
         # Get dataset
         try:
-            dataset = toolkit.get_action('package_show')(context, {'id': id})
+            dataset = toolkit.get_action('package_show')(context.copy(), {'id': id})
         except (toolkit.NotAuthorized, toolkit.ObjectNotFound):
             message = 'Not found py dataset "%s"'
             return toolkit.abort(404, message % id)
