@@ -1,5 +1,10 @@
 # RIDL Changelog
 
+## v2.3.1 - 2021-05-11
+
+Fixes:
+- Fix error copying datasets with tags
+
 ## v2.3.0 - 2021-05-06
 
 Features:
