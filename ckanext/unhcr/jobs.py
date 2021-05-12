@@ -161,26 +161,5 @@ def _delete_link_package_back_references(package_id, link_package_ids):
 
 
 def _get_link_package_ids_from_revisions(package_id):
-
-    # Get revisions
-    revisions = (model.Session.query(model.PackageExtraRevision)
-        .filter(model.PackageExtraRevision.package_id == package_id,
-                model.PackageExtraRevision.key == 'linked_datasets')
-        .order_by(model.PackageExtraRevision.revision_timestamp)
-        .all())
-
-    # Prev revision
-    prev = []
-    if len(revisions) >= 2:
-        revision = revisions[-2]
-        if revision.state == 'active':
-            prev = utils.normalize_list(revision.value)
-
-    # Next revision
-    next = []
-    if len(revisions) >= 1:
-        revision = revisions[-1]
-        if revision.state == 'active':
-            next = utils.normalize_list(revision.value)
-
-    return {'prev': prev, 'next': next}
+    # TODO: fix backlinks https://github.com/okfn/ckanext-unhcr/issues/577
+    return {'prev': [], 'next': []}
