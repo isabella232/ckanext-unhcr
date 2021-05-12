@@ -385,7 +385,7 @@ class UnhcrPlugin(
 
     def _package_after_create(self, context, pkg_dict):
         if not context.get('job') and not context.get('defer_commit'):
-            if pkg_dict.get('state') == 'active':
+            if self._package_is_active(context, pkg_dict):
                 toolkit.enqueue_job(jobs.process_dataset_on_create, [pkg_dict['id']])
 
         if pkg_dict.get('type') == 'deposited-dataset':
@@ -402,7 +402,7 @@ class UnhcrPlugin(
 
     def _resource_after_create(self, context, res_dict):
         if not context.get('job'):
-            if res_dict.get('state') == 'active':
+            if self._resource_is_active(context, res_dict):
                 toolkit.enqueue_job(jobs.process_dataset_on_update, [res_dict['package_id']])
 
 
@@ -415,19 +415,37 @@ class UnhcrPlugin(
 
     def _package_after_update(self, context, pkg_dict):
         if not context.get('job') and not context.get('defer_commit'):
-            if pkg_dict.get('state') == 'active':
+            if self._package_is_active(context, pkg_dict):
                 toolkit.enqueue_job(jobs.process_dataset_on_update, [pkg_dict['id']])
 
     def _resource_after_update(self, context, res_dict):
         if not context.get('job'):
-            if res_dict.get('state') == 'active':
+            if self._resource_is_active(context, res_dict):
                 toolkit.enqueue_job(jobs.process_dataset_on_update, [res_dict['package_id']])
 
 
     def after_delete(self, context, data_dict):
-        if 'owner_org' in data_dict and 'package_id' not in data_dict:
-            if not context.get('job'):
-                toolkit.enqueue_job(jobs.process_dataset_on_delete, [data_dict['id']])
+        if not context.get('job') and type(data_dict) == dict and data_dict.get('id'):
+            toolkit.enqueue_job(jobs.process_dataset_on_delete, [data_dict['id']])
+
+
+    def _package_is_active(self, context, pkg_dict):
+        if pkg_dict.get('state') == 'active':
+            return True
+        pkg = context.get('package')
+        if pkg and pkg.state == 'active':
+            return True
+        return False
+
+    def _resource_is_active(self, context, res_dict):
+        if res_dict.get('state') == 'active':
+            return True
+        pkg = context.get('package')
+        res_id = res_dict.get('id')
+        if pkg and pkg.resources:
+            if res_id in [r.id for r in pkg.resources if r.state == 'active']:
+                return True
+        return False
 
 
     # IAuthFunctions
