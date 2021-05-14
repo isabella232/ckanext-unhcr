@@ -139,6 +139,7 @@
                 }
             ], 
             "preset": "select", 
+            "validators": "ignore_empty scheming_required scheming_choices", 
             "label": "External access level", 
             "field_name": "external_access_level"
         }, 
@@ -155,7 +156,8 @@
                 }
             ], 
             "preset": "select", 
-            "help_text": "Apply to both Anonymized and  Personally identifiable data", 
+            "validators": "ignore_empty scheming_required scheming_choices", 
+            "help_text": "Apply to both Anonymized and Personally identifiable data", 
             "label": "Data sensitivity", 
             "field_name": "data_sensitivity"
         }, 
@@ -719,6 +721,7 @@
                 }
             ], 
             "preset": "select", 
+            "validators": "ignore_empty scheming_required scheming_choices", 
             "help_text": "Allows users to indicate if the dataset is archived or active", 
             "label": "Archived", 
             "field_name": "archived"
@@ -906,7 +909,7 @@
                 }
             ], 
             "preset": "select", 
-            "validators": "ignore_if_attachment scheming_required scheming_choices", 
+            "validators": "ignore_empty ignore_if_attachment scheming_required scheming_choices", 
             "help_text": "Indicates if the resource has HXL hashtags", 
             "label": "HXL-ated", 
             "field_name": "hxl-ated"
@@ -915,7 +918,7 @@
             "required": false, 
             "label": "File Process Status", 
             "preset": "select", 
-            "validators": "ignore_if_attachment scheming_required scheming_choices", 
+            "validators": "ignore_empty ignore_if_attachment scheming_required scheming_choices", 
             "help_text": "Indicates the processing stage of the data. 'Raw' means that the data has not been cleaned since collection. 'In process' means that it is being cleaned. 'Final' means that the dataset is final and ready for use in analytical products", 
             "choices": [
                 {
@@ -937,7 +940,7 @@
             "required": false, 
             "label": "Identifiability", 
             "preset": "select", 
-            "validators": "ignore_if_attachment scheming_required scheming_choices", 
+            "validators": "ignore_empty ignore_if_attachment scheming_required scheming_choices", 
             "help_text": "Indicates if personally identifiable data is contained in the dataset", 
             "choices": [
                 {
