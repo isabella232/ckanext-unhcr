@@ -662,7 +662,6 @@
         {
             "field_name": "linked_datasets",
             "preset": "linked_datasets",
-            "help_text": "help text",
             "label": "Linked Datasets",
             "help_text": "Links to other RIDL datasets. It supports multiple selections"
         },
