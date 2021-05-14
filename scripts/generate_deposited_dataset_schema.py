@@ -26,6 +26,17 @@ def generate_deposited_dataset_schema():
         if field['field_name'] not in ['type']:
             field['required'] = False
 
+    for field in schema['dataset_fields'] + schema['resource_fields']:
+        if field.get('preset') == 'select':
+            if field['field_name'] not in ['visibility', 'file_type', 'type']:
+                if not field.get('validators'):
+                    field['validators'] = 'ignore_empty scheming_required scheming_choices'
+                elif (
+                    field.get('validators') and
+                    not field['validators'].startswith('ignore_empty')
+                ):
+                    field['validators'] = 'ignore_empty ' + field['validators']
+
     # Handle organization fields
     for index, field in enumerate(list(schema['dataset_fields'])):
         if field['field_name'] == 'owner_org':
