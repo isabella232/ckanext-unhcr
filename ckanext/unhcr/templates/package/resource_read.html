@@ -12,11 +12,9 @@
 {% endblock %}
 
 {% block resource_actions_inner %}
-  {% if h.check_access('package_update', {'id': pkg.id}) %}
+  {% if h.check_access('package_update', {'id': pkg.id}) and not is_activity_archive %}
     <li>{% link_for _('Copy'), named_route='unhcr_resource.copy', dataset_id=pkg.name, resource_id=res.id, class_='btn', icon='copy' %}</li>
-  {% endif %}
-  {% if h.check_access('package_update', {'id':pkg.id }) %}
-    <li>{% link_for _('Manage'), named_route='resource.edit', id=pkg.name, resource_id=res.id, class_='btn', icon='wrench' %}</li>
+    <li>{% link_for _('Manage'), named_route=pkg.type ~ '_resource.edit', id=pkg.name, resource_id=res.id, class_='btn', icon='wrench' %}</li>
   {% endif %}
   {% if res.url and h.is_url(res.url) %}
     {% if h.can_download(pkg) %}
