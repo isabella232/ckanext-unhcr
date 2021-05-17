@@ -13,9 +13,9 @@ Example:
 {% if resources %}
   <section id="dataset-resources" class="resources">
     {% if type == 'data' %}
-      <h3>Data Files</h3>
+      <h2>Data Files</h2>
     {% elif type == 'attachment' %}
-      <h3>File Attachments</h3>
+      <h2>File Attachments</h2>
     {% endif %}
     {% block resource_list %}
       <ul class="{% block resource_list_class %}resource-list{% endblock %}">

@@ -4,7 +4,7 @@
     <div class="search-input control-group {{ search_class }}">
       <input type="text" class="search" name="q" value="{{ query }}" autocomplete="off" placeholder="{{ placeholder }}">
       {% block search_input_button %}
-      <button type="submit" value="search">
+      <button type="submit" value="search" aria-label="{{_('Submit')}}">
         <i class="fa fa-search"></i>
         <span>{{ _('Submit') }}</span>
       </button>
@@ -21,7 +21,7 @@
           <span class="facet">{{ facets.titles.get(field) }}:</span>
           {% for value in facets.fields[field] %}
             <span class="filtered pill">
-              {%- if facets.translated_fields and facets.translated_fields.has_key((field,value)) -%}
+              {%- if facets.translated_fields and (field,value) in facets.translated_fields -%}
                 {{ facets.translated_fields[(field,value)] }}
               {%- else -%}
                 {{ h.list_dict_filter(search_facets_items, 'name', 'display_name', value) }}
