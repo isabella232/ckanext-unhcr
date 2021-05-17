@@ -11,9 +11,9 @@
 {% block organizations_search_form %}{% endblock %}
 
 {% block organizations_list %}
-   {% if c.page.items or request.params %}
-     {% if c.page.items %}
-		{{ h.render_tree()|safe }}
+   {% if page.items or request.params %}
+     {% if page.items %}
+       {{ h.render_tree()|safe }}
      {% endif %}
    {% else %}
      <p class="empty">

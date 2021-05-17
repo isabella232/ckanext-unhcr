@@ -1,23 +1,23 @@
 {% ckan_extends %}
 
 {% set deposit = h.get_data_deposit() %}
-{% set group_users = c.group_dict.users|map(attribute="name")|list %}
+{% set group_users = group_dict.users|map(attribute="name")|list %}
 {% set can_request_access = (
   c.user not in group_users and
-  c.group_dict.id != deposit.id and
+  group_dict.id != deposit.id and
   not h.check_access('sysadmin') and
-  not h.get_existing_access_request(c.userobj.id, c.group_dict.id, 'requested')
+  not h.get_existing_access_request(c.userobj.id, group_dict.id, 'requested')
 ) %}
 
 {% block page_primary_action %}
-  {% if c.group_dict.state == 'approval_needed' %}
+  {% if group_dict.state == 'approval_needed' %}
     <div class="alert alert-info" role="alert">
       <p>{% trans %}This data container is waiting for an Administrator approval{% endtrans %}</p>
     </div>
   {% else %}
-    {% if c.group_dict.id != deposit.id %}
-      {% if h.check_access('package_create', {'owner_org': c.group_dict.id}) %}
-        {% snippet 'snippets/add_dataset_buttons.html', group=c.group_dict.id %}
+    {% if group_dict.id != deposit.id %}
+      {% if h.check_access('package_create', {'owner_org': group_dict.id}) %}
+        {% snippet 'snippets/add_dataset_buttons.html', group=group_dict.id %}
       {% endif %}
     {% endif %}
   {% endif %}
@@ -31,7 +31,7 @@
     role="button"
     class="btn"
     data-toggle="modal"
-    title="Request access to {{ c.group_dict.display_name }}"
+    title="Request access to {{ group_dict.display_name }}"
     data-target="#membership-container-request-access"
   >
     <i class="fa fa-key"></i>Request Access
@@ -42,7 +42,7 @@
 {% block groups_search_form %}
 
   {# Drafts #}
-  {% if c.group_dict.id == deposit.id %}
+  {% if group_dict.id == deposit.id %}
     {% set drafts = h.get_user_deposited_drafts() %}
     {% if drafts %}
       <div class="review alert alert-info" role="alert">
@@ -60,11 +60,11 @@
 
   {# Search #}
   {% set facets = {
-    'fields': c.fields_grouped,
-    'search': c.search_facets,
-    'titles': c.facet_titles,
-    'translated_fields': c.translated_fields,
-    'remove_field': c.remove_field }
+    'fields': fields_grouped,
+    'search': search_facets,
+    'titles': facet_titles,
+    'translated_fields': translated_fields,
+    'remove_field': remove_field }
   %}
   {% set sorting = [
     (_('Relevance'), 'score desc, metadata_modified desc'),
@@ -74,23 +74,23 @@
     (_('Created'), 'metadata_created desc'),
     (_('Popular'), 'views_recent desc') if g.tracking_enabled else (false, false) ]
   %}
-  {% set include_children_option = c.group_dict.id != deposit.id %}
-  {% snippet 'snippets/search_form.html', form_id='organization-datasets-search-form', type='dataset', query=c.q, sorting=sorting, sorting_selected=c.sort_by_selected, count=c.page.item_count, facets=facets, placeholder=_('Search datasets...'), show_empty=request.params, fields=c.fields, include_children_option=include_children_option %}
+  {% set include_children_option = group_dict.id != deposit.id %}
+  {% snippet 'snippets/search_form.html', form_id='organization-datasets-search-form', type='dataset', query=q, sorting=sorting, sorting_selected=sort_by_selected, count=page.item_count, facets=facets, placeholder=_('Search datasets...'), show_empty=request.params, fields=fields, include_children_option=include_children_option %}
 
 {% endblock %}
 
 {% block primary_content_inner %}
-  {% if c.group_dict.state == 'active' %}
+  {% if group_dict.state == 'active' %}
     {{ super() }}
   {% endif %}
 {% endblock %}
 
 {% block packages_list %}
-  {% if c.page.items %}
-    {% if c.group_dict.id == deposit.id %}
-      {{ h.snippet('snippets/deposit_package_list.html', packages=c.page.items) }}
+  {% if page.items %}
+    {% if group_dict.id == deposit.id %}
+      {{ h.snippet('snippets/deposit_package_list.html', packages=page.items) }}
     {% else %}
-      {{ h.snippet('snippets/package_list.html', packages=c.page.items) }}
+      {{ h.snippet('snippets/package_list.html', packages=page.items) }}
     {% endif %}
   {% endif %}
 {% endblock %}
@@ -98,8 +98,8 @@
 {% block organization_facets %}
   <div class="filters">
     <div>
-      {% for facet in c.facet_titles %}
-        {{ h.snippet('snippets/facet_list.html', title=c.facet_titles[facet], name=facet, extras={'id':c.group_dict.id}, alternative_url='/data-container/%s' % c.group_dict.name) }}
+      {% for facet in facet_titles %}
+        {{ h.snippet('snippets/facet_list.html', title=facet_titles[facet], name=facet, extras={'id':group_dict.id}, alternative_url='/data-container/%s' % group_dict.name) }}
       {% endfor %}
     </div>
     <a class="close no-text hide-filters"><i class="fa fa-times-circle"></i><span class="text">close</span></a>
@@ -109,6 +109,6 @@
 {% block footer %}
   {{ super() }}
   {% if can_request_access %}
-    {% snippet "organization/snippets/membership_modals.html", group=c.group_dict %}
+    {% snippet "organization/snippets/membership_modals.html", group=group_dict %}
   {% endif %}
 {% endblock %}
