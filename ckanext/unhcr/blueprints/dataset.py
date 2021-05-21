@@ -7,7 +7,6 @@ from ckan.views.dataset import CreateView
 import ckan.plugins.toolkit as toolkit
 from ckanext.scheming.helpers import scheming_get_dataset_schema
 from ckanext.unhcr import mailer
-from ckanext.unhcr.activity import log_download_activity
 from ckanext.unhcr.utils import require_user, resource_is_blocked
 
 
