@@ -49,7 +49,6 @@ def restrict_access_to_get_auth_functions():
     overriden_auth_functions['site_read'] = site_read
     overriden_auth_functions['organization_list_for_user'] = \
         organization_list_for_user
-    overriden_auth_functions['package_activity_list'] = package_activity_list
 
     return overriden_auth_functions
 
@@ -192,16 +191,12 @@ def package_update(next_auth, context, data_dict):
     return next_auth(context, data_dict)
 
 
-def package_activity_list(context, data_dict):
-    if toolkit.asbool(data_dict.get('get_internal_activities')):
-        # Check if the user can see the internal activity,
-        # for now we check if the user can edit the dataset
-        try:
-            toolkit.check_access('package_update', context, data_dict)
-            return {'success': True}
-        except toolkit.NotAuthorized:
-            return {'success': False}
-    return {'success': True}
+def package_internal_activity_list(context, data_dict):
+    try:
+        toolkit.check_access('package_update', context, data_dict)
+        return {'success': True}
+    except toolkit.NotAuthorized:
+        return {'success': False}
 
 
 # Resource

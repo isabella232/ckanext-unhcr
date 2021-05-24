@@ -21,7 +21,6 @@ import ckan.logic.action.create as create_core
 import ckan.logic.action.delete as delete_core
 import ckan.logic.action.update as update_core
 import ckan.logic.action.patch as patch_core
-#import ckan.lib.activity_streams as activity_streams
 import ckan.lib.dictization.model_dictize as model_dictize
 from ckanext.unhcr import helpers, mailer, utils
 from ckanext.unhcr.models import AccessRequest
@@ -403,202 +402,96 @@ def container_request_list(context, data_dict):
 
 # Activity
 
+def _package_activity_list(
+    package_id,
+    limit,
+    offset,
+    include_hidden_activity=False,
+    include_activity_types=None,
+):
+    q = model.activity._package_activity_query(package_id)
 
-def _package_admin_activity_list(full_list):
-    return [
-        a for a in full_list
-        if 'curation_activity' in a.get('data', {})
-        or a["activity_type"] == "download resource"
-    ]
+    if include_activity_types:
+        q = q.filter(model.Activity.activity_type.in_(include_activity_types))
 
-def _package_curation_activity_list(full_list):
-    return [
-        a for a in full_list
-        if 'curation_activity' in a.get('data', {})
-    ]
+    if not include_hidden_activity:
+        q = model.activity._filter_activitites_from_users(q)
 
-def _package_normal_activity_list(context, full_list):
-    activities = [
-        a for a in full_list
-        if 'curation_activity' not in a.get('data', {})
-        and a["activity_type"] != "download resource"
-    ]
-    # Filter out the activities that are related to `curation_state`
-    activities = list(
-        filter(
-            lambda activity: get_core.activity_detail_list(
-                context, {'id': activity['id']}).pop()
-                .get('data', {})
-                .get('package_extra', {})
-                .get('key') not in ('curation_state', 'curator_id'),
-            activities
-        )
+    return model.activity._activities_at_offset(q, limit, offset)
+
+
+@core_logic.validate(core_logic.schema.default_activity_list_schema)
+def package_internal_activity_list(context, data_dict):
+    toolkit.check_access('package_internal_activity_list', context.copy(), data_dict)
+    package_id = toolkit.get_or_bust(data_dict, 'id')
+    model = context['model']
+
+
+    package = model.Package.get(package_id)
+    if package is None:
+        raise toolkit.ObjectNotFound("Package not found")
+    user_is_container_admin = has_user_permission_for_group_or_org(
+        package.owner_org,
+        context['user'],
+        'admin',
     )
-    return activities
+
+    include_hidden_activity = data_dict.get('include_hidden_activity', False)
+
+    limit = data_dict['limit']  # defaulted, limited & made an int by schema
+    offset = int(data_dict.get('offset', 0))
+
+    if user_is_container_admin:
+        include_activity_types = ['changed curation state', 'download resource']
+    else:
+        include_activity_types = ['changed curation state']
+    activity_objects = _package_activity_list(
+        package.id,
+        limit,
+        offset,
+        include_hidden_activity,
+        include_activity_types,
+    )
+
+    return model_dictize.activity_list_dictize(
+        activity_objects, context, include_data=True)
+
+
+def _remove_internal_activities(activities):
+    return [
+        a for a in activities
+        if a['activity_type'] not in ['changed curation state', 'download resource']
+    ]
 
 
 @toolkit.side_effect_free
 @toolkit.chained_action
 def package_activity_list(up_func, context, data_dict):
-    toolkit.check_access('package_activity_list', context, data_dict)
-    get_internal_activities = toolkit.asbool(
-        data_dict.get('get_internal_activities'))
-    package_id = toolkit.get_or_bust(data_dict, 'id')
-
-    package = model.Package.get(package_id)
-    user_is_container_admin = has_user_permission_for_group_or_org(
-        package.owner_org,
-        context['user'],
-        'admin',
-    ) if package else False
-
-    full_list = up_func(context, data_dict)
-    if get_internal_activities and user_is_container_admin:
-        return _package_admin_activity_list(full_list)
-    if get_internal_activities and not user_is_container_admin:
-        return _package_curation_activity_list(full_list)
-    return _package_normal_activity_list(context, full_list)
+    return _remove_internal_activities(up_func(context.copy(), data_dict))
 
 
 @toolkit.side_effect_free
-def dashboard_activity_list(context, data_dict):
-    full_list = get_core.dashboard_activity_list(context, data_dict)
-    return [
-        a for a in full_list
-        if "curation_activity" not in a.get("data", {})
-        and a["activity_type"] != "download resource"
-    ]
-
-@toolkit.side_effect_free
-def user_activity_list(context, data_dict):
-    full_list = get_core.user_activity_list(context, data_dict)
-    return [
-        a for a in full_list
-        if "curation_activity" not in a.get("data", {})
-        and a["activity_type"] != "download resource"
-    ]
+@toolkit.chained_action
+def dashboard_activity_list(up_func, context, data_dict):
+    return _remove_internal_activities(up_func(context.copy(), data_dict))
 
 
 @toolkit.side_effect_free
-def group_activity_list(context, data_dict):
-    full_list = get_core.group_activity_list(context, data_dict)
-    normal_activities = [
-        a for a in full_list if 'curation_activity' not in a.get('data', {})]
-    return normal_activities
+@toolkit.chained_action
+def user_activity_list(up_func, context, data_dict):
+    return _remove_internal_activities(up_func(context.copy(), data_dict))
 
 
 @toolkit.side_effect_free
-def organization_activity_list(context, data_dict):
-    full_list = get_core.organization_activity_list(context, data_dict)
-    normal_activities = [
-        a for a in full_list if 'curation_activity' not in a.get('data', {})]
-    return normal_activities
+@toolkit.chained_action
+def group_activity_list(up_func, context, data_dict):
+    return _remove_internal_activities(up_func(context.copy(), data_dict))
 
 
 @toolkit.side_effect_free
-def recently_changed_packages_activity_list(context, data_dict):
-    full_list = get_core.recently_changed_packages_activity_list(context, data_dict)
-    normal_activities = [
-        a for a in full_list if 'curation_activity' not in a.get('data', {})]
-    return normal_activities
-
-
-# Without this action our `*_activity_list` is not overriden (ckan bug?)
-def package_activity_list_html(context, data_dict):
-    activity_stream = toolkit.get_action('package_activity_list')(context, data_dict)
-    offset = int(data_dict.get('offset', 0))
-    extra_vars = {
-        'controller': 'package',
-        'action': 'activity',
-        'id': data_dict['id'],
-        'offset': offset,
-    }
-    return activity_streams.activity_list_to_html(
-        context, activity_stream, extra_vars)
-
-
-@toolkit.side_effect_free
-def dashboard_activity_list_html(context, data_dict):
-    '''Override core ckan dashboard_activity_list_html action so download resource
-    activities are not rendered in the HTML.
-    '''
-    activity_stream = toolkit.get_action('dashboard_activity_list')(
-        context, data_dict)
-
-    user_id = context['user']
-    offset = int(data_dict.get('offset', 0))
-    extra_vars = {
-        'controller': 'user',
-        'action': 'dashboard',
-        'id': user_id,
-        'offset': offset,
-    }
-    return activity_streams.activity_list_to_html(
-        context, activity_stream, extra_vars
-    )
-
-
-@toolkit.side_effect_free
-def user_activity_list_html(context, data_dict):
-    '''Override core ckan user_activity_list_html action so download resource
-    activities are not rendered in the HTML.
-    '''
-    activity_stream = toolkit.get_action('user_activity_list')(
-        context, data_dict)
-
-    offset = int(data_dict.get('offset', 0))
-    extra_vars = {
-        'controller': 'user',
-        'action': 'activity',
-        'id': data_dict['id'],
-        'offset': offset,
-    }
-    return activity_streams.activity_list_to_html(
-        context, activity_stream, extra_vars
-    )
-
-
-# Without this action the `*_activity_list` is not overriden (ckan bug?)
-def group_activity_list_html(context, data_dict):
-    activity_stream = group_activity_list(context, data_dict)
-    offset = int(data_dict.get('offset', 0))
-    extra_vars = {
-        'controller': 'group',
-        'action': 'activity',
-        'id': data_dict['id'],
-        'offset': offset,
-    }
-    return activity_streams.activity_list_to_html(
-        context, activity_stream, extra_vars)
-
-
-# Without this action the `*_activity_list` is not overriden (ckan bug?)
-def organization_activity_list_html(context, data_dict):
-    activity_stream = organization_activity_list(context, data_dict)
-    offset = int(data_dict.get('offset', 0))
-    extra_vars = {
-        'controller': 'organization',
-        'action': 'activity',
-        'id': data_dict['id'],
-        'offset': offset,
-    }
-
-    return activity_streams.activity_list_to_html(
-        context, activity_stream, extra_vars)
-
-
-# Without this action the `*_activity_list` is not overriden (ckan bug?)
-def recently_changed_packages_activity_list_html(context, data_dict):
-    activity_stream = recently_changed_packages_activity_list(
-        context, data_dict)
-    offset = int(data_dict.get('offset', 0))
-    extra_vars = {
-        'controller': 'package',
-        'action': 'activity',
-        'offset': offset,
-    }
-    return activity_streams.activity_list_to_html(
-        context, activity_stream, extra_vars)
+@toolkit.chained_action
+def organization_activity_list(up_func, context, data_dict):
+    return _remove_internal_activities(up_func(context.copy(), data_dict))
 
 
 # Datastore

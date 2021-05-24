@@ -460,7 +460,7 @@ class UnhcrPlugin(
         functions['organization_show'] = auth.organization_show
         functions['organization_list_all_fields'] = auth.organization_list_all_fields
         functions['group_list_authz'] = auth.group_list_authz
-        functions['package_activity_list'] = auth.package_activity_list
+        functions['package_internal_activity_list'] = auth.package_internal_activity_list
         functions['package_create'] = auth.package_create
         functions['package_collaborator_create'] = auth.package_collaborator_create
         functions['package_update'] = auth.package_update
@@ -491,19 +491,13 @@ class UnhcrPlugin(
             'organization_member_create': actions.organization_member_create,
             'organization_member_delete': actions.organization_member_delete,
             'organization_list_all_fields': actions.organization_list_all_fields,
+            'package_internal_activity_list': actions.package_internal_activity_list,
             'container_request_list': actions.container_request_list,
             'package_activity_list': actions.package_activity_list,
             'dashboard_activity_list': actions.dashboard_activity_list,
             'user_activity_list': actions.user_activity_list,
             'group_activity_list': actions.group_activity_list,
             'organization_activity_list': actions.organization_activity_list,
-            'recently_changed_packages_activity_list': actions.recently_changed_packages_activity_list,
-            'package_activity_list_html': actions.package_activity_list_html,
-            'dashboard_activity_list_html': actions.dashboard_activity_list_html,
-            'user_activity_list_html': actions.user_activity_list_html,
-            'group_activity_list_html': actions.group_activity_list_html,
-            'organization_activity_list_html': actions.organization_activity_list_html,
-            'recently_changed_packages_activity_list_html': actions.recently_changed_packages_activity_list_html,
             'datasets_validation_report': actions.datasets_validation_report,
             'scan_hook': actions.scan_hook,
             'scan_submit': actions.scan_submit,
