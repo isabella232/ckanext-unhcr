@@ -981,7 +981,7 @@ class TestDepositedDatasetController(object):
 
         env = {'REMOTE_USER': self.curator['name'].encode('ascii')}
         resp = app.get(
-            url=toolkit.url_for('deposited-dataset_internal_activity', dataset_id=self.dataset['name']),
+            url=toolkit.url_for('unhcr_deposited_dataset.internal_activity', dataset_id=self.dataset['name']),
             extra_environ=env,
             status=200,
         )
