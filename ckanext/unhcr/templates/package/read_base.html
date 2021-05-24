@@ -41,7 +41,7 @@
       <i class="fa fa-key"></i>Request Access
     </a>
   {% endif %}
-  {% if h.organizations_available('create_dataset') %}
+  {% if h.organizations_available('create_dataset') and not is_activity_archive %}
     {% link_for _('Copy'), named_route='unhcr_dataset.copy', dataset_id=pkg.id, class_='btn', icon='copy' %}
   {% endif %}
   {{ super() }}
