@@ -11,7 +11,7 @@ def log_download_activity(context, resource_id):
     if user_by_name is not None:
         user_id = user_by_name.id
 
-    resource = toolkit.get_action('resource_show')(context, {'id': resource_id})
+    resource = toolkit.get_action('resource_show')(context.copy(), {'id': resource_id})
 
     activity_dict = {
         'activity_type': 'download resource',
