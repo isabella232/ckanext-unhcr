@@ -231,6 +231,7 @@ def upload_not_empty(key, data, errors, context):
 
 _object_id_validators = {
     'download resource': validators.package_id_exists,
+    'changed curation state': validators.package_id_exists,
 }
 
 def object_id_validator(key, activity_dict, errors, context):

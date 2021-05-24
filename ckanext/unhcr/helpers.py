@@ -708,7 +708,7 @@ def create_curation_activity(
     data_dict = {
         'user_id': user_id,
         'object_id': dataset_id,
-        'activity_type': 'changed package',
+        'activity_type': 'changed curation state',
         'data': {
             'curation_activity': activity_type,
             'package': {'name': dataset_name, 'id': dataset_id},
