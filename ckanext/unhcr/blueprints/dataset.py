@@ -119,6 +119,35 @@ def publish_microdata(package_type, dataset_id):
 
 
 @require_user
+def internal_activity(package_type, dataset_id):
+    context = {'model': model, 'user': toolkit.c.user}
+    data_dict = {'id': dataset_id}
+    try:
+        toolkit.check_access(u'package_show', context.copy(), data_dict)
+        package_show_context = context.copy()
+        pkg_dict = toolkit.get_action(u'package_show')(package_show_context, data_dict)
+        pkg = package_show_context[u'package']
+        package_activity_stream = toolkit.get_action('package_internal_activity_list')(
+            context.copy(),
+            {'id': dataset_id}
+        )
+        dataset_type = pkg_dict[u'type'] or u'dataset'
+    except toolkit.ObjectNotFound:
+        return toolkit.abort(404, toolkit._('Dataset not found'))
+    except toolkit.NotAuthorized:
+        return toolkit.abort(403, toolkit._('Unauthorized to read the internal activity for dataset %s') % dataset_id)
+
+    return toolkit.render(u'package/activity.html', {
+            u'dataset_type': dataset_type,
+            u'pkg_dict': pkg_dict,
+            u'pkg': pkg,
+            u'activity_stream': package_activity_stream,
+            u'id': dataset_id,
+        }
+    )
+
+
+@require_user
 def request_access(package_type, dataset_id):
     message = toolkit.request.form.get('message')
 
@@ -195,6 +224,10 @@ unhcr_dataset_blueprint.add_url_rule(
     rule=u'/<dataset_id>/publish_microdata',
     view_func=publish_microdata,
     methods=['POST',],
+)
+unhcr_dataset_blueprint.add_url_rule(
+    rule=u'/internal_activity/<dataset_id>',
+    view_func=internal_activity,
 )
 unhcr_dataset_blueprint.add_url_rule(
     rule=u'/<dataset_id>/request_access',

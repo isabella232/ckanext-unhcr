@@ -1,0 +1,18 @@
+{% set dataset_name = activity.data.package.name %}
+{% set dataset_link = url_for('dataset.read', id=activity.data.package.name) %}
+
+<li class="item {{ activity.activity_type|replace(' ', '-')|lower }}">
+  <i class="fa icon fa-gavel"></i>
+  <p>
+    {{
+      h.curation_activity_message(activity).format(
+        actor=ah.actor(activity),
+        dataset=h.link_to(dataset_name, dataset_link)
+      )|safe
+    }}
+    <br />
+    <span class="date" title="{{ h.render_datetime(activity.timestamp, with_hours=True) }}">
+      {{ h.time_ago_from_timestamp(activity.timestamp) }}
+    </span>
+  </p>
+</li>

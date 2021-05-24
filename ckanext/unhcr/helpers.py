@@ -723,25 +723,7 @@ def create_curation_activity(
     toolkit.get_action('activity_create')(activity_context, data_dict)
 
 
-def download_resource_renderer(context, activity):
-    resource_name = activity['data']['name'] or 'Unnamed resource'
-    resource_link = toolkit.url_for(
-        action='resource_read',
-        controller='package',
-        id=activity['object_id'],
-        resource_id=activity['data']['id']
-    )
-    return "{actor} downloaded " + core_helpers.tags.link_to(resource_name, resource_link)
-
-def custom_activity_renderer(context, activity):
-    '''
-    Before CKAN 2.9 the only way to customize the activty stream snippets was to
-    monkey patch a renderer, as we do here.
-    '''
-    if 'curation_activity' not in activity.get('data', {}):
-        # Default core one
-        return toolkit._("{actor} updated the dataset {dataset}")
-
+def curation_activity_message(activity):
     activity_name = activity['data']['curation_activity']
 
     output = ''
@@ -751,7 +733,7 @@ def custom_activity_renderer(context, activity):
     elif activity_name == 'dataset_submitted':
         output =  toolkit._("{actor} submitted dataset {dataset} for curation")
     elif activity_name == 'curator_assigned':
-        curator_link = core_helpers.tags.link_to(
+        curator_link = core_helpers.link_to(
             activity['data']['curator_name'],
             toolkit.url_for(
                 controller='user', action='read', id=activity['data']['curator_name'])
@@ -766,7 +748,7 @@ def custom_activity_renderer(context, activity):
     elif activity_name == 'dataset_rejected':
         output = toolkit._("{actor} rejected dataset {dataset} for publication")
     elif activity_name == 'dataset_withdrawn':
-        output = toolkit._("{actor} withdrawn dataset {dataset} from the data deposit")
+        output = toolkit._("{actor} withdrew dataset {dataset} from the data deposit")
     elif activity_name == 'dataset_approved':
         output = toolkit._("{actor} approved dataset {dataset} for publication")
 

@@ -13,10 +13,6 @@ from ckan.lib.plugins import DefaultPermissionLabels
 
 # 🙈
 import ckan.authz as authz
-#from ckan.lib.activity_streams import (
-#    activity_stream_string_functions,
-#    activity_stream_string_icons,
-#)
 
 from ckanext.unhcr import actions, auth, click_commands, blueprints, helpers, jobs, utils, validators
 
@@ -114,7 +110,6 @@ class UnhcrPlugin(
     plugins.implements(plugins.IAuthFunctions)
     plugins.implements(plugins.IActions)
     plugins.implements(plugins.IValidators)
-    plugins.implements(plugins.IRoutes, inherit=True)
     plugins.implements(plugins.IPermissionLabels)
     plugins.implements(plugins.IBlueprint)
 
@@ -125,10 +120,6 @@ class UnhcrPlugin(
         toolkit.add_public_directory(config_, 'public')
         toolkit.add_resource('fanstatic', 'unhcr')
         toolkit.add_ckan_admin_tab(config_, 'unhcr_search_index.index', 'Search Index', icon='hdd-o')
-
-        #activity_stream_string_functions['changed package'] = helpers.custom_activity_renderer
-        #activity_stream_string_functions['download resource'] = helpers.download_resource_renderer
-        #activity_stream_string_icons['download resource'] = 'download'
 
         User.external = property(utils.user_is_external)
         if (authz.is_authorized.__name__ != 'unhcr_auth_wrapper'):
@@ -148,17 +139,6 @@ class UnhcrPlugin(
 
     def get_commands(self):
         return [click_commands.unhcr]
-
-    # IRoutes
-
-    def before_map(self, _map):
-
-        # package
-        controller = 'ckanext.unhcr.controllers.extended_package:ExtendedPackageController'
-        _map.connect('dataset_internal_activity', '/dataset/internal_activity/{dataset_id}', controller=controller, action='activity')
-        _map.connect('deposited-dataset_internal_activity', '/deposited-dataset/internal_activity/{dataset_id}', controller=controller, action='activity')
-
-        return _map
 
     # IFacets
 
@@ -223,6 +203,8 @@ class UnhcrPlugin(
             'get_pending_requests_total': helpers.get_pending_requests_total,
             'get_existing_access_request': helpers.get_existing_access_request,
             'get_access_request_for_user': helpers.get_access_request_for_user,
+            # Activities
+            'curation_activity_message': helpers.curation_activity_message,
             # Deposited datasets
             'get_data_deposit': helpers.get_data_deposit,
             'get_data_curation_users': helpers.get_data_curation_users,

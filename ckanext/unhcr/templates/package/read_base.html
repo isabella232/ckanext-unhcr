@@ -1,21 +1,20 @@
 {% ckan_extends %}
 
-{% set pkg = c.pkg_dict %}
 {% set can_request_access = (
-  pkg.resources|length > 0 and
-  not h.can_download(pkg) and
-  not h.get_existing_access_request(c.userobj.id, pkg.id, 'requested')
+  pkg_dict.resources|length > 0 and
+  not h.can_download(pkg_dict) and
+  not h.get_existing_access_request(c.userobj.id, pkg_dict.id, 'requested')
 ) %}
 
 {% if pkg.type == 'deposited-dataset' %}
-  {% set curation = h.get_deposited_dataset_user_curation_status(pkg, c.userobj.id) %}
+  {% set curation = h.get_deposited_dataset_user_curation_status(pkg_dict, c.userobj.id) %}
 {% endif %}
 
 {% block content_primary_nav %}
   {% if pkg.type == 'deposited-dataset' %}
     {{ h.build_nav_icon(dataset_type ~ '.read', _('Dataset'), id=pkg.id if is_activity_archive else pkg.name, icon='sitemap') }}
     {% if h.check_access('package_activity_list', {'user': c.user, 'id': pkg.id}) %}
-      {{ h.build_nav_icon('%s_internal_activity' % dataset_type, _('Internal Activity'), dataset_id=pkg.name, icon='gavel') }}
+      {{ h.build_nav_icon('unhcr_deposited_dataset.internal_activity', _('Internal Activity'), dataset_id=pkg.name, icon='gavel') }}
     {% endif %}
   {% else %}
   {{ h.build_nav_icon(dataset_type ~ '.read', _('Dataset'), id=pkg.id if is_activity_archive else pkg.name, icon='sitemap') }}
@@ -24,7 +23,7 @@
       h.check_access('package_update', {'user': c.user, 'id': pkg.id}) and
       h.check_access('package_activity_list', {'user': c.user, 'id': pkg.id})
     ) %}
-      {{ h.build_nav_icon('%s_internal_activity' % dataset_type, _('Internal Activity'), dataset_id=pkg.name, icon='gavel') }}
+      {{ h.build_nav_icon('unhcr_dataset.internal_activity', _('Internal Activity'), dataset_id=pkg.name, icon='gavel') }}
     {% endif %}
   {% endif %}
 {% endblock %}

@@ -398,6 +398,10 @@ unhcr_deposited_dataset_blueprint.add_url_rule(
     view_func=dataset.copy,
 )
 unhcr_deposited_dataset_blueprint.add_url_rule(
+    rule=u'/internal_activity/<dataset_id>',
+    view_func=dataset.internal_activity,
+)
+unhcr_deposited_dataset_blueprint.add_url_rule(
     rule=u'/<dataset_id>/resource_copy/<resource_id>',
     endpoint='resource_copy',
     view_func=resource.copy,

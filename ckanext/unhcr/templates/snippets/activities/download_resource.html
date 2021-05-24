@@ -1,0 +1,16 @@
+{% set resource_name = activity.data.name or 'Unnamed resource' %}
+{% set resource_link = url_for('resource.read', id=activity.object_id, resource_id=activity.data.id) %}
+
+<li class="item {{ activity.activity_type|replace(' ', '-')|lower }}">
+  <i class="fa icon fa-download"></i>
+  <p>
+    {{ _('{actor} downloaded {resource}').format(
+      actor=ah.actor(activity),
+      resource=h.link_to(resource_name, resource_link)
+    )|safe }}
+    <br />
+    <span class="date" title="{{ h.render_datetime(activity.timestamp, with_hours=True) }}">
+      {{ h.time_ago_from_timestamp(activity.timestamp) }}
+    </span>
+  </p>
+</li>
