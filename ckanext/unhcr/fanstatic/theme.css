@@ -2286,6 +2286,10 @@ i {
   color: #000;
 }
 
+.activity .item.changed-curation-state .icon {
+  background-color: #8c76ce;
+}
+
 .modal-content form {
   margin: 0;
 }
