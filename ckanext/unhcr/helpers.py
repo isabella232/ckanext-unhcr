@@ -701,28 +701,6 @@ def get_default_container_for_user():
 
 # Internal activity
 
-def create_curation_activity(
-        activity_type, dataset_id, dataset_name, user_id,
-        message=None, **kwargs):
-    activity_context = {'ignore_auth': True}
-    data_dict = {
-        'user_id': user_id,
-        'object_id': dataset_id,
-        'activity_type': 'changed curation state',
-        'data': {
-            'curation_activity': activity_type,
-            'package': {'name': dataset_name, 'id': dataset_id},
-        }
-    }
-    if message:
-        data_dict['data']['message'] = message
-    if kwargs:
-        for key, value in kwargs.iteritems():
-            data_dict['data'][key] = value
-
-    toolkit.get_action('activity_create')(activity_context, data_dict)
-
-
 def curation_activity_message(activity):
     activity_name = activity['data']['curation_activity']
 

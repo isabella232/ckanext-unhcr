@@ -7,6 +7,7 @@ import random
 from ckan import model
 import ckan.plugins.toolkit as toolkit
 from ckanext.unhcr import helpers, mailer
+from ckanext.unhcr.activity import create_curation_activity
 from ckanext.unhcr.blueprints import dataset
 from ckanext.unhcr.blueprints import resource
 from ckanext.unhcr.utils import require_user
@@ -51,7 +52,7 @@ def approve(package_type, dataset_id):
 
     # Update activity stream
     message = toolkit.request.form.get('message')
-    helpers.create_curation_activity('dataset_approved', dataset['id'],
+    create_curation_activity('dataset_approved', dataset['id'],
         dataset['name'], user_id, message=message)
 
     # Send notification email
@@ -106,10 +107,10 @@ def assign(package_type, dataset_id):
     if curator_id:
         context = _get_context(ignore_auth=True)
         curator = toolkit.get_action('user_show')(context, {'id': curator_id})
-        helpers.create_curation_activity('curator_assigned', dataset['id'],
+        create_curation_activity('curator_assigned', dataset['id'],
             dataset['name'], user_id, curator_name=curator['name'])
     else:
-        helpers.create_curation_activity('curator_removed', dataset['id'],
+        create_curation_activity('curator_removed', dataset['id'],
             dataset['name'], user_id)
 
     # Send notification email
@@ -159,7 +160,7 @@ def request_changes(package_type, dataset_id):
 
     # Update activity stream
     message = toolkit.request.form.get('message')
-    helpers.create_curation_activity('changes_requested', dataset['id'],
+    create_curation_activity('changes_requested', dataset['id'],
             dataset['name'], user_id, message=message)
 
     # Send notification email
@@ -206,7 +207,7 @@ def request_review(package_type, dataset_id):
     message = toolkit.request.form.get('message')
     context = _get_context(ignore_auth=True)
     depositor = toolkit.get_action('user_show')(context, {'id': dataset['creator_user_id']})
-    helpers.create_curation_activity('final_review_requested', dataset['id'],
+    create_curation_activity('final_review_requested', dataset['id'],
         dataset['name'], user_id, message=message, depositor_name=depositor['name'])
 
     # Send notification email
@@ -248,7 +249,7 @@ def reject(package_type, dataset_id):
 
     # Update activity stream
     message = toolkit.request.form.get('message')
-    helpers.create_curation_activity('dataset_rejected', dataset['id'],
+    create_curation_activity('dataset_rejected', dataset['id'],
         dataset['name'], user_id, message=message)
 
     # Send notification email
@@ -289,7 +290,7 @@ def submit(package_type, dataset_id):
 
     # Update activity stream
     message = toolkit.request.form.get('message')
-    helpers.create_curation_activity('dataset_submitted', dataset['id'],
+    create_curation_activity('dataset_submitted', dataset['id'],
         dataset['name'], user_id, message=message)
 
     # Send notification email
@@ -334,7 +335,7 @@ def withdraw(package_type, dataset_id):
 
     # Update activity stream
     message = toolkit.request.form.get('message')
-    helpers.create_curation_activity('dataset_withdrawn', dataset['id'],
+    create_curation_activity('dataset_withdrawn', dataset['id'],
         dataset['name'], user_id, message=message)
 
     # Send notification email

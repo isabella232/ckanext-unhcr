@@ -9,7 +9,7 @@ from ckan.views.resource import CreateView
 from ckan.views.resource import download as base_local_resource_download
 from ckanext.scheming.helpers import scheming_get_dataset_schema
 from ckanext.s3filestore.views.resource import resource_download as base_s3_resource_download
-from ckanext.unhcr.activity import log_download_activity
+from ckanext.unhcr.activity import create_download_activity
 from ckanext.unhcr.utils import require_user, resource_is_blocked
 log = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ def download(package_type, id, resource_id, filename=None):
     else:
         resp = base_local_resource_download(package_type, id, resource_id, filename)
 
-    log_download_activity(context.copy(), resource_id)
+    create_download_activity(context.copy(), resource_id)
     return resp
 
 

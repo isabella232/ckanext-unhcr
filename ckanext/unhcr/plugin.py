@@ -15,6 +15,7 @@ from ckan.lib.plugins import DefaultPermissionLabels
 import ckan.authz as authz
 
 from ckanext.unhcr import actions, auth, click_commands, blueprints, helpers, jobs, utils, validators
+from ckanext.unhcr.activity import create_curation_activity
 
 from ckanext.scheming.helpers import scheming_get_dataset_schema
 from ckanext.hierarchy.helpers import group_tree_section
@@ -396,7 +397,7 @@ class UnhcrPlugin(
                     {'ignore_auth': True}, {'id': context['user']})
                 user_id = user['id']
             if user_id:
-                helpers.create_curation_activity('dataset_deposited', pkg_dict['id'],
+                create_curation_activity('dataset_deposited', pkg_dict['id'],
                     pkg_dict['name'], user_id)
 
     def _resource_after_create(self, context, res_dict):

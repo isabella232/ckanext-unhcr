@@ -7,7 +7,7 @@ from ckan.tests import helpers as core_helpers
 from ckantoolkit.tests import factories as core_factories
 from ckanext.unhcr.tests import factories, mocks
 from ckanext.unhcr import helpers
-from ckanext.unhcr.activity import log_download_activity
+from ckanext.unhcr.activity import create_download_activity, create_curation_activity
 
 
 @pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
@@ -31,14 +31,14 @@ class TestActivityListActions(object):
             url = "http://fakeurl/test.txt",
             url_type='upload',
         )
-        helpers.create_curation_activity(
+        create_curation_activity(
             'dataset_approved',
             self.dataset1['id'],
             self.dataset1['name'],
             self.sysadmin['id'],
             message='asdf'
         )
-        log_download_activity({'user': self.sysadmin['name']}, self.resource1['id'])
+        create_download_activity({'user': self.sysadmin['name']}, self.resource1['id'])
         toolkit.get_action('activity_create')({'ignore_auth':True}, {
             'user_id': self.sysadmin['name'],
             'object_id': self.dataset1['id'],
