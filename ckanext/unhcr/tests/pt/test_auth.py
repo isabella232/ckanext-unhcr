@@ -22,9 +22,9 @@ class TestAuthUI(object):
         endpoints = [
             ('/', 403),
             ('/dataset', 403),
-            ('/dataset/{}'.format(dataset['name']), 403),
+            ('/dataset/{}'.format(dataset['name']), 404),
             ('/data-container', 403),
-            ('/data-container/{}'.format(data_container['name']), 403),
+            ('/data-container/{}'.format(data_container['name']), 404),
             ('/user', 403),
         ]
         for endpoint in endpoints:
@@ -120,7 +120,6 @@ class TestAuthUI(object):
             '/ckan-admin',
             '/dashboard',
             '/metrics',
-            '/tag',
             '/dataset',
             '/data-container',
             '/organization',
@@ -138,7 +137,8 @@ class TestAuthUI(object):
         ]
         for endpoint in endpoints_404:
             # these throw a 404 rather than a 403
-            resp = app.get(endpoint, extra_environ=env, status=404)
+            with app.flask_app.test_request_context():
+                resp = app.get(endpoint, extra_environ=env, status=404)
 
         endpoints_200 = [
             '/',
