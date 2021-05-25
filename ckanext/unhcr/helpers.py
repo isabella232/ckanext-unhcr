@@ -713,8 +713,7 @@ def curation_activity_message(activity):
     elif activity_name == 'curator_assigned':
         curator_link = core_helpers.link_to(
             activity['data']['curator_name'],
-            toolkit.url_for(
-                controller='user', action='read', id=activity['data']['curator_name'])
+            toolkit.url_for('user.read', id=activity['data']['curator_name'])
         )
         output =  toolkit._("{actor} assigned %s as Curator for dataset {dataset}" % curator_link)
     elif activity_name == 'curator_removed':
