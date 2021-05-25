@@ -63,7 +63,7 @@ def approve(container_id):
 
     # show flash message and redirect
     toolkit.h.flash_success(u'Data container "{}" approved'.format(org_dict['title']))
-    return toolkit.redirect_to('data-container_read', id=container_id)
+    return toolkit.redirect_to('data-container.read', id=container_id)
 
 
 @require_user
@@ -87,7 +87,7 @@ def reject(container_id):
 
     # show flash message and redirect
     toolkit.h.flash_error(u'Data container "{}" rejected'.format(org_dict['title']))
-    return toolkit.redirect_to('data-container_index')
+    return toolkit.redirect_to('data-container.index')
 
 
 @require_user
@@ -254,7 +254,7 @@ def request_access(container_id):
                 container['display_name']
             )
         )
-        return toolkit.redirect_to('data-container_read', id=container_id)
+        return toolkit.redirect_to('data-container.read', id=container_id)
 
     try:
         toolkit.get_action('access_request_create')(
@@ -294,7 +294,7 @@ def request_access(container_id):
             container['display_name']
         )
     )
-    return toolkit.redirect_to('data-container_read', id=container_id)
+    return toolkit.redirect_to('data-container.read', id=container_id)
 
 
 unhcr_data_container_blueprint.add_url_rule(

@@ -362,8 +362,7 @@ def compose_infected_file_email_body(recipient, resource_name, package_id, resou
     context['recipient'] = recipient
     context['resource_name'] = resource_name
     context['resource_url'] = toolkit.url_for(
-        controller='package',
-        action='resource_read',
+        'resource.read',
         id=package_id,
         resource_id=resource_id,
         qualified=True

@@ -37,7 +37,7 @@ def approve(package_type, dataset_id):
     if 'approve' not in curation['actions']:
         message = 'This action is not available for the dataset "%s"'
         toolkit.h.flash_error(message % dataset['title'])
-        return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+        return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
     context['ignore_auth'] = True
 
     # Update dataset
@@ -70,7 +70,7 @@ def approve(package_type, dataset_id):
     # Show flash message and redirect
     message = 'Dataset "%s" approved and moved to the destination data container'
     toolkit.h.flash_success(message % dataset['title'])
-    return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+    return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
 
 
 @require_user
@@ -88,7 +88,7 @@ def assign(package_type, dataset_id):
     if 'assign' not in curation['actions']:
         message = 'This action is not available for the dataset "%s"'
         toolkit.h.flash_error(message % dataset['title'])
-        return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+        return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
     context['ignore_auth'] = True
 
     # Update dataset
@@ -130,7 +130,7 @@ def assign(package_type, dataset_id):
     # Show flash message and redirect
     message = 'Dataset "%s" Curator updated'
     toolkit.h.flash_success(message % dataset['title'])
-    return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+    return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
 
 
 @require_user
@@ -148,7 +148,7 @@ def request_changes(package_type, dataset_id):
     if 'request_changes' not in curation['actions']:
         message = 'This action is not available for the dataset "%s"'
         toolkit.h.flash_error(message % dataset['title'])
-        return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+        return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
     context['ignore_auth'] = True
 
     # Update dataset
@@ -178,7 +178,7 @@ def request_changes(package_type, dataset_id):
     # Show flash message and redirect
     message = 'Dataset "%s" changes requested'
     toolkit.h.flash_success(message % dataset['title'])
-    return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+    return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
 
 
 @require_user
@@ -196,7 +196,7 @@ def request_review(package_type, dataset_id):
     if 'request_review' not in curation['actions']:
         message = 'This action is not available for the dataset "%s"'
         toolkit.h.flash_error(message % dataset['title'])
-        return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+        return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
     context['ignore_auth'] = True
 
     # Update dataset
@@ -221,7 +221,7 @@ def request_review(package_type, dataset_id):
     # Show flash message and redirect
     message = 'Dataset "%s" review requested'
     toolkit.h.flash_success(message % dataset['title'])
-    return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+    return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
 
 
 @require_user
@@ -239,7 +239,7 @@ def reject(package_type, dataset_id):
     if 'reject' not in curation['actions']:
         message = 'This action is not available for the dataset "%s"'
         toolkit.h.flash_error(message % dataset['title'])
-        return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+        return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
     context['ignore_auth'] = True
 
     # Delete rejected dataset, but first update its name so it can be reused
@@ -263,7 +263,7 @@ def reject(package_type, dataset_id):
     # Show flash message and redirect
     message = 'Dataset "%s" rejected'
     toolkit.h.flash_error(message % dataset['title'])
-    return toolkit.redirect_to('data-container_read', id='data-deposit')
+    return toolkit.redirect_to('data-container.read', id='data-deposit')
 
 
 @require_user
@@ -281,7 +281,7 @@ def submit(package_type, dataset_id):
     if 'submit' not in curation['actions']:
         message = 'This action is not available for the dataset "%s"'
         toolkit.h.flash_error(message % dataset['title'])
-        return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+        return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
     context['ignore_auth'] = True
 
     # Update dataset
@@ -307,7 +307,7 @@ def submit(package_type, dataset_id):
     # Show flash message and redirect
     message = 'Dataset "%s" submitted'
     toolkit.h.flash_success(message % dataset['title'])
-    return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+    return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
 
 
 @require_user
@@ -325,7 +325,7 @@ def withdraw(package_type, dataset_id):
     if 'withdraw' not in curation['actions']:
         message = 'This action is not available for the dataset "%s"'
         toolkit.h.flash_error(message % dataset['title'])
-        return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+        return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
     context['ignore_auth'] = True
 
     # Delete withdrawn dataset, but first update its name so it can be reused
@@ -349,7 +349,7 @@ def withdraw(package_type, dataset_id):
     # Show flash message and redirect
     message = 'Dataset "%s" withdrawn'
     toolkit.h.flash_error(message % dataset['title'])
-    return toolkit.redirect_to('data-container_read', id='data-deposit')
+    return toolkit.redirect_to('data-container.read', id='data-deposit')
 
 
 unhcr_deposited_dataset_blueprint.add_url_rule(

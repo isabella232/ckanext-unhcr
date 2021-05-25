@@ -117,7 +117,7 @@ def publish_microdata(package_type, dataset_id):
     else:
         message = 'Dataset "%s" publishing to the Microdata library failed for the following reason: "%s"'
         toolkit.h.flash_error(message % (dataset['title'], error))
-    return toolkit.redirect_to('dataset_edit', id=dataset['name'])
+    return toolkit.redirect_to('dataset.edit', id=dataset['name'])
 
 
 @require_user
@@ -170,7 +170,7 @@ def request_access(package_type, dataset_id):
                 dataset['title']
             )
         )
-        return toolkit.redirect_to('dataset_read', id=dataset['id'])
+        return toolkit.redirect_to('dataset.read', id=dataset['id'])
 
     try:
         toolkit.get_action('access_request_create')(
@@ -211,7 +211,7 @@ def request_access(package_type, dataset_id):
         )
     )
 
-    return toolkit.redirect_to('dataset_read', id=dataset['id'])
+    return toolkit.redirect_to('dataset.read', id=dataset['id'])
 
 
 unhcr_dataset_blueprint.add_url_rule(
