@@ -345,10 +345,7 @@ class UnhcrPlugin(
 
     # Always include sub-containers to container_read search
     def before_search(self, search_params):
-        controllers = (
-            'organization',
-            'ckanext.unhcr.controllers.extended_organization:ExtendedOrganizationController',
-        )
+        controllers = ('organization', 'data-container')
         try:
             getattr(toolkit.c, "controller", None)
         except TypeError:
@@ -371,17 +368,17 @@ class UnhcrPlugin(
                 return name_list
 
             # update filter query
-            if toolkit.c.id:
+            if getattr(toolkit.c, "group", None):
                 children = _children_name_list(
                     group_tree_section(
-                        toolkit.c.id,
+                        toolkit.c.group.name,
                         type_='data-container',
                         include_parents=False,
                         include_siblings=False
                     ).get('children',[])
                 )
                 if children:
-                    search_params['fq'] = 'organization:%s' % toolkit.c.id
+                    search_params['fq'] = 'organization:%s' % toolkit.c.group.name
                     for name in children:
                         if name:
                             search_params['fq'] += ' OR organization:%s' %  name
