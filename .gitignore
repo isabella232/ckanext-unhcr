@@ -45,3 +45,6 @@ docs/_build/
 .pytest_cache
 selenium-debug.log
 selenium-server.log
+
+#vscode
+.vscode

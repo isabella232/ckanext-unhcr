@@ -21,6 +21,7 @@ CKAN extension for the UNHCR RIDL project
 - [Loging into container](#loging-into-container)
 - [Updating readme](#updating-readme)
 - [Managing docker](#managing-docker)
+- [Prepare a local environment for running scripts](#prepare-a-local-environment-for-running-scripts)
 - [Generate deposited-dataset schema](#generate-deposited-dataset-schema)
 - [Create data containers and data deposit](#create-data-containers-and-data-deposit)
 - [Create development users](#create-development-users)
@@ -156,6 +157,16 @@ $ docker system prune -a --volumes # CAUTION: it will purge all docker projects
 $ docker volume rm dockerckan<project>_ckan_storage dockerckan<project>_pg_data # remove project volumes
 ```
 
+## Prepare a local environment for running scripts
+
+Create a local Python 3 environment, activate it and install requirements.  
+
+```
+python3 -m venv /path/to/your/new/env
+source /path/to/your/new/env/bin/activate
+pip install -r scripts/requirements.txt
+```
+
 ## Generate deposited-dataset schema
 
 It will be generated based on the `dataset` schema (re-writing existent `deposited-dataset` schema).
@@ -166,7 +177,7 @@ $ python scripts/generate_deposited_dataset_schema.py
 
 ## Create data containers and data deposit
 
-It will create all initial data containers and data deposit. For local development `url` should be `http://ckan-dev:5000` and `api_key` from your user profile.
+It will create all initial data containers and data deposit. For local development `url` should be `https://ckan-dev:5000` and `api_key` from your user profile.
 
 ```
 $ python scripts/initial_data_containers.py url api_key

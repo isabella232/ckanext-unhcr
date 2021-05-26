@@ -18,8 +18,7 @@ def create_data_deposit(url, api_key):
         }, requests_kwargs={'verify': False})
         print('Created data deposit')
     except ckanapi.errors.ValidationError as e:
-        print str(e)
-        pass
+        print(str(e))
 
 if __name__ == '__main__':
 
