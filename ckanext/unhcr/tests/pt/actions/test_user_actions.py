@@ -6,6 +6,7 @@ from ckan.plugins import toolkit
 from ckan.tests.helpers import call_action
 from ckantoolkit.tests import factories as core_factories
 from ckanext.unhcr.tests import factories
+from ckanext.unhcr.actions import user_list
 
 
 @pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
@@ -59,6 +60,42 @@ class TestUserActions(object):
                 and u['name'] != default_user['name']
             ])
         )
+
+    def test_user_list_empty(self):
+        """ fake an empty user's list """
+        def return_empty_list(context, data_dict):
+            return []
+        context = {'return_query': False}
+        data_dict = {}
+        users = user_list(
+            up_func=return_empty_list,
+            context=context,
+            data_dict=data_dict
+        )
+        assert len(users) == 0
+
+    def test_user_list_query(self):
+        sysadmin = core_factories.Sysadmin()
+        external_user = factories.ExternalUser()
+        internal_user = core_factories.User()
+        default_user = toolkit.get_action('get_site_user')({ 'ignore_auth': True })
+
+        action = toolkit.get_action('user_list')
+        context = {'user': sysadmin['name'], 'return_query': True}
+        users = action(context, {})
+        assert users.count() == 4
+
+    def test_user_list_query_empty(self):
+        sysadmin = core_factories.Sysadmin()
+        external_user = factories.ExternalUser()
+        internal_user = core_factories.User()
+        default_user = toolkit.get_action('get_site_user')({ 'ignore_auth': True })
+
+        action = toolkit.get_action('user_list')
+        context = {'user': sysadmin['name'], 'return_query': True}
+        # add a filter to get 0 results
+        users = action(context, {'email': 'not-exist@example.com'})
+        assert users.count() == 0
 
     def test_user_show(self):
         sysadmin = core_factories.Sysadmin()
