@@ -653,7 +653,7 @@ def scan_submit(context, data_dict):
         )
         r.raise_for_status()
     except requests.exceptions.ConnectionError as e:
-        error = {'message': 'Could not connect to Clam AV Service.', 'details': str(e)}
+        error = {'message': ['Could not connect to Clam AV Service.'], 'details': [str(e)]}
         _fail_task(context, task, error)
         raise toolkit.ValidationError(error)
     except requests.exceptions.HTTPError as e:
