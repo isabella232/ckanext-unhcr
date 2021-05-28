@@ -47,6 +47,7 @@ class TestDatasetViews(object):
             operational_purpose_of_data = 'cartography',
             user=self.user1,
             visibility='restricted',
+            tags=[{'name': 'Keyword1'}, {'name': 'Keyword2'}],
         )
 
         # Resources
@@ -153,6 +154,8 @@ class TestDatasetViews(object):
         assert 'cartography' in resp.body
         assert 'Add Data' in resp.body
         assert 'container1' in resp.body
+        assert 'Keyword1' in resp.body
+        assert 'Keyword2' in resp.body
 
     def test_dataset_copy_to_other_org(self, app):
         resp = self.make_dataset_copy_request(
