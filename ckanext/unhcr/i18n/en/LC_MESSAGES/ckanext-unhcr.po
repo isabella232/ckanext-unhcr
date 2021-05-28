@@ -5005,3 +5005,11 @@ msgstr ""
 #: ckan/views/util.py:26
 msgid "Redirecting to external site is not allowed."
 msgstr ""
+
+
+# manually added
+msgid "Are you sure you want to delete this Organization?"
+msgstr "Are you sure you want to delete this Data Container?"
+
+msgid "Data-container"
+msgstr "Data Container"
