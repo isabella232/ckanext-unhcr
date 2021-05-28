@@ -1143,11 +1143,11 @@ msgstr ""
 
 #: ckan/controllers/package.py:462
 msgid "CKAN Dataset Revision History"
-msgstr ""
+msgstr "RIDL Dataset Revision History"
 
 #: ckan/controllers/package.py:465
 msgid "Recent changes to CKAN Dataset: "
-msgstr ""
+msgstr "Recent changes to RIDL Dataset: "
 
 #: ckan/controllers/package.py:521 ckan/views/dataset.py:537
 msgid "Unauthorized to create a package"
@@ -2656,7 +2656,7 @@ msgstr ""
 
 #: ckan/templates/admin/config.html:45
 msgid "CKAN config options"
-msgstr ""
+msgstr "RIDL config options"
 
 #: ckan/templates/admin/config.html:52
 #, python-format
@@ -3341,6 +3341,9 @@ msgid ""
 "datasets. Users can have different roles within an Organization, "
 "depending on their level of authorisation to create, edit and publish."
 msgstr ""
+"RIDL Data Containers are used to create, manage and publish collections of "
+"datasets. Users can have different roles within an Organization, "
+"depending on their level of authorisation to create, edit and publish."
 
 #: ckan/templates/organization/snippets/organization_form.html:10
 msgid "My Organization"
@@ -3381,6 +3384,9 @@ msgid ""
 "together with a description and other information, at a fixed URL. "
 "Datasets are what users see when searching for data."
 msgstr ""
+"A RIDL Dataset is a collection of data resources (such as files), "
+"together with a description and other information, at a fixed URL. "
+"Datasets are what users see when searching for data."
 
 #: ckan/templates/package/changes.html:9 ckan/templates/package/changes.html:17
 #: ckan/templates/snippets/activities/changed_package.html:20
@@ -4650,7 +4656,7 @@ msgstr ""
 
 #: ckan/templates/user/edit.html:19
 msgid "Your profile lets other CKAN users know about who you are and what you do."
-msgstr ""
+msgstr "Your profile lets other RIDL users know about who you are and what you do."
 
 #: ckan/templates/user/edit_user_form.html:7
 msgid "Change details"
