@@ -34,6 +34,7 @@ def publish(package_type, dataset_id):
 
 @require_user
 def copy(package_type, dataset_id):
+    """ Copy a dataset """
     context = {'model': model, 'user': toolkit.c.user}
 
     # Get organizations
@@ -77,6 +78,7 @@ def copy(package_type, dataset_id):
     if data.get('owner_org'):
         data['owner_org'] = data['owner_org'] if data['owner_org'] in org_ids else None
     data['original_dataset'] = dataset
+    data['tags'] = dataset['tags']
 
     view = CreateView()
     return view.get(package_type, data=data)
