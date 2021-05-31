@@ -47,9 +47,16 @@
   {% else %}
     {% if not h.get_existing_access_request(c.userobj.id, pkg.id, 'requested') %}
       {% snippet "snippets/request_access.html", pkg=pkg %}
-      {% endif %}
+    {% endif %}
   {% endif %}
 {% endblock %}
 
 {% block secondary_content %}
+{% endblock %}
+
+{% block footer %}
+  {{ super() }}
+  {% if not h.can_download(pkg) %}
+    {% snippet "package/snippets/collaboration_modals.html", pkg=pkg %}
+  {% endif %}
 {% endblock %}
