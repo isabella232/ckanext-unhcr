@@ -60,7 +60,6 @@ def package_update(context, data_dict):
 
     # Send notification if needed
     if notify:
-        dataset['url'] = toolkit.url_for('dataset_read', id=dataset.get('name'), qualified=True)
         curation = helpers.get_deposited_dataset_user_curation_status(dataset, user_obj.id)
         subj = mailer.compose_curation_email_subj(dataset)
         body = mailer.compose_curation_email_body(
