@@ -931,7 +931,7 @@ class TestDepositedDatasetController(object):
 
         env = {'REMOTE_USER': self.creator['name'].encode('ascii')}
         resp = app.get(
-            url=toolkit.url_for('deposited-dataset_read', id=self.dataset['id']),
+            url=toolkit.url_for('deposited-dataset.read', id=self.dataset['id']),
             extra_environ=env,
             status=200,
         )
@@ -949,7 +949,7 @@ class TestDepositedDatasetController(object):
         env = {'REMOTE_USER': user.encode('ascii')}
         with self.app.flask_app.test_request_context():
             resp = self.app.get(
-                url=toolkit.url_for('dataset_read', id=self.dataset['id']),
+                url=toolkit.url_for('deposited-dataset.read', id=self.dataset['id']),
                 extra_environ=env,
                 status=200,
             )
@@ -967,7 +967,7 @@ class TestDepositedDatasetController(object):
         env = {'REMOTE_USER': user.encode('ascii')}
         with self.app.flask_app.test_request_context():
             resp = self.app.get(
-                url=toolkit.url_for('dataset_read', id=self.dataset['id']),
+                url=toolkit.url_for('deposited-dataset.read', id=self.dataset['id']),
                 extra_environ=env,
                 status=200,
             )

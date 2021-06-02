@@ -74,13 +74,13 @@ class TestSummaryMailer(object):
             '''
             <h2>New deposited datasets (1)</h2>
             <ul> <li> <a href="{}">New Deposit</a> </li> </ul>'''.format(
-                toolkit.url_for('dataset.read', id='new-deposit', qualified=True)
+                toolkit.url_for('deposited-dataset.read', id='new-deposit', qualified=True)
             ),
 
             '''
             <h2>Datasets awaiting review (1)</h2>
             <ul> <li> <a href="{}">Awaiting Review</a> </li> </ul>'''.format(
-                toolkit.url_for('dataset.read', id='awaiting-review', qualified=True)
+                toolkit.url_for('deposited-dataset.read', id='awaiting-review', qualified=True)
             ),
         ]
 
