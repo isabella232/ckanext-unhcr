@@ -29,7 +29,7 @@ def publish(package_type, dataset_id):
         return toolkit.abort(400, 'Dataset must have one or more resources to publish')
     dataset = toolkit.get_action('package_patch')(context.copy(), {'id': dataset_id, 'state': 'active'})
     toolkit.h.flash_success('Dataset "%s" has been published' % dataset['title'])
-    return toolkit.redirect_to('dataset.read', id=dataset['name'])
+    return toolkit.redirect_to(package_type + '.read', id=dataset['name'])
 
 
 @require_user

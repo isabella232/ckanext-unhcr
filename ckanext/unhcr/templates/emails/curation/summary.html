@@ -21,7 +21,7 @@
       <ul>
         {% for ds in root.datasets %}
           <li>
-            {{ h.link_to(ds.title or ds.name, h.url_for('dataset.read', id=ds.name, qualified=True)) }}
+            {{ h.link_to(ds.title or ds.name, h.url_for(ds.type ~ '.read', id=ds.name, qualified=True)) }}
             in {{ h.link_to(ds.organization.title or ds.organization.name, h.url_for('data-container.read', id=ds.organization.name, qualified=True)) }}
           </li>
         {% endfor %}
@@ -44,7 +44,7 @@
     <ul>
       {% for ds in new_deposits %}
         <li>
-          {{ h.link_to(ds.title or ds.name, h.url_for('dataset.read', id=ds.name, qualified=True)) }}
+          {{ h.link_to(ds.title or ds.name, h.url_for(ds.type ~ '.read', id=ds.name, qualified=True)) }}
         </li>
       {% else %}
         <li>No new deposits</li>
@@ -57,7 +57,7 @@
     <ul>
       {% for ds in awaiting_review %}
         <li>
-          {{ h.link_to(ds.title or ds.name, h.url_for('dataset.read', id=ds.name, qualified=True)) }}
+          {{ h.link_to(ds.title or ds.name, h.url_for(ds.type ~ '.read', id=ds.name, qualified=True)) }}
         </li>
       {% else %}
         <li>Nothing awaiting review</li>

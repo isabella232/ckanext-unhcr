@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 
 
 unhcr_deposited_dataset_blueprint = Blueprint(
-    'unhcr_deposited_dataset',
+    'unhcr_deposited-dataset',
     __name__,
     url_prefix=u'/deposited-dataset',
     url_defaults={u'package_type': u'deposited-dataset'},
@@ -395,7 +395,7 @@ unhcr_deposited_dataset_blueprint.add_url_rule(
 )
 unhcr_deposited_dataset_blueprint.add_url_rule(
     rule=u'/copy/<dataset_id>',
-    endpoint='dataset_copy',
+    endpoint='copy',
     view_func=dataset.copy,
 )
 unhcr_deposited_dataset_blueprint.add_url_rule(

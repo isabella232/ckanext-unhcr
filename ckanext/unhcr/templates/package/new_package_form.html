@@ -3,19 +3,19 @@
 {% block stages %}
   {{ super() }}
   {% if dataset_type == 'deposited-dataset' %}
-	  <div class="review alert alert-info" role="alert">
+    <div class="review alert alert-info" role="alert">
       You are depositing a dataset.
       After depositing, additional changes can still be made until
       it is submitted for further documentation and curation.
     </div>
   {% elif data.original_dataset %}
-	  <div class="review alert alert-info" role="alert">
+    <div class="review alert alert-info" role="alert">
       <p>
         You are copying the
         "
         <a
           id="dataset-title-value"
-          href="{{ h.url_for('dataset.read', id=data.original_dataset.name) }}"
+          href="{{ h.url_for(dataset_type ~ '.read', id=data.original_dataset.name) }}"
         >
           <strong>{{ data.original_dataset.title }}</strong>
         </a>

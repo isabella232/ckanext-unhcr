@@ -67,7 +67,11 @@ def compose_curation_email_body(dataset, curation, recipient, event, message=Non
     context['site_title'] = toolkit.config.get('ckan.site_title')
     context['site_url'] = toolkit.config.get('ckan.site_url')
     context['dataset'] = dataset
-    context['dataset_url'] = toolkit.url_for('dataset_read', id=dataset['name'], qualified=True)
+    context['dataset_url'] = toolkit.url_for(
+        dataset['type'] + '.read',
+        id=dataset['name'],
+        qualified=True
+    )
     context['curation'] = curation
     context['message'] = message
     return render_jinja2('emails/curation/%s.html' % event, context)
