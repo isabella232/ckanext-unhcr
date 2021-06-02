@@ -39,7 +39,7 @@ def compose_container_email_body(container, user, event):
     context['site_title'] = toolkit.config.get('ckan.site_title')
     context['site_url'] = toolkit.config.get('ckan.site_url')
     context['container'] = container
-    context['container_url'] = toolkit.url_for('data-container_read', id=container['name'], qualified=True)
+    context['container_url'] = toolkit.url_for('data-container.read', id=container['name'], qualified=True)
     return render_jinja2('emails/container/%s.html' % event, context)
 
 
@@ -49,7 +49,7 @@ def compose_request_container_email_body(container, recipient, requesting_user):
     context['site_title'] = toolkit.config.get('ckan.site_title')
     context['site_url'] = toolkit.config.get('ckan.site_url')
     context['container'] = container
-    context['container_url'] = toolkit.url_for('data-container_read', id=container['name'], qualified=True)
+    context['container_url'] = toolkit.url_for('data-container.read', id=container['name'], qualified=True)
     context['requesting_user'] = requesting_user
     context['h'] = toolkit.h
     return render_jinja2('emails/container/request.html', context)
@@ -91,12 +91,12 @@ def compose_membership_email_body(container, user_dict, event):
     context['container'] = container
     # single
     if isinstance(container, dict):
-        context['container_url'] = toolkit.url_for('data-container_read', id=container['name'], qualified=True)
+        context['container_url'] = toolkit.url_for('data-container.read', id=container['name'], qualified=True)
     # multiple
     else:
         for item in container:
-            item['url'] = toolkit.url_for('data-container_read', id=item['name'], qualified=True)
-        context['container_url'] = toolkit.url_for('data-container_index', qualified=True)
+            item['url'] = toolkit.url_for('data-container.read', id=item['name'], qualified=True)
+        context['container_url'] = toolkit.url_for('data-container.index', qualified=True)
     return render_jinja2('emails/membership/%s.html' % event, context)
 
 
@@ -384,7 +384,7 @@ def _compose_collaborator_email_subj(dataset):
         toolkit.config.get('ckan.site_title'), dataset.title)
 
 def _compose_collaborator_email_body(user, dataset, role, event):
-    dataset_link = toolkit.url_for('dataset_read', id=dataset.id, qualified=True)
+    dataset_link = toolkit.url_for('dataset.read', id=dataset.id, qualified=True)
     return render_jinja2('collaborators/emails/{0}_collaborator.html'.format(event), {
         'user_name': user.fullname or user.name,
         'role': role,

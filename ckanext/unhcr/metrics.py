@@ -106,7 +106,7 @@ def get_datasets_by_downloads(context):
     for row in result:
         data.append({
             'display_name': row['title'],
-            'link': toolkit.url_for('dataset_read', id=row['name']),
+            'link': toolkit.url_for('dataset.read', id=row['name']),
             'count': row['count'],
         })
 
@@ -122,7 +122,7 @@ def get_datasets_by_downloads(context):
 def get_containers(context):
     data = _get_facet_table('organization', context)
     for row in data:
-        row['link'] = toolkit.url_for('data-container_read', id=row['name'])
+        row['link'] = toolkit.url_for('data-container.read', id=row['name'])
 
     title = 'Data Containers'
     return {
