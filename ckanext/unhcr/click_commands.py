@@ -63,7 +63,8 @@ def snapshot_metrics():
     u'send-summary-emails',
     short_help=u'Send a summary of activity over the last 7 days\nto sysadmins and curators'
 )
-def send_summary_emails():
+@click.option('-v', '--verbose', count=True)
+def send_summary_emails(verbose):
     if not toolkit.asbool(toolkit.config.get('ckanext.unhcr.send_summary_emails', False)):
         print('ckanext.unhcr.send_summary_emails is False. Not sending anything.')
         return
@@ -80,7 +81,7 @@ def send_summary_emails():
                 continue
 
             print('SENDING summary email to: {}'.format(recipient['email']))
-            if self.verbose > 1:
+            if verbose > 0:
                 print(email['body'])
                 print('')
 
