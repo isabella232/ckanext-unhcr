@@ -69,6 +69,11 @@ class TestResourceFields(object):
 
             assert error == ['Missing value']
 
+    @pytest.mark.skip(reason="""
+        Failing due to a bug in core. Refs:
+        https://github.com/okfn/ckanext-unhcr/issues/564
+        https://github.com/ckan/ckan/pull/6119
+    """)
     def test_both_types_data_fields_missing(self):
 
         dataset = factories.Dataset()
