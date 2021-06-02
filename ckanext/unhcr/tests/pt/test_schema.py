@@ -13,7 +13,7 @@ class TestResourceFields(object):
     def setup(self):
         self.sysadmin = core_factories.Sysadmin(name='sysadmin', id='sysadmin')
 
-    def test_file_ment_fields(self):
+    def test_file_attachment_fields(self):
 
         dataset = factories.Dataset()
 
