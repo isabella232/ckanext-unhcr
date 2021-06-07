@@ -9,8 +9,8 @@ assets:
 	npx grunt postcss
 
 docker:
-	docker pull openknowledge/ckan-base:2.8 && \
-	docker pull openknowledge/ckan-dev:2.8 && \
+	docker pull openknowledge/ckan-base:2.9 && \
+	docker pull openknowledge/ckan-dev:2.9 && \
 	docker-compose -f ../../docker-compose.yml build
 
 e2e:
@@ -31,11 +31,7 @@ shell:
 
 test:
 	docker-compose -f ../../docker-compose.yml exec ckan-dev \
-	cd /srv/app/src_extensions/ckanext-unhcr && \
 	pytest \
-		--ckan-ini=test.ini \
-		--cov=ckanext.unhcr \
-		--cov-report=xml \
-		--cov-append \
+		--ckan-ini=/srv/app/src_extensions/ckanext-unhcr/test.ini \
 		--disable-warnings \
-		ckanext/unhcr/tests/pt ${ARGS}
+		/srv/app/src_extensions/ckanext-unhcr/ckanext/unhcr/tests/pt ${ARGS}

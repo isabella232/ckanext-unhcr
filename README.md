@@ -18,7 +18,7 @@ CKAN extension for the UNHCR RIDL project
 - [Running E2E tests](#running-e2e-tests)
 - [Building static assets](#building-static-assets)
 - [Working with i18n](#working-with-i18n)
-- [Loging into container](#loging-into-container)
+- [Logging into container](#logging-into-container)
 - [Updating readme](#updating-readme)
 - [Managing docker](#managing-docker)
 - [Prepare a local environment for running scripts](#prepare-a-local-environment-for-running-scripts)
@@ -31,11 +31,11 @@ CKAN extension for the UNHCR RIDL project
 
 ## Requirements
 
-This extension is being developed against CKAN 2.8.x
+This extension is being developed against CKAN 2.9.x
 
 Please follow installation instructions of the software below if needed. Also, take a look inside the `Makefile` to understand what's going on under the hood:
 - `docker`
-- `docker-compose`
+- `docker-compose` (`>= 1.26`)
 - `/etc/hosts` contains the `127.0.0.1 ckan-dev` line
 
 For building static assets and running end-to-end tests Node.js is required and can be installed with these commands:
@@ -48,7 +48,7 @@ $ npm install
 
 ## Setting up environment
 
-Clone the `ckanext-unhcr` repository (assuming that we're inside the `docker-ckan-unhcr/src` directory):
+Clone the `ckanext-unhcr` repository (assuming that we're inside the `docker-ckan-unhcr-aws/src` directory):
 
 ```bash
 $ git clone git@github.com:okfn/ckanext-unhcr.git
@@ -59,7 +59,7 @@ It's designed to support live development of extensions. The only one requiremen
 
 ## Working with docker
 
-The whole docker setup is inside the `docker-ckan-unhcr` directory. You can tweak any CKAN instance's aspects there (e.g. patches/cron/etc). To add other CKAN extensions to the work - add its folders to `docker-compose.dev.yml` (see `ckan-dev` volumes).
+The whole docker setup is inside the `docker-ckan-unhcr-aws` directory. You can tweak any CKAN instance's aspects there (e.g. patches/cron/etc). To add other CKAN extensions to the work - add its folders to `docker-compose.yml` (see `ckan-dev` volumes).
 
 Pull the latest `ckan-base/dev` images and build the project's images:
 
@@ -91,8 +91,7 @@ $ make test
 ```
 
 To run only selected tests:
-- add `@nose.plugins.attrib.attr('only')` decorator to the selected test
-- run `$ make test ARGS='-a only'`
+- run `$ make test ARGS='-k <pattern>'`
 
 ## Running E2E tests
 
@@ -126,7 +125,7 @@ $ make i18n
 
 See CKAN documentation for more on i18n management.
 
-## Loging into container
+## Logging into container
 
 To issue commands inside a running container:
 
