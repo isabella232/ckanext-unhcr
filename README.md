@@ -93,6 +93,14 @@ $ make test
 To run only selected tests:
 - run `$ make test ARGS='-k <pattern>'`
 
+### Troubleshooting
+
+If `ProgrammingError: (psycopg2.errors.UndefinedFunction) function populate_full_text_trigger() does not exist` is thrown running the tests:
+
+* Run `ckan -c /srv/app/ckan.ini datastore set-permissions`
+* Grab the generate SQL script and remove the line `\connect "datastore"`
+* Connect to the `datastore_test` DB and run the SQL
+
 ## Running E2E tests
 
 We write and store E2E tests inside the `tests` directory. Prefer to name test files after feature/bug names. To run the tests you should have the development server up and running:
