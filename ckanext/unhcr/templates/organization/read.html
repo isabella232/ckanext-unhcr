@@ -24,19 +24,20 @@
 {% endblock %}
 
 {% block content_action %}
+  {{ super() }}
 
-{% if can_request_access %}
-  <a
-    href="#membership-container-request-access"
-    role="button"
-    class="btn"
-    data-toggle="modal"
-    title="Request access to {{ group_dict.display_name }}"
-    data-target="#membership-container-request-access"
-  >
-    <i class="fa fa-key"></i>Request Access
-  </a>
-{% endif %}
+  {% if can_request_access %}
+    <a
+      href="#membership-container-request-access"
+      role="button"
+      class="btn"
+      data-toggle="modal"
+      title="Request access to {{ group_dict.display_name }}"
+      data-target="#membership-container-request-access"
+    >
+      <i class="fa fa-key"></i>Request Access
+    </a>
+  {% endif %}
 {% endblock %}
 
 {% block groups_search_form %}
