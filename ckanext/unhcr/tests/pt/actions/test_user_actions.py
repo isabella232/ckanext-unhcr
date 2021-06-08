@@ -26,7 +26,7 @@ class TestUserActions(object):
 
         assert (
             e.value.error_dict['email'][0] ==
-            "The email address 'alice@unhcr.org' already belongs to a registered user."
+            "The email address 'alice@unhcr.org' belongs to a registered user."
         )
 
         call_action(
