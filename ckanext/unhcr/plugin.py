@@ -328,18 +328,14 @@ class UnhcrPlugin(
 
     # Always include sub-containers to container_read search
     def before_search(self, search_params):
-        controllers = ('organization', 'data-container')
+        blueprints = ('organization', 'data-container')
+
         try:
-            getattr(toolkit.c, "controller", None)
+            blueprint, view = toolkit.get_endpoint()
         except TypeError:
             return search_params
 
-        if (
-            getattr(toolkit.c, "controller", None)
-            and getattr(toolkit.c, "action", None)
-            and toolkit.c.controller in controllers
-            and toolkit.c.action != 'edit'
-        ):
+        if blueprint in blueprints and view != 'edit':
             toolkit.c.include_children_selected = True
 
             # helper function

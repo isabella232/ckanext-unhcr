@@ -177,17 +177,21 @@ def _render_tree_node(node):
 # Access restriction
 
 def page_authorized():
+    blueprint, view = toolkit.get_endpoint()
 
-    if (toolkit.c.controller == 'error' and
-            toolkit.c.action == 'document' and
-            toolkit.c.code and toolkit.c.code[0] != '403'):
+    if (
+        blueprint == 'error'
+        and view == 'document'
+        and toolkit.c.code
+        and toolkit.c.code[0] != '403'
+    ):
         return True
 
-    allowed_controllers = [
+    allowed_blueprints = [
         'user',  # most actions are defined in the core 'user' blueprint
         'unhcr_user',  # we override some actions in the 'unhcr_user' blueprint
     ]
-    allowed_actions = [
+    allowed_views = [
         'logged_in',
         'logged_out',
         'logged_out_page',
@@ -200,8 +204,8 @@ def page_authorized():
     return (
         toolkit.c.userobj
         or (
-            toolkit.c.controller in allowed_controllers
-            and toolkit.c.action in allowed_actions
+            blueprint in allowed_blueprints
+            and view in allowed_views
         )
     )
 
