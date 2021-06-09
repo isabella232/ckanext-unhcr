@@ -20,7 +20,10 @@
     <dt>Parent: {{ parent }}</dt>
     
     {% if data_container.country %}
-    <dt>Countries: {{ data_container.country|join(', ') }}</dt>
+    <dt>Countries: </dt>
+        {% for country in data_container.country %}
+        <dd>{{ h.get_data_container_choice_label('country', country) }}</dd>
+        {% endfor %}
     {% endif %}
     
     {% if data_container.population %}
@@ -32,7 +35,10 @@
     {% endif %}
 
     {% if data_container.sectoral_area %}
-    <dt>Sectoral area: {{ data_container.sectoral_area|join(', ') }}</dt>
+    <dt>Sectoral area:</dt>
+    {% for sectoral_area in data_container.sectoral_area %}
+    <dd>{{ h.get_data_container_choice_label('sectoral_area', sectoral_area) }}</dd>
+    {% endfor %}
     {% endif %}
 
     <dt>Visible to external users: {{ data_container.visible_external }}</dt>

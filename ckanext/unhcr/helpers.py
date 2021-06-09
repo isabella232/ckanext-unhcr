@@ -13,7 +13,7 @@ import ckan.lib.helpers as core_helpers
 import ckan.lib.plugins as lib_plugins
 from ckanext.hierarchy import helpers as hierarchy_helpers
 from ckanext.scheming.helpers import (
-    scheming_get_dataset_schema, scheming_field_by_name
+    scheming_get_dataset_schema, scheming_field_by_name, scheming_get_organization_schema
 )
 from ckanext.unhcr import utils
 from ckanext.unhcr import __VERSION__
@@ -941,6 +941,18 @@ def get_choice_label(name, value, is_resource=False):
     else:
         log.warning('Could not get field {} from deposited-dataset schema'.format(name))
 
+
+def get_data_container_choice_label(name, value):
+    schema = scheming_get_organization_schema('data-container')
+    fields = schema['fields']
+    field = scheming_field_by_name(fields, name)
+    if field:
+        for choice in field.get('choices', []):
+            if choice.get('value') == value:
+                return choice.get('label')
+        return value
+    else:
+        log.warning('Could not get field {} from data-container schema'.format(name))
 
 def normalize_list(value):
     # It takes into account that ''.split(',') == ['']

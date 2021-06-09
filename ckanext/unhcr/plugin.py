@@ -222,6 +222,7 @@ class UnhcrPlugin(
             'get_field_label': helpers.get_field_label,
             'can_download': helpers.can_download,
             'get_choice_label': helpers.get_choice_label,
+            'get_data_container_choice_label': helpers.get_data_container_choice_label,
             'get_ridl_version': helpers.get_ridl_version,
             'get_envname': helpers.get_envname,
             'get_max_resource_size': helpers.get_max_resource_size,
