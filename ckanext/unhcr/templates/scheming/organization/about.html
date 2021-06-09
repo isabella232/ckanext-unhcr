@@ -22,7 +22,7 @@
     {% if data_container.country %}
     <dt>Countries: </dt>
         {% for country in data_container.country %}
-        <dd>{{ h.get_data_container_choice_label('country', country) }}</dd>
+        <dd> - {{ h.get_data_container_choice_label('country', country) }}</dd>
         {% endfor %}
     {% endif %}
     
@@ -37,7 +37,7 @@
     {% if data_container.sectoral_area %}
     <dt>Sectoral area:</dt>
     {% for sectoral_area in data_container.sectoral_area %}
-    <dd>{{ h.get_data_container_choice_label('sectoral_area', sectoral_area) }}</dd>
+    <dd> - {{ h.get_data_container_choice_label('sectoral_area', sectoral_area) }}</dd>
     {% endfor %}
     {% endif %}
 
