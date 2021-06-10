@@ -126,38 +126,11 @@ def _modify_weighted_field(package, key, weights):
 
 
 def _create_link_package_back_references(package_id, link_package_ids):
-    # Create package back reference for every linked package
-    for link_package_id in link_package_ids:
-        link_package = toolkit.get_action('package_show')(
-            {'model': model, 'job': True, 'ignore_auth': True},
-            {'id': link_package_id}
-        )
-        back_package_ids = utils.normalize_list(link_package.get('linked_datasets', []))
-        if package_id not in back_package_ids:
-            link_package['linked_datasets'] = back_package_ids + [package_id]
-            default_user = toolkit.get_action('get_site_user')({ 'ignore_auth': True })
-            toolkit.get_action('package_update')(
-                {'model': model, 'job': True, 'user': default_user['name']},
-                link_package
-            )
+    pass
 
 
 def _delete_link_package_back_references(package_id, link_package_ids):
-    # Delete package back reference for every unlinked package
-    for link_package_id in link_package_ids:
-        link_package = toolkit.get_action('package_show')(
-            {'model': model, 'job': True, 'ignore_auth': True},
-            {'id': link_package_id}
-        )
-        back_package_ids = utils.normalize_list(link_package.get('linked_datasets', []))
-        if package_id in back_package_ids:
-            back_package_ids.remove(package_id)
-            link_package['linked_datasets'] = back_package_ids
-            default_user = toolkit.get_action('get_site_user')({ 'ignore_auth': True })
-            toolkit.get_action('package_update')(
-                {'model': model, 'job': True, 'user': default_user['name']},
-                link_package
-            )
+    pass
 
 
 def _get_link_package_ids_from_revisions(package_id):
