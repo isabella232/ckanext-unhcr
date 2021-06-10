@@ -899,6 +899,9 @@ def access_request_update(context, data_dict):
     if not request:
         raise toolkit.ObjectNotFound("Access Request not found")
 
+    if request.object_type not in ['organization', 'package', 'user']:
+        raise toolkit.Invalid("Unknown Object Type")
+
     toolkit.check_access('access_request_update', context, data_dict)
 
     if request.object_type == 'package':

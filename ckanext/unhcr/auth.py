@@ -3,7 +3,7 @@ from ckan import model
 from ckan.authz import has_user_permission_for_group_or_org
 from ckan.plugins import toolkit
 from ckanext.saml2auth.helpers import is_default_login_enabled
-from ckan.logic.auth import get as core_get, get_resource_object
+from ckan.logic.auth import get_resource_object
 import ckanext.datastore.logic.auth as auth_datastore_core
 from ckanext.unhcr import helpers
 from ckanext.unhcr.models import AccessRequest
@@ -71,11 +71,12 @@ def site_read(context, data_dict):
 # Organization
 
 @toolkit.auth_allow_anonymous_access
-def organization_list_for_user(context, data_dict):
+@toolkit.chained_auth_function
+def organization_list_for_user(next_auth, context, data_dict):
     if not context.get('user'):
         return {'success': False}
     else:
-        return core_get.organization_list_for_user(context, data_dict)
+        return next_auth(context, data_dict)
 
 
 @toolkit.chained_auth_function
@@ -92,7 +93,7 @@ def organization_show(next_auth, context, data_dict):
     return next_auth(context, data_dict)
 
 
-def organization_list_all_fields(next_auth, context, data_dict):
+def organization_list_all_fields(context, data_dict):
     try:
         toolkit.check_access('organization_list', context, data_dict)
         return {'success': True}
@@ -338,10 +339,8 @@ def access_request_list_for_user(context, data_dict):
         {"user": user},
         {"id": user, "permission": "admin"}
     )
-    if len(orgs) > 0:
-        return {'success': True}
+    return {'success': len(orgs) > 0}
 
-    return {'success': False}
 
 def access_request_update(context, data_dict):
     user = context.get('user')
@@ -369,8 +368,6 @@ def access_request_update(context, data_dict):
         }
     elif request.object_type == 'user':
         return external_user_update_state(context, {'id': request.object_id})
-
-    raise toolkit.Invalid("Unknown Object Type")
 
 
 def access_request_create(context, data_dict):
