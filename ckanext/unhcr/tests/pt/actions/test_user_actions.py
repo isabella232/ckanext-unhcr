@@ -121,6 +121,46 @@ class TestUserActions(object):
         assert 'expiry_date' in user
         assert 'Alice' == user['focal_point']
 
+    def test_user_update_saml2_user(self):
+        saml_user = core_factories.User()
+        userobj = model.User.get(saml_user['id'])
+        userobj.plugin_extras = {'saml2auth': { 'saml_id': 'abc123' }}
+        model.Session.commit()
+
+        context = {'user': saml_user['name']}
+        with pytest.raises(toolkit.ValidationError):
+            toolkit.get_action('user_update')(context, saml_user)
+
+    def test_user_generate_apikey_saml2_user(self):
+        saml_user = core_factories.User()
+        userobj = model.User.get(saml_user['id'])
+        userobj.plugin_extras = {'saml2auth': { 'saml_id': 'abc123' }}
+        model.Session.commit()
+
+        context = {'user': saml_user['name']}
+        data_dict = {'id': saml_user['id']}
+        result = toolkit.get_action('user_generate_apikey')(context, data_dict)
+        assert type(result) == dict
+        assert saml_user['apikey'] != result['apikey']
+
+    def test_user_update_change_apikey_saml2_user(self):
+        saml_user = core_factories.User()
+        userobj = model.User.get(saml_user['id'])
+        userobj.plugin_extras = {'saml2auth': { 'saml_id': 'abc123' }}
+        model.Session.commit()
+
+        context = {'user': saml_user['name']}
+        data_dict = saml_user.copy()
+        data_dict['apikey'] = 'f00b42'
+        data_dict['email'] = 'newemail@example.com'
+        result = toolkit.get_action('user_update')(context, data_dict)
+        assert result['email'] != 'newemail@example.com'
+
+    def test_user_update_native_user(self):
+        native_user = core_factories.User()
+        context = {'user': native_user['name']}
+        result = toolkit.get_action('user_update')(context, native_user)
+        assert type(result) == dict
 
 @pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
 class TestUserAutocomplete(object):

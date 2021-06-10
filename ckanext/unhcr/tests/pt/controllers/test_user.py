@@ -226,3 +226,67 @@ class TestUserRegister(object):
                 extra_environ={'REMOTE_USER': self.sysadmin['name'].encode('ascii')},
                 status=403
             )
+
+
+@pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
+class TestPasswordReset(object):
+
+    def setup(self):
+        saml_user = core_factories.User(name='saml2user', email='saml2@unhcr.org')
+        userobj = model.User.get(saml_user['id'])
+        userobj.plugin_extras = {'saml2auth': { 'saml_id': 'abc123' }}
+        model.Session.commit()
+        core_factories.User(name='nativeuser', email='native@unhcr.org')
+
+    @pytest.mark.ckan_config('ckanext.saml2auth.enable_ckan_internal_login', True)
+    def test_password_reset_get_form_native_users_enabled(self, app):
+        print(toolkit.url_for('user.request_reset'))
+        app.get(toolkit.url_for('user.request_reset'), status=200)
+
+    @pytest.mark.ckan_config('ckanext.saml2auth.enable_ckan_internal_login', False)
+    def test_password_reset_get_form_native_users_disabled(self, app):
+        app.get(toolkit.url_for('user.request_reset'), status=403)
+
+    @pytest.mark.ckan_config('ckanext.saml2auth.enable_ckan_internal_login', True)
+    @pytest.mark.parametrize(
+        "user, exp_code, exp_message",
+        [
+            ('saml2user', 403, "Unauthorized to request reset password."),
+            ('saml2@unhcr.org', 403, "Unauthorized to request reset password."),
+
+            # these two are still going to be a 403 because we aren't logged in
+            # but we should be redirected back to the login page 403
+            # instead of an error message 403
+            ('nativeuser', 403, "You must be logged in to access the RIDL site."),
+            ('native@unhcr.org', 403, "You must be logged in to access the RIDL site."),
+        ]
+    )
+    def test_password_reset_submit_form_native_users_enabled(
+        self, app, user, exp_code, exp_message
+    ):
+        resp = app.post(
+            toolkit.url_for('user.request_reset'),
+            data={'user': user},
+            status=exp_code
+        )
+        assert exp_message in resp.body
+
+    @pytest.mark.ckan_config('ckanext.saml2auth.enable_ckan_internal_login', False)
+    @pytest.mark.parametrize(
+        "user, exp_code, exp_message",
+        [
+            ('saml2user', 403, "Unauthorized to request reset password."),
+            ('saml2@unhcr.org', 403, "Unauthorized to request reset password."),
+            ('nativeuser', 403, "Unauthorized to request reset password."),
+            ('native@unhcr.org', 403, "Unauthorized to request reset password."),
+        ]
+    )
+    def test_password_reset_submit_form_native_users_disabled(
+        self, app, user, exp_code, exp_message
+    ):
+        resp = app.post(
+            toolkit.url_for('user.request_reset'),
+            data={'user': user},
+            status=exp_code
+        )
+        assert exp_message in resp.body

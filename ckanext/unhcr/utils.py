@@ -1,7 +1,7 @@
 import json
 from functools import wraps
 import ckan.plugins.toolkit as toolkit
-# TODO: move here helpers not used in templates?
+# TODO: move here helpers not used in templates
 
 
 INTERNAL_DOMAINS = ['unhcr.org']
@@ -81,3 +81,13 @@ def require_user(func):
             return toolkit.abort(403, "Forbidden")
         return func(*args, **kwargs)
     return view_wrapper
+
+
+def is_saml2_user(userobj):
+    if not userobj:
+        return False
+    if not userobj.plugin_extras:
+        return False
+    if userobj.plugin_extras.get('saml2auth', {}).get('saml_id', None):
+        return True
+    return False

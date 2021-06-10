@@ -471,6 +471,8 @@ class UnhcrPlugin(
         functions['external_user_update_state'] = auth.external_user_update_state
         functions['search_index_rebuild'] = auth.search_index_rebuild
         functions['user_show'] = auth.user_show
+        functions['user_reset'] = auth.user_reset
+        functions['request_reset'] = auth.request_reset
         return functions
 
     # IActions
@@ -508,6 +510,7 @@ class UnhcrPlugin(
             'user_list': actions.user_list,
             'user_show': actions.user_show,
             'user_create': actions.user_create,
+            'user_update': actions.user_update,
         }
         return functions
 

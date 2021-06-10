@@ -5,10 +5,11 @@ from ckan.plugins import toolkit
 import ckan.logic.auth.create as auth_create_core
 import ckan.logic.auth.update as auth_update_core
 import ckanext.datastore.logic.auth as auth_datastore_core
+from ckanext.saml2auth.helpers import is_default_login_enabled
 from ckan.logic.auth import get as core_get, get_resource_object
 from ckanext.unhcr import helpers
 from ckanext.unhcr.models import AccessRequest
-from ckanext.unhcr.utils import get_module_functions
+from ckanext.unhcr.utils import get_module_functions, is_saml2_user
 log = logging.getLogger(__name__)
 
 
@@ -32,8 +33,6 @@ def restrict_access_to_get_auth_functions():
         'organization_list_for_user',  # Because of #4097
         'get_site_user',
         'user_reset',  # saml2
-        'user_create',  # saml2
-        'user_delete',  # saml2
         'request_reset',  # saml2
     ]
 
@@ -441,3 +440,41 @@ def user_show(next_auth, context, data_dict):
             return next_auth(context, data_dict)
         return {'success': False}
     return next_auth(context, data_dict)
+
+
+# Password resets
+
+def _get_user(username_or_email):
+    userobj = model.User.get(username_or_email)
+    if userobj:
+        return userobj
+    users = model.User.by_email(username_or_email)
+    if len(users) == 1:
+        return users[0]
+    return None
+
+
+@toolkit.chained_auth_function
+@toolkit.auth_allow_anonymous_access
+@toolkit.auth_sysadmins_check
+def user_reset(next_auth, context, data_dict):
+    if is_default_login_enabled():
+        return next_auth(context, data_dict)
+    return {'success': False, 'msg': 'Users cannot reset passwords.'}
+
+
+@toolkit.chained_auth_function
+@toolkit.auth_allow_anonymous_access
+@toolkit.auth_sysadmins_check
+def request_reset(next_auth, context, data_dict):
+    username_or_email = toolkit.request.form.get('user', '')
+    method = toolkit.request.method
+
+    if is_default_login_enabled():
+        userobj = _get_user(username_or_email)
+        if (
+            method == 'GET' or userobj is None or
+            (method == 'POST' and not is_saml2_user(userobj))
+        ):
+            return next_auth(context, data_dict)
+    return {'success': False, 'msg': 'Users cannot reset passwords.'}

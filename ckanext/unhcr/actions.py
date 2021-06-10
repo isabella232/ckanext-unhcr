@@ -24,6 +24,7 @@ import ckan.logic.action.patch as patch_core
 import ckan.lib.dictization.model_dictize as model_dictize
 from ckanext.unhcr import helpers, mailer, utils
 from ckanext.unhcr.models import AccessRequest
+from ckanext.unhcr.utils import is_saml2_user
 from ckanext.scheming.helpers import scheming_get_dataset_schema
 
 log = logging.getLogger(__name__)
@@ -1248,6 +1249,26 @@ def user_create(up_func, context, data_dict):
     user['focal_point'] = plugin_extras['unhcr']['focal_point']
     user['default_containers'] = plugin_extras['unhcr']['default_containers']
     return user
+
+
+@toolkit.chained_action
+def user_update(up_func, context, data_dict):
+    user_id = toolkit.get_or_bust(data_dict, 'id')
+    m = context.get('model', model)
+    user_obj = m.User.get(user_id)
+
+    if user_obj is not None and is_saml2_user(user_obj):
+
+        if user_obj.apikey != data_dict.get('apikey'):
+            up_dict = toolkit.get_action('user_show')(context.copy(), {'id': user_id})
+            up_dict['apikey'] = data_dict['apikey']
+            return up_func(context, up_dict)
+
+        raise toolkit.ValidationError({'error': [
+            "User accounts managed by Single Sign-On can't be modified"
+        ]})
+
+    return up_func(context, data_dict)
 
 
 def _init_plugin_extras(plugin_extras):
