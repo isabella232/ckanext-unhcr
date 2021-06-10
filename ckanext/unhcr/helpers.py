@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+from datetime import datetime
 from urllib import quote
 from jinja2 import Markup, escape
 from ckan import model
@@ -1042,3 +1043,7 @@ def nl_to_br(text):
     result = u'\n\n'.join(u'<p>%s</p>' % p.replace('\n', Markup('<br>\n'))
                           for p in _paragraph_re.split(escape(text)))
     return Markup(result)
+
+
+def show_mfa_dialog():
+    return datetime.now() < datetime(2021, 6, 21)

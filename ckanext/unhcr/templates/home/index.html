@@ -12,6 +12,38 @@
     {% block primary_content %}
     <div role="main" class="hero">
       <div class="container">
+
+        {% if h.show_mfa_dialog() %}
+        <div class="alert fade in" style="background-color:rgb(51, 142, 201)">
+          <h2 class="heading">Multi-Factor Authentication will be mandatory on RIDL starting from 21 June 2021</h2>
+          <p>From this date, authorization with the Authenticator app will be required to log in to RIDL, similar to the Intranet, UNHCR Service Portal, Outlook Email, Teams and other Microsoft Office online products.</p>
+
+          <h2 class="heading">What is Multi-Factor Authentication, and how does it work?</h2>
+          <p>MFA can protect your account from 99.9% of phishing attacks that look to steal your personal information, like login and password. Relying on two forms of authentication – something you know, like your password, and something you have, like your phone – MFA adds a second layer of security to your account to make sure that your information stays safe, even if a hacker gets hold of your password.</p>
+
+          <h2 class="heading">What should you do?</h2>
+          <p>If you do not have MFA enabled yet, register today in three simple steps:</p>
+          <ul>
+            <li>
+              <a href="https://web.microsoftstream.com/video/e9f6d829-c000-4259-bbbc-a649ea200719">Watch the instructional video</a>
+              or read the
+              <a href="https://intranet.unhcr.org/content/dam/unhcr/intranet/staff%20support/information-communication-technology/documents/english/multi-factor_authentication/Multi-Factor%20Authentication_End-User%20Guide.pdf">MFA End-User guide</a>;
+            </li>
+            <li>
+              Register your security preferences on
+              <a href="https://mfa.unhcr.org">https://mfa.unhcr.org</a>
+              and install the
+              <a href="https://support.microsoft.com/en-us/topic/use-microsoft-authenticator-with-microsoft-365-1412611f-ad8d-43ab-807c-7965e5155411?ui=en-us&rs=en-us&ad=us">Authenticator App</a>
+              on your smartphone/tablet;
+            </li>
+            <li>
+              Request for MFA to be activated on your account by sending an email to the Global Service Desk at
+              <a href="mailto:GSD@unhcr.org">GSD@unhcr.org</a>.
+            </li>
+          </ul>
+        </div>
+        {% endif %}
+
         {% block search %}
           {% if not c.userobj.external %}
             {% set tags = h.get_facet_items_dict('tags', limit=3) %}
@@ -51,9 +83,7 @@
             </p>
             <p>
               More guidance on how to use RIDL is available
-              <a href="https://im.unhcr.org/ridl/" target="_blank"><strong>
-                here
-              </strong></a>.
+              <a href="https://im.unhcr.org/ridl/" target="_blank">here</a>.
             </p>
           {% endif %}
 
