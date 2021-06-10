@@ -66,8 +66,18 @@ def _process_dataset_fields(package_id):
 
     # Update package
     default_user = toolkit.get_action('get_site_user')({ 'ignore_auth': True })
-    package_update = toolkit.get_action('package_update')
-    package_update({'job': True, 'user': default_user['name']}, package)
+    data_dict = {
+        'match': {'id': package['id']},
+        'update': {
+            'process_status': package['process_status'],
+            'identifiability': package['identifiability'],
+            'visibility': package['visibility'],
+            'date_range_start': package['date_range_start'],
+            'date_range_end': package['date_range_end'],
+        },
+    }
+    package_revise = toolkit.get_action('package_revise')
+    package_revise({'job': True, 'user': default_user['name']}, data_dict)
 
 
 def _modify_package(package):
