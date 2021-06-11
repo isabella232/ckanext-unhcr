@@ -1,5 +1,9 @@
 # RIDL Changelog
 
+## v2.3.2 - 2021-06-11
+
+- Show MFA banner
+
 ## v2.3.1 - 2021-05-11
 
 Fixes:
