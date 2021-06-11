@@ -1,5 +1,24 @@
 # RIDL Changelog
 
+## v3.0.0 - 2021-06-14
+
+Behaviour changes:
+- SAML2 SSO: Logging out of RIDL no longer logs out of Active Directory
+- API keys are no longer auto-generated for new users. CKAN 2.9 introduces a new feature: API Tokens
+  see https://docs.ckan.org/en/2.9/api/index.html#api-authentication
+
+Bug fixes:
+- Fixed 500 error when requesting password reset for nonexistant user or searching user list with zero results
+- Fixed copying dataset with tags
+- Fixed request access dialog on resource pages
+- Active menu tab is always marked active on dataset pages
+- Fixed missing 'manage' link on container read page
+- Fixed missing fields on About page for containers
+
+Features:
+- A full history of dataset changes is now displayed in the Activity Stream to admins
+- CKAN 2.9 supports python3, enabling us to work on the python3 migration next
+
 ## v2.3.3 - 2021-06-11
 
 - Minor formatting change in MFA banner
