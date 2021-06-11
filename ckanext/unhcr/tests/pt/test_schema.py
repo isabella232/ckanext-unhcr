@@ -5,7 +5,7 @@ from ckan.plugins import toolkit
 from ckan.tests.helpers import call_action
 from ckan import model
 from ckantoolkit.tests import factories as core_factories
-from ckanext.unhcr.tests import factories
+from ckanext.unhcr.tests import factories, mocks
 
 
 @pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
@@ -83,7 +83,7 @@ class TestResourceFields(object):
         }
         resource2 = {
             'name': 'Test Data file',
-            'url': 'http://example.com/data.csv',
+            'upload': mocks.FakeFileStorage(),
             'format': 'CSV',
             'description': 'Some data file',
             'type': 'data',
