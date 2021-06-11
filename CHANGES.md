@@ -1,5 +1,9 @@
 # RIDL Changelog
 
+## v2.3.3 - 2021-06-11
+
+- Minor formatting change in MFA banner
+
 ## v2.3.2 - 2021-06-11
 
 - Show MFA banner
