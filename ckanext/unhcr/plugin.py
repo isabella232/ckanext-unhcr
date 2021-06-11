@@ -316,6 +316,7 @@ class UnhcrPlugin(
             'get_max_resource_size': helpers.get_max_resource_size,
             'get_google_analytics_id': helpers.get_google_analytics_id,
             'nl_to_br': helpers.nl_to_br,
+            'show_mfa_dialog': helpers.show_mfa_dialog,
         }
 
     # IPackageController

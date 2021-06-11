@@ -1375,6 +1375,10 @@ ol.unstyled {
   justify-content: center;
 }
 
+.homepage [role="main"] > .container a {
+  font-weight: bold;
+}
+
 .homepage .module-search {
   padding: 0;
   margin: 5vh 0;
@@ -1431,10 +1435,13 @@ ol.unstyled {
 
 .homepage .hero h1,
     .homepage .hero h2,
-    .homepage .hero h3,
-    .homepage .hero a:not(.btn) {
+    .homepage .hero h3 {
   color: inherit;
   font-weight: normal;
+}
+
+.homepage .hero a:not(.btn) {
+  color: inherit;
 }
 
 .homepage .hero .search-form {
