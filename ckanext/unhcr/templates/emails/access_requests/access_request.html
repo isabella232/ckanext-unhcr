@@ -13,10 +13,10 @@
 
     {% if object_type == 'dataset' %}
       has requested access to download
-      {{ h.link_to(object.title or object.name, h.url_for('dataset_read', id=object.name, qualified=True)) }}.
+      {{ h.link_to(object.title or object.name, h.url_for('dataset.read', id=object.name, qualified=True)) }}.
     {% elif object_type == 'container' %}
       has requested access to
-      {{ h.link_to(object.display_name, h.url_for('data-container_read', id=object.name, qualified=True)) }}.
+      {{ h.link_to(object.display_name, h.url_for('data-container.read', id=object.name, qualified=True)) }}.
     {% elif object_type == 'user' %}
       has requested access to deposit datasets.
     {% else %}

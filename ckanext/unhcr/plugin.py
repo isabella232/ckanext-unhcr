@@ -13,12 +13,9 @@ from ckan.lib.plugins import DefaultPermissionLabels
 
 # 🙈
 import ckan.authz as authz
-from ckan.lib.activity_streams import (
-    activity_stream_string_functions,
-    activity_stream_string_icons,
-)
 
-from ckanext.unhcr import actions, auth, blueprints, helpers, jobs, utils, validators
+from ckanext.unhcr import actions, auth, click_commands, blueprints, helpers, jobs, utils, validators
+from ckanext.unhcr.activity import create_curation_activity
 
 from ckanext.scheming.helpers import scheming_get_dataset_schema
 from ckanext.hierarchy.helpers import group_tree_section
@@ -105,6 +102,7 @@ def url_for(*args, **kw):
 class UnhcrPlugin(
         plugins.SingletonPlugin, DefaultTranslation, DefaultPermissionLabels):
     plugins.implements(plugins.IConfigurer)
+    plugins.implements(plugins.IClick)
     plugins.implements(plugins.ITranslation)
     plugins.implements(plugins.IFacets)
     plugins.implements(plugins.ITemplateHelpers)
@@ -113,7 +111,6 @@ class UnhcrPlugin(
     plugins.implements(plugins.IAuthFunctions)
     plugins.implements(plugins.IActions)
     plugins.implements(plugins.IValidators)
-    plugins.implements(plugins.IRoutes, inherit=True)
     plugins.implements(plugins.IPermissionLabels)
     plugins.implements(plugins.IBlueprint)
 
@@ -123,14 +120,7 @@ class UnhcrPlugin(
         toolkit.add_template_directory(config_, 'templates')
         toolkit.add_public_directory(config_, 'public')
         toolkit.add_resource('fanstatic', 'unhcr')
-
-        # TODO: in CKAN 2.9 we can add `icon='hdd-o'` here
-        # but not yet :(
-        toolkit.add_ckan_admin_tab(config_, 'unhcr_search_index.index', 'Search Index')
-
-        activity_stream_string_functions['changed package'] = helpers.custom_activity_renderer
-        activity_stream_string_functions['download resource'] = helpers.download_resource_renderer
-        activity_stream_string_icons['download resource'] = 'download'
+        toolkit.add_ckan_admin_tab(config_, 'unhcr_search_index.index', 'Search Index', icon='hdd-o')
 
         User.external = property(utils.user_is_external)
         if (authz.is_authorized.__name__ != 'unhcr_auth_wrapper'):
@@ -146,91 +136,10 @@ class UnhcrPlugin(
 
         return schema
 
-    # IRoutes
+    # IClick
 
-    def before_map(self, _map):
-
-        # header
-        # TODO: review header item creation
-        controller = 'ckan.controllers.organization:OrganizationController'
-        _map.connect('data-deposit', '/data-container/data-deposit', controller=controller, action='read', id='data-deposit')
-
-        # package
-
-        # Re-add these core ones otherwise our route below will mask them
-        _map.connect('search', '/dataset', controller='package', action='search', highlight_actions='index search')
-        _map.connect('add dataset', '/dataset/new', controller='package', action='new')
-        _map.connect('/dataset/{action}', controller='package',
-                  requirements=dict(action='|'.join([
-                      'list',
-                      'autocomplete',
-                      'search'
-                  ])))
-
-        # Re-add these DDI ones otherwise our route below will mask them
-        _map.connect(
-            '/dataset/import',
-            controller='ckanext.ddi.controllers:ImportFromXml',
-            action='import_form'
-        )
-        _map.connect(
-            '/dataset/importfile',
-            controller='ckanext.ddi.controllers:ImportFromXml',
-            action='run_import'
-        )
-
-        controller = 'ckanext.unhcr.controllers.extended_package:ExtendedPackageController'
-        _map.connect('/dataset/{id}', controller=controller, action='read')
-        _map.connect('/dataset/publish/{id}', controller=controller, action='publish')
-        _map.connect('/dataset/copy/{id}', controller=controller, action='copy')
-        _map.connect('/dataset/{id}/resource_copy/{resource_id}', controller=controller, action='resource_copy')
-        _map.connect('/dataset/{id}/publish_microdata', controller=controller, action='publish_microdata')
-        _map.connect('/dataset/{id}/request_access', controller=controller, action='request_access', conditions={'method': ['POST']})
-        _map.connect('dataset_internal_activity', '/dataset/internal_activity/{dataset_id}', controller=controller, action='activity')
-        _map.connect('deposited-dataset_internal_activity', '/deposited-dataset/internal_activity/{dataset_id}', controller=controller, action='activity')
-
-        # additional aliases to map /deposited-dataset/stuff routes
-        # these are needed because register_package_plugins() only maps a
-        # subset of /dataset routes for custom package types
-        _map.connect('/deposited-dataset/resources/{id}', controller=controller, action='resources')
-        _map.connect('/deposited-dataset/{id}/resource_copy/{resource_id}', controller=controller, action='resource_copy')
-        _map.connect('/deposited-dataset/{id}/resource_delete/{resource_id}', controller=controller, action='resource_delete')
-        _map.connect('/deposited-dataset/{id}/resource_edit/{resource_id}', controller=controller, action='resource_edit')
-        _map.connect('/deposited-dataset/{id}/resource/{resource_id}', controller=controller, action='resource_read')
-        _map.connect('/deposited-dataset/{id}/resource/{resource_id}/view/{view_id}', controller=controller, action='resource_view')
-        _map.connect('/deposited-dataset/new_resource/{id}', controller=controller, action='new_resource')
-        _map.connect('/deposited-dataset/publish/{id}', controller=controller, action='publish')
-        _map.connect('/deposited-dataset/activity/{dataset_id}', controller=controller, action='activity')
-        _map.connect('/deposited-dataset/activity/{dataset_id}/{offset}', controller=controller, action='activity')
-        _map.connect('/deposited-dataset/copy/{id}', controller=controller, action='copy')
-        _map.connect('/deposited-dataset/{id}/resource_data/{resource_id}', controller='ckanext.datapusher.plugin:ResourceDataController', action='resource_data')
-
-        # resource download routes
-        download_routes = [
-            '/dataset/{id}/resource/{resource_id}/download',
-            '/dataset/{id}/resource/{resource_id}/download/{filename}',
-            '/deposited-dataset/{id}/resource/{resource_id}/download',
-            '/deposited-dataset/{id}/resource/{resource_id}/download/{filename}',
-        ]
-        if not plugins.plugin_loaded('s3filestore'):
-            for route in download_routes:
-                _map.connect(route, controller=controller, action='resource_download')
-
-
-        # organization
-
-        # Re-add this core one otherwise our route below will mask it
-        _map.connect('data-container_new', '/data-container/new',
-                        controller='organization', action='new')
-
-        controller = 'ckanext.unhcr.controllers.extended_organization:ExtendedOrganizationController'
-        _map.connect('/data-container/{id}', controller=controller, action='read')
-
-        # user
-        controller = 'ckanext.unhcr.controllers.extended_user:ExtendedUserController'
-        _map.connect('dashboard.requests', '/dashboard/requests', controller=controller, action='list_requests', ckan_icon='spinner')
-
-        return _map
+    def get_commands(self):
+        return [click_commands.unhcr]
 
     # IFacets
 
@@ -295,6 +204,8 @@ class UnhcrPlugin(
             'get_pending_requests_total': helpers.get_pending_requests_total,
             'get_existing_access_request': helpers.get_existing_access_request,
             'get_access_request_for_user': helpers.get_access_request_for_user,
+            # Activities
+            'curation_activity_message': helpers.curation_activity_message,
             # Deposited datasets
             'get_data_deposit': helpers.get_data_deposit,
             'get_data_curation_users': helpers.get_data_curation_users,
@@ -311,12 +222,12 @@ class UnhcrPlugin(
             'get_field_label': helpers.get_field_label,
             'can_download': helpers.can_download,
             'get_choice_label': helpers.get_choice_label,
+            'get_data_container_choice_label': helpers.get_data_container_choice_label,
             'get_ridl_version': helpers.get_ridl_version,
             'get_envname': helpers.get_envname,
             'get_max_resource_size': helpers.get_max_resource_size,
             'get_google_analytics_id': helpers.get_google_analytics_id,
             'nl_to_br': helpers.nl_to_br,
-            'show_mfa_dialog': helpers.show_mfa_dialog,
         }
 
     # IPackageController
@@ -417,21 +328,14 @@ class UnhcrPlugin(
 
     # Always include sub-containers to container_read search
     def before_search(self, search_params):
-        controllers = (
-            'organization',
-            'ckanext.unhcr.controllers.extended_organization:ExtendedOrganizationController',
-        )
+        blueprints = ('organization', 'data-container')
+
         try:
-            getattr(toolkit.c, "controller", None)
+            blueprint, view = toolkit.get_endpoint()
         except TypeError:
             return search_params
 
-        if (
-            getattr(toolkit.c, "controller", None)
-            and getattr(toolkit.c, "action", None)
-            and toolkit.c.controller in controllers
-            and toolkit.c.action != 'edit'
-        ):
+        if blueprint in blueprints and view != 'edit':
             toolkit.c.include_children_selected = True
 
             # helper function
@@ -443,17 +347,17 @@ class UnhcrPlugin(
                 return name_list
 
             # update filter query
-            if toolkit.c.id:
+            if getattr(toolkit.c, "group", None):
                 children = _children_name_list(
                     group_tree_section(
-                        toolkit.c.id,
+                        toolkit.c.group.name,
                         type_='data-container',
                         include_parents=False,
                         include_siblings=False
                     ).get('children',[])
                 )
                 if children:
-                    search_params['fq'] = 'organization:%s' % toolkit.c.id
+                    search_params['fq'] = 'organization:%s' % toolkit.c.group.name
                     for name in children:
                         if name:
                             search_params['fq'] += ' OR organization:%s' %  name
@@ -477,7 +381,7 @@ class UnhcrPlugin(
 
     def _package_after_create(self, context, pkg_dict):
         if not context.get('job') and not context.get('defer_commit'):
-            if pkg_dict.get('state') == 'active':
+            if self._package_is_active(context, pkg_dict):
                 toolkit.enqueue_job(jobs.process_dataset_on_create, [pkg_dict['id']])
 
         if pkg_dict.get('type') == 'deposited-dataset':
@@ -489,12 +393,12 @@ class UnhcrPlugin(
                     {'ignore_auth': True}, {'id': context['user']})
                 user_id = user['id']
             if user_id:
-                helpers.create_curation_activity('dataset_deposited', pkg_dict['id'],
+                create_curation_activity('dataset_deposited', pkg_dict['id'],
                     pkg_dict['name'], user_id)
 
     def _resource_after_create(self, context, res_dict):
         if not context.get('job'):
-            if res_dict.get('state') == 'active':
+            if self._resource_is_active(context, res_dict):
                 toolkit.enqueue_job(jobs.process_dataset_on_update, [res_dict['package_id']])
 
 
@@ -507,19 +411,37 @@ class UnhcrPlugin(
 
     def _package_after_update(self, context, pkg_dict):
         if not context.get('job') and not context.get('defer_commit'):
-            if pkg_dict.get('state') == 'active':
+            if self._package_is_active(context, pkg_dict):
                 toolkit.enqueue_job(jobs.process_dataset_on_update, [pkg_dict['id']])
 
     def _resource_after_update(self, context, res_dict):
         if not context.get('job'):
-            if res_dict.get('state') == 'active':
+            if self._resource_is_active(context, res_dict):
                 toolkit.enqueue_job(jobs.process_dataset_on_update, [res_dict['package_id']])
 
 
     def after_delete(self, context, data_dict):
-        if 'owner_org' in data_dict and 'package_id' not in data_dict:
-            if not context.get('job'):
-                toolkit.enqueue_job(jobs.process_dataset_on_delete, [data_dict['id']])
+        if not context.get('job') and type(data_dict) == dict and data_dict.get('id'):
+            toolkit.enqueue_job(jobs.process_dataset_on_delete, [data_dict['id']])
+
+
+    def _package_is_active(self, context, pkg_dict):
+        if pkg_dict.get('state') == 'active':
+            return True
+        pkg = context.get('package')
+        if pkg and pkg.state == 'active':
+            return True
+        return False
+
+    def _resource_is_active(self, context, res_dict):
+        if res_dict.get('state') == 'active':
+            return True
+        pkg = context.get('package')
+        res_id = res_dict.get('id')
+        if pkg and pkg.resources:
+            if res_id in [r.id for r in pkg.resources if r.state == 'active']:
+                return True
+        return False
 
 
     # IAuthFunctions
@@ -535,10 +457,10 @@ class UnhcrPlugin(
         functions['organization_show'] = auth.organization_show
         functions['organization_list_all_fields'] = auth.organization_list_all_fields
         functions['group_list_authz'] = auth.group_list_authz
-        functions['package_activity_list'] = auth.package_activity_list
+        functions['package_internal_activity_list'] = auth.package_internal_activity_list
         functions['package_create'] = auth.package_create
+        functions['package_collaborator_create'] = auth.package_collaborator_create
         functions['package_update'] = auth.package_update
-        functions['dataset_collaborator_create'] = auth.dataset_collaborator_create
         functions['scan_hook'] = auth.scan_hook
         functions['scan_submit'] = auth.scan_submit
         functions['access_request_list_for_user'] = auth.access_request_list_for_user
@@ -548,6 +470,8 @@ class UnhcrPlugin(
         functions['external_user_update_state'] = auth.external_user_update_state
         functions['search_index_rebuild'] = auth.search_index_rebuild
         functions['user_show'] = auth.user_show
+        functions['user_reset'] = auth.user_reset
+        functions['request_reset'] = auth.request_reset
         return functions
 
     # IActions
@@ -560,24 +484,19 @@ class UnhcrPlugin(
             'package_update': actions.package_update,
             'package_publish_microdata': actions.package_publish_microdata,
             'package_get_microdata_collections': actions.package_get_microdata_collections,
-            'dataset_collaborator_create': actions.dataset_collaborator_create,
+            'package_collaborator_create': actions.package_collaborator_create,
+            'package_collaborator_delete': actions.package_collaborator_delete,
             'organization_create': actions.organization_create,
             'organization_member_create': actions.organization_member_create,
             'organization_member_delete': actions.organization_member_delete,
             'organization_list_all_fields': actions.organization_list_all_fields,
+            'package_internal_activity_list': actions.package_internal_activity_list,
             'container_request_list': actions.container_request_list,
             'package_activity_list': actions.package_activity_list,
             'dashboard_activity_list': actions.dashboard_activity_list,
             'user_activity_list': actions.user_activity_list,
             'group_activity_list': actions.group_activity_list,
             'organization_activity_list': actions.organization_activity_list,
-            'recently_changed_packages_activity_list': actions.recently_changed_packages_activity_list,
-            'package_activity_list_html': actions.package_activity_list_html,
-            'dashboard_activity_list_html': actions.dashboard_activity_list_html,
-            'user_activity_list_html': actions.user_activity_list_html,
-            'group_activity_list_html': actions.group_activity_list_html,
-            'organization_activity_list_html': actions.organization_activity_list_html,
-            'recently_changed_packages_activity_list_html': actions.recently_changed_packages_activity_list_html,
             'datasets_validation_report': actions.datasets_validation_report,
             'scan_hook': actions.scan_hook,
             'scan_submit': actions.scan_submit,
@@ -590,6 +509,7 @@ class UnhcrPlugin(
             'user_list': actions.user_list,
             'user_show': actions.user_show,
             'user_create': actions.user_create,
+            'user_update': actions.user_update,
         }
         return functions
 
@@ -610,7 +530,6 @@ class UnhcrPlugin(
             'upload_not_empty': validators.upload_not_empty,
             'object_id_validator': validators.object_id_validator,
             'activity_type_exists': validators.activity_type_exists,
-            'owner_org_validator': validators.owner_org_validator,
         }
 
     # IPermissionLabels
@@ -673,15 +592,15 @@ class UnhcrPlugin(
     # IBlueprint
 
     def get_blueprint(self):
-        bp = [
+        return [
             blueprints.unhcr_access_requests_blueprint,
             blueprints.unhcr_admin_blueprint,
+            blueprints.unhcr_dashboard_blueprint,
+            blueprints.unhcr_dataset_blueprint,
             blueprints.unhcr_data_container_blueprint,
             blueprints.unhcr_deposited_dataset_blueprint,
             blueprints.unhcr_metrics_blueprint,
+            blueprints.unhcr_resource_blueprint,
             blueprints.unhcr_search_index_blueprint,
             blueprints.unhcr_user_blueprint,
         ]
-        if plugins.plugin_loaded('s3filestore'):
-            bp.append(blueprints.unhcr_s3_resource_blueprint)
-        return bp

@@ -18,9 +18,10 @@ CKAN extension for the UNHCR RIDL project
 - [Running E2E tests](#running-e2e-tests)
 - [Building static assets](#building-static-assets)
 - [Working with i18n](#working-with-i18n)
-- [Loging into container](#loging-into-container)
+- [Logging into container](#logging-into-container)
 - [Updating readme](#updating-readme)
 - [Managing docker](#managing-docker)
+- [Prepare a local environment for running scripts](#prepare-a-local-environment-for-running-scripts)
 - [Generate deposited-dataset schema](#generate-deposited-dataset-schema)
 - [Create data containers and data deposit](#create-data-containers-and-data-deposit)
 - [Create development users](#create-development-users)
@@ -30,11 +31,11 @@ CKAN extension for the UNHCR RIDL project
 
 ## Requirements
 
-This extension is being developed against CKAN 2.8.x
+This extension is being developed against CKAN 2.9.x
 
 Please follow installation instructions of the software below if needed. Also, take a look inside the `Makefile` to understand what's going on under the hood:
 - `docker`
-- `docker-compose`
+- `docker-compose` (`>= 1.26`)
 - `/etc/hosts` contains the `127.0.0.1 ckan-dev` line
 
 For building static assets and running end-to-end tests Node.js is required and can be installed with these commands:
@@ -47,7 +48,7 @@ $ npm install
 
 ## Setting up environment
 
-Clone the `ckanext-unhcr` repository (assuming that we're inside the `docker-ckan-unhcr/src` directory):
+Clone the `ckanext-unhcr` repository (assuming that we're inside the `docker-ckan-unhcr-aws/src` directory):
 
 ```bash
 $ git clone git@github.com:okfn/ckanext-unhcr.git
@@ -58,7 +59,7 @@ It's designed to support live development of extensions. The only one requiremen
 
 ## Working with docker
 
-The whole docker setup is inside the `docker-ckan-unhcr` directory. You can tweak any CKAN instance's aspects there (e.g. patches/cron/etc). To add other CKAN extensions to the work - add its folders to `docker-compose.dev.yml` (see `ckan-dev` volumes).
+The whole docker setup is inside the `docker-ckan-unhcr-aws` directory. You can tweak any CKAN instance's aspects there (e.g. patches/cron/etc). To add other CKAN extensions to the work - add its folders to `docker-compose.yml` (see `ckan-dev` volumes).
 
 Pull the latest `ckan-base/dev` images and build the project's images:
 
@@ -90,8 +91,15 @@ $ make test
 ```
 
 To run only selected tests:
-- add `@nose.plugins.attrib.attr('only')` decorator to the selected test
-- run `$ make test ARGS='-a only'`
+- run `$ make test ARGS='-k <pattern>'`
+
+### Troubleshooting
+
+If `ProgrammingError: (psycopg2.errors.UndefinedFunction) function populate_full_text_trigger() does not exist` is thrown running the tests:
+
+* Run `ckan -c /srv/app/ckan.ini datastore set-permissions`
+* Grab the generate SQL script and remove the line `\connect "datastore"`
+* Connect to the `datastore_test` DB and run the SQL
 
 ## Running E2E tests
 
@@ -125,7 +133,7 @@ $ make i18n
 
 See CKAN documentation for more on i18n management.
 
-## Loging into container
+## Logging into container
 
 To issue commands inside a running container:
 
@@ -156,6 +164,16 @@ $ docker system prune -a --volumes # CAUTION: it will purge all docker projects
 $ docker volume rm dockerckan<project>_ckan_storage dockerckan<project>_pg_data # remove project volumes
 ```
 
+## Prepare a local environment for running scripts
+
+Create a local Python 3 environment, activate it and install requirements.  
+
+```
+python3 -m venv /path/to/your/new/env
+source /path/to/your/new/env/bin/activate
+pip install -r scripts/requirements.txt
+```
+
 ## Generate deposited-dataset schema
 
 It will be generated based on the `dataset` schema (re-writing existent `deposited-dataset` schema).
@@ -166,7 +184,7 @@ $ python scripts/generate_deposited_dataset_schema.py
 
 ## Create data containers and data deposit
 
-It will create all initial data containers and data deposit. For local development `url` should be `http://ckan-dev:5000` and `api_key` from your user profile.
+It will create all initial data containers and data deposit. For local development `url` should be `https://ckan-dev:5000` and `api_key` from your user profile.
 
 ```
 $ python scripts/initial_data_containers.py url api_key
@@ -180,16 +198,15 @@ Create users using command line interface:
 
 ```
 # Sysadmin
-docker-compose -f ../../docker-compose.yml exec ckan-dev paster --plugin=ckan sysadmin add ckan_sysadmin email=sysadmin@example.com password=testpass -c /srv/app/production.ini
+docker-compose -f ../../docker-compose.yml exec ckan-dev ckan -c /srv/app/ckan.ini sysadmin add ckan_sysadmin email=sysadmin@example.com password=testpass
 # Depadmin
-docker-compose -f ../../docker-compose.yml exec ckan-dev paster --plugin=ckan user add ckan_depadmin email=depadmin@example.com password=testpass -c /srv/app/production.ini
+docker-compose -f ../../docker-compose.yml exec ckan-dev ckan -c /srv/app/ckan.ini user add ckan_depadmin email=depadmin@example.com password=testpass
 # Curators
-docker-compose -f ../../docker-compose.yml exec ckan-dev paster --plugin=ckan user add ckan_curator1 email=curator1@example.com password=testpass -c /srv/app/production.ini
-docker-compose -f ../../docker-compose.yml exec ckan-dev paster --plugin=ckan user add ckan_curator2 email=curator2@example.com password=testpass -c /srv/app/production.ini
+docker-compose -f ../../docker-compose.yml exec ckan-dev ckan -c /srv/app/ckan.ini user add ckan_curator1 email=curator1@example.com password=testpass
+docker-compose -f ../../docker-compose.yml exec ckan-dev ckan -c /srv/app/ckan.ini user add ckan_curator2 email=curator2@example.com password=testpass
 # Depositors
-docker-compose -f ../../docker-compose.yml exec ckan-dev paster --plugin=ckan user add ckan_user1 email=user1@example.com password=testpass -c /srv/app/production.ini
-docker-compose -f ../../docker-compose.yml exec ckan-dev paster --plugin=ckan user add ckan_user2 email=user2@example.com password=testpass -c /srv/app/production.ini
-docker-compose -f ../../docker-compose.yml exec ckan-dev paster --plugin=ckan user add ckan_external email=user@outsider.example.com password=testpass -c /srv/app/production.ini
+docker-compose -f ../../docker-compose.yml exec ckan-dev ckan -c /srv/app/ckan.ini user add ckan_user1 email=user1@example.com password=testpass
+docker-compose -f ../../docker-compose.yml exec ckan-dev ckan -c /srv/app/ckan.ini user add ckan_user2 email=user2@example.com password=testpass
 ```
 
 Add admins and and editors to data deposit using web interface:

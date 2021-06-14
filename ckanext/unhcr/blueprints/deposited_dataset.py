@@ -7,20 +7,23 @@ import random
 from ckan import model
 import ckan.plugins.toolkit as toolkit
 from ckanext.unhcr import helpers, mailer
+from ckanext.unhcr.activity import create_curation_activity
+from ckanext.unhcr.blueprints import dataset
+from ckanext.unhcr.blueprints import resource
+from ckanext.unhcr.utils import require_user
 log = logging.getLogger(__name__)
 
 
 unhcr_deposited_dataset_blueprint = Blueprint(
-    'unhcr_deposited_dataset',
+    'unhcr_deposited-dataset',
     __name__,
     url_prefix=u'/deposited-dataset',
+    url_defaults={u'package_type': u'deposited-dataset'},
 )
 
 
-def approve(dataset_id):
-    if (not hasattr(toolkit.c, "user") or not toolkit.c.user):
-        return toolkit.abort(403, "Forbidden")
-
+@require_user
+def approve(package_type, dataset_id):
     user_id = getattr(toolkit.c.userobj, 'id', None)
 
     # Get curation data
@@ -34,7 +37,7 @@ def approve(dataset_id):
     if 'approve' not in curation['actions']:
         message = 'This action is not available for the dataset "%s"'
         toolkit.h.flash_error(message % dataset['title'])
-        return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+        return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
     context['ignore_auth'] = True
 
     # Update dataset
@@ -49,7 +52,7 @@ def approve(dataset_id):
 
     # Update activity stream
     message = toolkit.request.form.get('message')
-    helpers.create_curation_activity('dataset_approved', dataset['id'],
+    create_curation_activity('dataset_approved', dataset['id'],
         dataset['name'], user_id, message=message)
 
     # Send notification email
@@ -67,13 +70,11 @@ def approve(dataset_id):
     # Show flash message and redirect
     message = 'Dataset "%s" approved and moved to the destination data container'
     toolkit.h.flash_success(message % dataset['title'])
-    return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+    return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
 
 
-def assign(dataset_id):
-    if (not hasattr(toolkit.c, "user") or not toolkit.c.user):
-        return toolkit.abort(403, "Forbidden")
-
+@require_user
+def assign(package_type, dataset_id):
     user_id = getattr(toolkit.c.userobj, 'id', None)
 
     # Get curation data
@@ -87,7 +88,7 @@ def assign(dataset_id):
     if 'assign' not in curation['actions']:
         message = 'This action is not available for the dataset "%s"'
         toolkit.h.flash_error(message % dataset['title'])
-        return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+        return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
     context['ignore_auth'] = True
 
     # Update dataset
@@ -106,10 +107,10 @@ def assign(dataset_id):
     if curator_id:
         context = _get_context(ignore_auth=True)
         curator = toolkit.get_action('user_show')(context, {'id': curator_id})
-        helpers.create_curation_activity('curator_assigned', dataset['id'],
+        create_curation_activity('curator_assigned', dataset['id'],
             dataset['name'], user_id, curator_name=curator['name'])
     else:
-        helpers.create_curation_activity('curator_removed', dataset['id'],
+        create_curation_activity('curator_removed', dataset['id'],
             dataset['name'], user_id)
 
     # Send notification email
@@ -129,13 +130,11 @@ def assign(dataset_id):
     # Show flash message and redirect
     message = 'Dataset "%s" Curator updated'
     toolkit.h.flash_success(message % dataset['title'])
-    return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+    return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
 
 
-def request_changes(dataset_id):
-    if (not hasattr(toolkit.c, "user") or not toolkit.c.user):
-        return toolkit.abort(403, "Forbidden")
-
+@require_user
+def request_changes(package_type, dataset_id):
     user_id = getattr(toolkit.c.userobj, 'id', None)
 
     # Get curation data
@@ -149,7 +148,7 @@ def request_changes(dataset_id):
     if 'request_changes' not in curation['actions']:
         message = 'This action is not available for the dataset "%s"'
         toolkit.h.flash_error(message % dataset['title'])
-        return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+        return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
     context['ignore_auth'] = True
 
     # Update dataset
@@ -161,7 +160,7 @@ def request_changes(dataset_id):
 
     # Update activity stream
     message = toolkit.request.form.get('message')
-    helpers.create_curation_activity('changes_requested', dataset['id'],
+    create_curation_activity('changes_requested', dataset['id'],
             dataset['name'], user_id, message=message)
 
     # Send notification email
@@ -179,13 +178,11 @@ def request_changes(dataset_id):
     # Show flash message and redirect
     message = 'Dataset "%s" changes requested'
     toolkit.h.flash_success(message % dataset['title'])
-    return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+    return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
 
 
-def request_review(dataset_id):
-    if (not hasattr(toolkit.c, "user") or not toolkit.c.user):
-        return toolkit.abort(403, "Forbidden")
-
+@require_user
+def request_review(package_type, dataset_id):
     user_id = getattr(toolkit.c.userobj, 'id', None)
 
     # Get curation data
@@ -199,7 +196,7 @@ def request_review(dataset_id):
     if 'request_review' not in curation['actions']:
         message = 'This action is not available for the dataset "%s"'
         toolkit.h.flash_error(message % dataset['title'])
-        return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+        return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
     context['ignore_auth'] = True
 
     # Update dataset
@@ -210,7 +207,7 @@ def request_review(dataset_id):
     message = toolkit.request.form.get('message')
     context = _get_context(ignore_auth=True)
     depositor = toolkit.get_action('user_show')(context, {'id': dataset['creator_user_id']})
-    helpers.create_curation_activity('final_review_requested', dataset['id'],
+    create_curation_activity('final_review_requested', dataset['id'],
         dataset['name'], user_id, message=message, depositor_name=depositor['name'])
 
     # Send notification email
@@ -224,13 +221,11 @@ def request_review(dataset_id):
     # Show flash message and redirect
     message = 'Dataset "%s" review requested'
     toolkit.h.flash_success(message % dataset['title'])
-    return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+    return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
 
 
-def reject(dataset_id):
-    if (not hasattr(toolkit.c, "user") or not toolkit.c.user):
-        return toolkit.abort(403, "Forbidden")
-
+@require_user
+def reject(package_type, dataset_id):
     user_id = getattr(toolkit.c.userobj, 'id', None)
 
     # Get curation data
@@ -244,7 +239,7 @@ def reject(dataset_id):
     if 'reject' not in curation['actions']:
         message = 'This action is not available for the dataset "%s"'
         toolkit.h.flash_error(message % dataset['title'])
-        return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+        return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
     context['ignore_auth'] = True
 
     # Delete rejected dataset, but first update its name so it can be reused
@@ -254,7 +249,7 @@ def reject(dataset_id):
 
     # Update activity stream
     message = toolkit.request.form.get('message')
-    helpers.create_curation_activity('dataset_rejected', dataset['id'],
+    create_curation_activity('dataset_rejected', dataset['id'],
         dataset['name'], user_id, message=message)
 
     # Send notification email
@@ -268,13 +263,11 @@ def reject(dataset_id):
     # Show flash message and redirect
     message = 'Dataset "%s" rejected'
     toolkit.h.flash_error(message % dataset['title'])
-    return toolkit.redirect_to('data-container_read', id='data-deposit')
+    return toolkit.redirect_to('data-container.read', id='data-deposit')
 
 
-def submit(dataset_id):
-    if (not hasattr(toolkit.c, "user") or not toolkit.c.user):
-        return toolkit.abort(403, "Forbidden")
-
+@require_user
+def submit(package_type, dataset_id):
     user_id = getattr(toolkit.c.userobj, 'id', None)
 
     # Get curation data
@@ -288,7 +281,7 @@ def submit(dataset_id):
     if 'submit' not in curation['actions']:
         message = 'This action is not available for the dataset "%s"'
         toolkit.h.flash_error(message % dataset['title'])
-        return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+        return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
     context['ignore_auth'] = True
 
     # Update dataset
@@ -297,7 +290,7 @@ def submit(dataset_id):
 
     # Update activity stream
     message = toolkit.request.form.get('message')
-    helpers.create_curation_activity('dataset_submitted', dataset['id'],
+    create_curation_activity('dataset_submitted', dataset['id'],
         dataset['name'], user_id, message=message)
 
     # Send notification email
@@ -314,13 +307,11 @@ def submit(dataset_id):
     # Show flash message and redirect
     message = 'Dataset "%s" submitted'
     toolkit.h.flash_success(message % dataset['title'])
-    return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+    return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
 
 
-def withdraw(dataset_id):
-    if (not hasattr(toolkit.c, "user") or not toolkit.c.user):
-        return toolkit.abort(403, "Forbidden")
-
+@require_user
+def withdraw(package_type, dataset_id):
     user_id = getattr(toolkit.c.userobj, 'id', None)
 
     # Get curation data
@@ -334,7 +325,7 @@ def withdraw(dataset_id):
     if 'withdraw' not in curation['actions']:
         message = 'This action is not available for the dataset "%s"'
         toolkit.h.flash_error(message % dataset['title'])
-        return toolkit.redirect_to('deposited-dataset_read', id=dataset['name'])
+        return toolkit.redirect_to('deposited-dataset.read', id=dataset['name'])
     context['ignore_auth'] = True
 
     # Delete withdrawn dataset, but first update its name so it can be reused
@@ -344,7 +335,7 @@ def withdraw(dataset_id):
 
     # Update activity stream
     message = toolkit.request.form.get('message')
-    helpers.create_curation_activity('dataset_withdrawn', dataset['id'],
+    create_curation_activity('dataset_withdrawn', dataset['id'],
         dataset['name'], user_id, message=message)
 
     # Send notification email
@@ -358,7 +349,7 @@ def withdraw(dataset_id):
     # Show flash message and redirect
     message = 'Dataset "%s" withdrawn'
     toolkit.h.flash_error(message % dataset['title'])
-    return toolkit.redirect_to('data-container_read', id='data-deposit')
+    return toolkit.redirect_to('data-container.read', id='data-deposit')
 
 
 unhcr_deposited_dataset_blueprint.add_url_rule(
@@ -395,6 +386,26 @@ unhcr_deposited_dataset_blueprint.add_url_rule(
     rule=u'/<dataset_id>/withdraw',
     view_func=withdraw,
     methods=['POST',],
+)
+
+# re-register duplicates of other custom dataset/resource routes
+unhcr_deposited_dataset_blueprint.add_url_rule(
+    rule=u'/publish/<dataset_id>',
+    view_func=dataset.publish,
+)
+unhcr_deposited_dataset_blueprint.add_url_rule(
+    rule=u'/copy/<dataset_id>',
+    endpoint='copy',
+    view_func=dataset.copy,
+)
+unhcr_deposited_dataset_blueprint.add_url_rule(
+    rule=u'/internal_activity/<dataset_id>',
+    view_func=dataset.internal_activity,
+)
+unhcr_deposited_dataset_blueprint.add_url_rule(
+    rule=u'/<dataset_id>/resource_copy/<resource_id>',
+    endpoint='resource_copy',
+    view_func=resource.copy,
 )
 
 

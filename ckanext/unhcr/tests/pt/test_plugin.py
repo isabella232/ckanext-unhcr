@@ -48,7 +48,7 @@ class TestHooks(object):
         }
 
     @mock.patch('ckan.plugins.toolkit.enqueue_job')
-    def test_after_create_resource_hook_called(self, mock_hook):
+    def test_after_resource_create_hook_called(self, mock_hook):
         action = toolkit.get_action("resource_create")
         resource = action({'user': self.user['name']}, self.new_resource_dict)
         mock_hook.assert_called_once()
@@ -56,13 +56,13 @@ class TestHooks(object):
         assert resource['package_id'] == mock_hook.call_args_list[0][0][1][0]
 
     @mock.patch('ckan.plugins.toolkit.enqueue_job')
-    def test_after_create_resource_hook_not_called(self, mock_hook):
+    def test_after_resource_create_hook_not_called(self, mock_hook):
         action = toolkit.get_action("resource_create")
         action({'user': self.user['name'], 'job': True}, self.new_resource_dict)
         mock_hook.assert_not_called()
 
     @mock.patch('ckan.plugins.toolkit.enqueue_job')
-    def test_after_create_package_hook_called(self, mock_hook):
+    def test_after_package_create_hook_called(self, mock_hook):
         action = toolkit.get_action("package_create")
         dataset = action({'user': self.user['name']}, self.new_package_dict)
         mock_hook.assert_called_once()
@@ -70,40 +70,58 @@ class TestHooks(object):
         assert dataset['id'] == mock_hook.call_args_list[0][0][1][0]
 
     @mock.patch('ckan.plugins.toolkit.enqueue_job')
-    def test_after_create_package_hook_not_called_job(self, mock_hook):
+    def test_after_package_create_hook_not_called_job(self, mock_hook):
         action = toolkit.get_action("package_create")
         dataset = action({'user': self.user['name'], 'job': True}, self.new_package_dict)
         mock_hook.assert_not_called()
 
     @mock.patch('ckan.plugins.toolkit.enqueue_job')
-    def test_after_create_package_hook_not_called_defer_commit(self, mock_hook):
+    def test_after_package_create_hook_not_called_defer_commit(self, mock_hook):
         action = toolkit.get_action("package_create")
         dataset = action({'user': self.user['name'], 'defer_commit': True}, self.new_package_dict)
         mock_hook.assert_not_called()
 
     @mock.patch('ckan.plugins.toolkit.enqueue_job')
-    def test_after_create_package_hook_not_called_not_active(self, mock_hook):
+    def test_after_package_create_hook_not_called_not_active(self, mock_hook):
         action = toolkit.get_action("package_create")
         self.new_package_dict['state'] = 'pending'
         dataset = action({'user': self.user['name']}, self.new_package_dict)
         mock_hook.assert_not_called()
 
     @mock.patch('ckan.plugins.toolkit.enqueue_job')
-    def test_after_update_resource_hook_called(self, mock_hook):
+    def test_after_resource_update_hook_called(self, mock_hook):
         action = toolkit.get_action("resource_update")
         action({'user': self.user['name']}, self.resource)
-        mock_hook.assert_called_once()
+        assert mock_hook.call_count == 2
         assert 'process_dataset_on_update' == mock_hook.call_args_list[0][0][0].__name__
         assert self.resource['package_id'] == mock_hook.call_args_list[0][0][1][0]
+        assert 'process_dataset_on_update' == mock_hook.call_args_list[1][0][0].__name__
+        assert self.resource['package_id'] == mock_hook.call_args_list[1][0][1][0]
 
     @mock.patch('ckan.plugins.toolkit.enqueue_job')
-    def test_after_update_resource_hook_not_called(self, mock_hook):
+    def test_after_resource_update_hook_not_called(self, mock_hook):
         action = toolkit.get_action("resource_update")
         action({'user': self.user['name'], 'job': True}, self.resource)
         mock_hook.assert_not_called()
 
     @mock.patch('ckan.plugins.toolkit.enqueue_job')
-    def test_after_update_package_hook_called(self, mock_hook):
+    def test_after_resource_patch_hook_called(self, mock_hook):
+        action = toolkit.get_action("resource_patch")
+        action({'user': self.user['name']}, {'id': self.resource['id'], 'description': 'asdf'})
+        assert mock_hook.call_count == 2
+        assert 'process_dataset_on_update' == mock_hook.call_args_list[0][0][0].__name__
+        assert self.resource['package_id'] == mock_hook.call_args_list[0][0][1][0]
+        assert 'process_dataset_on_update' == mock_hook.call_args_list[1][0][0].__name__
+        assert self.resource['package_id'] == mock_hook.call_args_list[1][0][1][0]
+
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
+    def test_after_resource_patch_hook_not_called(self, mock_hook):
+        action = toolkit.get_action("resource_patch")
+        action({'user': self.user['name'], 'job': True}, {'id': self.resource['id'], 'description': 'asdf'})
+        mock_hook.assert_not_called()
+
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
+    def test_after_package_update_hook_called(self, mock_hook):
         action = toolkit.get_action("package_update")
         action({'user': self.user['name']}, self.dataset)
         mock_hook.assert_called_once()
@@ -111,7 +129,7 @@ class TestHooks(object):
         assert self.dataset['id'] == mock_hook.call_args_list[0][0][1][0]
 
     @mock.patch('ckan.plugins.toolkit.enqueue_job')
-    def test_after_update_package_hook_not_called(self, mock_hook):
+    def test_after_package_update_hook_not_called(self, mock_hook):
         action = toolkit.get_action("package_update")
         action({'user': self.user['name'], 'job': True}, self.dataset)
         action({'user': self.user['name'], 'defer_commit': True}, self.dataset)
@@ -120,29 +138,45 @@ class TestHooks(object):
         mock_hook.assert_not_called()
 
     @mock.patch('ckan.plugins.toolkit.enqueue_job')
-    def test_after_delete_resource_hook_called(self, mock_hook):
-        action = toolkit.get_action("resource_delete")
+    def test_after_package_patch_hook_called(self, mock_hook):
+        action = toolkit.get_action("package_patch")
+        action({'user': self.user['name']}, {'id': self.dataset['id'], 'version': 2})
+        mock_hook.assert_called_once()
+        assert 'process_dataset_on_update' == mock_hook.call_args_list[0][0][0].__name__
+        assert self.dataset['id'] == mock_hook.call_args_list[0][0][1][0]
 
-        action({'user': self.user['name']}, self.resource)
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
+    def test_after_package_patch_hook_not_called(self, mock_hook):
+        action = toolkit.get_action("package_patch")
+        action({'user': self.user['name'], 'job': True}, {'id': self.dataset['id'], 'version': 2})
+        action({'user': self.user['name'], 'defer_commit': True}, {'id': self.dataset['id'], 'version': 3})
+        action({'user': self.user['name']}, {'id': self.dataset['id'], 'state': 'pending'})
+        action({'user': self.user['name']}, {'id': self.dataset['id'], 'version': 4})
+        mock_hook.assert_not_called()
+
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
+    def test_after_resource_delete_hook_called(self, mock_hook):
+        action = toolkit.get_action("resource_delete")
+        action({'user': self.user['name']}, {'id': self.resource['id']})
         mock_hook.assert_called_once()
         assert 'process_dataset_on_update' == mock_hook.call_args_list[0][0][0].__name__
         assert self.resource['package_id'] == mock_hook.call_args_list[0][0][1][0]
 
     @mock.patch('ckan.plugins.toolkit.enqueue_job')
-    def test_after_delete_resource_hook_not_called(self, mock_hook):
+    def test_after_resource_delete_hook_not_called(self, mock_hook):
         action = toolkit.get_action("resource_delete")
         action({'user': self.user['name'], 'job': True}, self.resource)
         mock_hook.assert_not_called()
 
     @mock.patch('ckan.plugins.toolkit.enqueue_job')
-    def test_after_delete_package_hook_called(self, mock_hook):
+    def test_after_package_delete_hook_called(self, mock_hook):
         action = toolkit.get_action("package_delete")
-        action({'user': self.user['name']}, self.dataset)
+        action({'user': self.user['name']}, {'id': self.dataset['id']})
         assert 'process_dataset_on_delete' == mock_hook.call_args_list[0][0][0].__name__
         assert self.dataset['id'] == mock_hook.call_args_list[0][0][1][0]
 
     @mock.patch('ckan.plugins.toolkit.enqueue_job')
-    def test_after_delete_package_hook_not_called(self, mock_hook):
+    def test_after_package_delete_hook_not_called(self, mock_hook):
         action = toolkit.get_action("package_delete")
         action({'user': self.user['name'], 'job': True}, self.dataset)
         mock_hook.assert_not_called()

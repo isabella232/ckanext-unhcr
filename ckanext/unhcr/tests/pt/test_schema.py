@@ -5,7 +5,7 @@ from ckan.plugins import toolkit
 from ckan.tests.helpers import call_action
 from ckan import model
 from ckantoolkit.tests import factories as core_factories
-from ckanext.unhcr.tests import factories
+from ckanext.unhcr.tests import factories, mocks
 
 
 @pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
@@ -13,7 +13,7 @@ class TestResourceFields(object):
     def setup(self):
         self.sysadmin = core_factories.Sysadmin(name='sysadmin', id='sysadmin')
 
-    def test_file_ment_fields(self):
+    def test_file_attachment_fields(self):
 
         dataset = factories.Dataset()
 
@@ -60,9 +60,6 @@ class TestResourceFields(object):
 
         with pytest.raises(toolkit.ValidationError) as e:
             call_action('package_update', {'user': self.sysadmin['name']}, **dataset)
-        # workaround for DetachedInstanceError
-        # TODO: remove this when we upgrade to CKAN 2.9
-        model.Session.refresh(model.Session.revision)
 
         errors = e.value.error_dict['resources'][0]
 
@@ -86,7 +83,7 @@ class TestResourceFields(object):
         }
         resource2 = {
             'name': 'Test Data file',
-            'url': 'http://example.com/data.csv',
+            'upload': mocks.FakeFileStorage(),
             'format': 'CSV',
             'description': 'Some data file',
             'type': 'data',
@@ -97,9 +94,6 @@ class TestResourceFields(object):
 
         with pytest.raises(toolkit.ValidationError) as e:
             call_action('package_update', {'user': self.sysadmin['name']}, **dataset)
-        # workaround for DetachedInstanceError
-        # TODO: remove this when we upgrade to CKAN 2.9
-        model.Session.refresh(model.Session.revision)
 
         errors = e.value.error_dict['resources'][1]
 

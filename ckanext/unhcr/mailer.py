@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from datetime import datetime, timedelta
 import itertools
 import logging
@@ -37,7 +39,7 @@ def compose_container_email_body(container, user, event):
     context['site_title'] = toolkit.config.get('ckan.site_title')
     context['site_url'] = toolkit.config.get('ckan.site_url')
     context['container'] = container
-    context['container_url'] = toolkit.url_for('data-container_read', id=container['name'], qualified=True)
+    context['container_url'] = toolkit.url_for('data-container.read', id=container['name'], qualified=True)
     return render_jinja2('emails/container/%s.html' % event, context)
 
 
@@ -47,7 +49,7 @@ def compose_request_container_email_body(container, recipient, requesting_user):
     context['site_title'] = toolkit.config.get('ckan.site_title')
     context['site_url'] = toolkit.config.get('ckan.site_url')
     context['container'] = container
-    context['container_url'] = toolkit.url_for('data-container_read', id=container['name'], qualified=True)
+    context['container_url'] = toolkit.url_for('data-container.read', id=container['name'], qualified=True)
     context['requesting_user'] = requesting_user
     context['h'] = toolkit.h
     return render_jinja2('emails/container/request.html', context)
@@ -65,7 +67,11 @@ def compose_curation_email_body(dataset, curation, recipient, event, message=Non
     context['site_title'] = toolkit.config.get('ckan.site_title')
     context['site_url'] = toolkit.config.get('ckan.site_url')
     context['dataset'] = dataset
-    context['dataset_url'] = toolkit.url_for('dataset_read', id=dataset['name'], qualified=True)
+    context['dataset_url'] = toolkit.url_for(
+        dataset['type'] + '.read',
+        id=dataset['name'],
+        qualified=True
+    )
     context['curation'] = curation
     context['message'] = message
     return render_jinja2('emails/curation/%s.html' % event, context)
@@ -85,12 +91,12 @@ def compose_membership_email_body(container, user_dict, event):
     context['container'] = container
     # single
     if isinstance(container, dict):
-        context['container_url'] = toolkit.url_for('data-container_read', id=container['name'], qualified=True)
+        context['container_url'] = toolkit.url_for('data-container.read', id=container['name'], qualified=True)
     # multiple
     else:
         for item in container:
-            item['url'] = toolkit.url_for('data-container_read', id=item['name'], qualified=True)
-        context['container_url'] = toolkit.url_for('data-container_index', qualified=True)
+            item['url'] = toolkit.url_for('data-container.read', id=item['name'], qualified=True)
+        context['container_url'] = toolkit.url_for('data-container.index', qualified=True)
     return render_jinja2('emails/membership/%s.html' % event, context)
 
 
@@ -222,7 +228,7 @@ def get_summary_email_recipients():
     )
     curator_ids = [c[0] for c in curators]
 
-    all_users = toolkit.get_action('user_list')({ 'ignore_auth': True }, {})
+    all_users = toolkit.get_action('user_list')({ 'ignore_auth': True, 'keep_email': True }, {})
     default_user = toolkit.get_action('get_site_user')({ 'ignore_auth': True })
 
     for user in all_users:
@@ -308,7 +314,7 @@ def compose_request_access_email_body(object_type, recipient, obj, requesting_us
     context['requesting_user'] = requesting_user
     context['message'] = message
     context['dashboard_url'] = toolkit.url_for(
-        'dashboard.requests',
+        'unhcr_dashboard.requests',
         qualified=True,
     )
     context['h'] = toolkit.h
@@ -338,7 +344,7 @@ def compose_account_approved_email_subj():
 def compose_account_approved_email_body(recipient):
     context = {}
     context['recipient'] = recipient
-    context['login_url'] = toolkit.url_for('/service/login', qualified=True)
+    context['login_url'] = toolkit.url_for('user.login', _external=True)
     context['h'] = toolkit.h
 
     return render_jinja2('emails/user/account_approved.html', context)
@@ -360,8 +366,7 @@ def compose_infected_file_email_body(recipient, resource_name, package_id, resou
     context['recipient'] = recipient
     context['resource_name'] = resource_name
     context['resource_url'] = toolkit.url_for(
-        controller='package',
-        action='resource_read',
+        'resource.read',
         id=package_id,
         resource_id=resource_id,
         qualified=True
@@ -370,3 +375,34 @@ def compose_infected_file_email_body(recipient, resource_name, package_id, resou
     context['h'] = toolkit.h
 
     return render_jinja2('emails/resource/infected_file.html', context)
+
+
+# Collaborators
+
+def _compose_collaborator_email_subj(dataset):
+    return u'{0} - Notification about collaborator role for {1}'.format(
+        toolkit.config.get('ckan.site_title'), dataset.title)
+
+def _compose_collaborator_email_body(user, dataset, role, event):
+    dataset_link = toolkit.url_for('dataset.read', id=dataset.id, qualified=True)
+    return render_jinja2('collaborators/emails/{0}_collaborator.html'.format(event), {
+        'user_name': user.fullname or user.name,
+        'role': role,
+        'site_title': toolkit.config.get('ckan.site_title'),
+        'site_url': toolkit.config.get('ckan.site_url'),
+        'dataset_title': dataset.title,
+        'dataset_link': dataset_link
+    })
+
+def mail_notification_to_collaborator(dataset_id, user_id, capacity, event):
+    user = model.User.get(user_id)
+    dataset = model.Package.get(dataset_id)
+
+    try:
+        subj = _compose_collaborator_email_subj(dataset)
+        body = _compose_collaborator_email_body(user, dataset, capacity, event)
+        core_mailer.mail_user(user, subj, body, headers={
+            'Content-Type': 'text/html; charset=UTF-8'
+        })
+    except core_mailer.MailerException as exception:
+        log.exception(exception)

@@ -6,6 +6,7 @@ from ckan.plugins import toolkit
 from ckan.tests.helpers import call_action
 from ckantoolkit.tests import factories as core_factories
 from ckanext.unhcr.tests import factories
+from ckanext.unhcr.actions import user_list
 
 
 @pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
@@ -25,7 +26,7 @@ class TestUserActions(object):
 
         assert (
             e.value.error_dict['email'][0] ==
-            "The email address 'alice@unhcr.org' already belongs to a registered user."
+            "The email address 'alice@unhcr.org' belongs to a registered user."
         )
 
         call_action(
@@ -60,6 +61,42 @@ class TestUserActions(object):
             ])
         )
 
+    def test_user_list_empty(self):
+        """ fake an empty user's list """
+        def return_empty_list(context, data_dict):
+            return []
+        context = {'return_query': False}
+        data_dict = {}
+        users = user_list(
+            up_func=return_empty_list,
+            context=context,
+            data_dict=data_dict
+        )
+        assert len(users) == 0
+
+    def test_user_list_query(self):
+        sysadmin = core_factories.Sysadmin()
+        external_user = factories.ExternalUser()
+        internal_user = core_factories.User()
+        default_user = toolkit.get_action('get_site_user')({ 'ignore_auth': True })
+
+        action = toolkit.get_action('user_list')
+        context = {'user': sysadmin['name'], 'return_query': True}
+        users = action(context, {})
+        assert users.count() == 4
+
+    def test_user_list_query_empty(self):
+        sysadmin = core_factories.Sysadmin()
+        external_user = factories.ExternalUser()
+        internal_user = core_factories.User()
+        default_user = toolkit.get_action('get_site_user')({ 'ignore_auth': True })
+
+        action = toolkit.get_action('user_list')
+        context = {'user': sysadmin['name'], 'return_query': True}
+        # add a filter to get 0 results
+        users = action(context, {'email': 'not-exist@example.com'})
+        assert users.count() == 0
+
     def test_user_show(self):
         sysadmin = core_factories.Sysadmin()
         external_user = factories.ExternalUser()
@@ -84,6 +121,46 @@ class TestUserActions(object):
         assert 'expiry_date' in user
         assert 'Alice' == user['focal_point']
 
+    def test_user_update_saml2_user(self):
+        saml_user = core_factories.User()
+        userobj = model.User.get(saml_user['id'])
+        userobj.plugin_extras = {'saml2auth': { 'saml_id': 'abc123' }}
+        model.Session.commit()
+
+        context = {'user': saml_user['name']}
+        with pytest.raises(toolkit.ValidationError):
+            toolkit.get_action('user_update')(context, saml_user)
+
+    def test_user_generate_apikey_saml2_user(self):
+        saml_user = core_factories.User()
+        userobj = model.User.get(saml_user['id'])
+        userobj.plugin_extras = {'saml2auth': { 'saml_id': 'abc123' }}
+        model.Session.commit()
+
+        context = {'user': saml_user['name']}
+        data_dict = {'id': saml_user['id']}
+        result = toolkit.get_action('user_generate_apikey')(context, data_dict)
+        assert type(result) == dict
+        assert saml_user['apikey'] != result['apikey']
+
+    def test_user_update_change_apikey_saml2_user(self):
+        saml_user = core_factories.User()
+        userobj = model.User.get(saml_user['id'])
+        userobj.plugin_extras = {'saml2auth': { 'saml_id': 'abc123' }}
+        model.Session.commit()
+
+        context = {'user': saml_user['name']}
+        data_dict = saml_user.copy()
+        data_dict['apikey'] = 'f00b42'
+        data_dict['email'] = 'newemail@example.com'
+        result = toolkit.get_action('user_update')(context, data_dict)
+        assert result['email'] != 'newemail@example.com'
+
+    def test_user_update_native_user(self):
+        native_user = core_factories.User()
+        context = {'user': native_user['name']}
+        result = toolkit.get_action('user_update')(context, native_user)
+        assert type(result) == dict
 
 @pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
 class TestUserAutocomplete(object):

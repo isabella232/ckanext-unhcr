@@ -10,7 +10,7 @@ def update_data_containers(url, api_key):
 
     ckan = ckanapi.RemoteCKAN(url, api_key)
 
-    with open(INPUT_CSV, 'rb') as csv_file:
+    with open(INPUT_CSV) as csv_file:
         reader = csv.reader(csv_file)
         # Skip headers
         next(reader, None)
@@ -26,7 +26,6 @@ def update_data_containers(url, api_key):
             except (ckanapi.errors.ValidationError, ckanapi.errors.NotFound) as e:
                 print(u"failed to update '{}' ❌".format(row[0]))
                 print(str(e))
-                pass
 
 
 if __name__ == '__main__':

@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 # Module API
 
 def process_dataset_on_create(package_id):
-    context = {'model': model, 'job': True}
+    context = {'model': model, 'job': True, 'ignore_auth': True}
 
     # Pause excecution
     time.sleep(3)
@@ -19,16 +19,16 @@ def process_dataset_on_create(package_id):
     _process_dataset_fields(package_id)
 
     # Create back references
-    package = toolkit.get_action('package_show')(context, {'id': package_id})
+    package = toolkit.get_action('package_show')(context.copy(), {'id': package_id})
     link_package_ids = utils.normalize_list(package.get('linked_datasets', []))
     _create_link_package_back_references(package_id, link_package_ids)
 
 
 def process_dataset_on_delete(package_id):
-    context = {'model': model, 'job': True}
+    context = {'model': model, 'job': True, 'ignore_auth': True}
 
     # Delete back references
-    package = toolkit.get_action('package_show')(context, {'id': package_id})
+    package = toolkit.get_action('package_show')(context.copy(), {'id': package_id})
     link_package_ids = utils.normalize_list(package.get('linked_datasets', []))
     _delete_link_package_back_references(package_id, link_package_ids)
 
@@ -59,14 +59,15 @@ def _process_dataset_fields(package_id):
 
     # Get package
     package_show = toolkit.get_action('package_show')
-    package = package_show({'job': True}, {'id': package_id})
+    package = package_show({'job': True, 'ignore_auth': True}, {'id': package_id})
 
     # Modify package
     package = _modify_package(package)
 
     # Update package
+    default_user = toolkit.get_action('get_site_user')({ 'ignore_auth': True })
     package_update = toolkit.get_action('package_update')
-    package_update({'job': True}, package)
+    package_update({'job': True, 'user': default_user['name']}, package)
 
 
 def _modify_package(package):
@@ -125,51 +126,40 @@ def _modify_weighted_field(package, key, weights):
 
 
 def _create_link_package_back_references(package_id, link_package_ids):
-    context = {'model': model, 'job': True}
-
     # Create package back reference for every linked package
     for link_package_id in link_package_ids:
-        link_package = toolkit.get_action('package_show')(context, {'id': link_package_id})
+        link_package = toolkit.get_action('package_show')(
+            {'model': model, 'job': True, 'ignore_auth': True},
+            {'id': link_package_id}
+        )
         back_package_ids = utils.normalize_list(link_package.get('linked_datasets', []))
         if package_id not in back_package_ids:
             link_package['linked_datasets'] = back_package_ids + [package_id]
-            toolkit.get_action('package_update')(context, link_package)
+            default_user = toolkit.get_action('get_site_user')({ 'ignore_auth': True })
+            toolkit.get_action('package_update')(
+                {'model': model, 'job': True, 'user': default_user['name']},
+                link_package
+            )
 
 
 def _delete_link_package_back_references(package_id, link_package_ids):
-    context = {'model': model, 'job': True}
-
     # Delete package back reference for every unlinked package
     for link_package_id in link_package_ids:
-        link_package = toolkit.get_action('package_show')(context, {'id': link_package_id})
+        link_package = toolkit.get_action('package_show')(
+            {'model': model, 'job': True, 'ignore_auth': True},
+            {'id': link_package_id}
+        )
         back_package_ids = utils.normalize_list(link_package.get('linked_datasets', []))
         if package_id in back_package_ids:
             back_package_ids.remove(package_id)
             link_package['linked_datasets'] = back_package_ids
-            toolkit.get_action('package_update')(context, link_package)
+            default_user = toolkit.get_action('get_site_user')({ 'ignore_auth': True })
+            toolkit.get_action('package_update')(
+                {'model': model, 'job': True, 'user': default_user['name']},
+                link_package
+            )
 
 
 def _get_link_package_ids_from_revisions(package_id):
-
-    # Get revisions
-    revisions = (model.Session.query(model.PackageExtraRevision)
-        .filter(model.PackageExtraRevision.package_id == package_id,
-                model.PackageExtraRevision.key == 'linked_datasets')
-        .order_by(model.PackageExtraRevision.revision_timestamp)
-        .all())
-
-    # Prev revision
-    prev = []
-    if len(revisions) >= 2:
-        revision = revisions[-2]
-        if revision.state == 'active':
-            prev = utils.normalize_list(revision.value)
-
-    # Next revision
-    next = []
-    if len(revisions) >= 1:
-        revision = revisions[-1]
-        if revision.state == 'active':
-            next = utils.normalize_list(revision.value)
-
-    return {'prev': prev, 'next': next}
+    # TODO: fix backlinks https://github.com/okfn/ckanext-unhcr/issues/577
+    return {'prev': [], 'next': []}

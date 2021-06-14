@@ -111,9 +111,10 @@
         },
         {
             "field_name": "data_sensitivity",
-            "help_text": "Apply to both Anonymized and  Personally identifiable data",
+            "help_text": "Apply to both Anonymized and Personally identifiable data",
             "label": "Data sensitivity",
             "preset": "select",
+            "validators": "ignore_empty scheming_required scheming_choices",
             "choices": [
                 {
                     "label": "Yes",
@@ -662,7 +663,6 @@
         {
             "field_name": "linked_datasets",
             "preset": "linked_datasets",
-            "help_text": "help text",
             "label": "Linked Datasets",
             "help_text": "Links to other RIDL datasets. It supports multiple selections"
         },
@@ -846,7 +846,7 @@
             "help_text": "Indicates if the resource has HXL hashtags",
             "label": "HXL-ated",
             "preset": "select",
-            "validators": "ignore_if_attachment scheming_required scheming_choices",
+            "validators": "ignore_empty ignore_if_attachment scheming_required scheming_choices",
             "choices": [
                 {
                     "label": "No",

@@ -11,7 +11,7 @@
         {{
           h.link_to(
             'edit or publish it',
-            h.url_for(controller='package', action='edit', id=pkg_name)
+            h.url_for(dataset_type ~ '.edit', id=pkg_name)
           )
         }}
         </strong>
@@ -20,12 +20,7 @@
       <p>
         All your Draft datasets are listed at
         <strong>
-        {{
-          h.link_to(
-            'My Datasets',
-            h.url_for(controller='user', action='read', id=c.user)
-          )
-        }}
+        {{ h.link_to('My Datasets', h.url_for('user.read', id=c.user)) }}
         </strong>
       </p>
     </div>

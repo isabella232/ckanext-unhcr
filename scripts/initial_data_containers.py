@@ -13,7 +13,7 @@ def create_data_containers(url, api_key):
     done = []
     orgs = []
 
-    with open(INPUT_CSV, 'rb') as csv_file:
+    with open(INPUT_CSV) as csv_file:
         reader = csv.reader(csv_file)
         # Skip headers
         next(reader, None)
@@ -67,10 +67,10 @@ def create_data_containers(url, api_key):
     for org in orgs:
         try:
             ckan.call_action('organization_create', org, requests_kwargs={'verify': False})
-            print 'Created data container {}'.format(org['name'])
+            print('Created data container {}'.format(org['name']))
         except ckanapi.errors.ValidationError as e:
-            print str(e)
-            pass
+            print(str(e))
+
 
 if __name__ == '__main__':
 

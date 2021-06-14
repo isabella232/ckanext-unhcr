@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
+
 import pytest
+import mock
 from datetime import datetime, timedelta
 import ckan.model as model
 from ckan.lib.jinja_extensions import regularise_html
@@ -64,20 +67,20 @@ class TestSummaryMailer(object):
             <h1>New datasets (1)</h1>
             <h2> <a href="{org}">Test Org</a> (1) </h2>
             <ul> <li> <a href="{ds}">New Dataset</a> in <a href="{org}">Test Org</a> </li> </ul>'''.format(
-                ds=toolkit.url_for('dataset_read', id='new-dataset', qualified=True),
-                org=toolkit.url_for('data-container_read', id='test-org', qualified=True)
+                ds=toolkit.url_for('dataset.read', id='new-dataset', qualified=True),
+                org=toolkit.url_for('data-container.read', id='test-org', qualified=True)
             ),
 
             '''
             <h2>New deposited datasets (1)</h2>
             <ul> <li> <a href="{}">New Deposit</a> </li> </ul>'''.format(
-                toolkit.url_for('dataset_read', id='new-deposit', qualified=True)
+                toolkit.url_for('deposited-dataset.read', id='new-deposit', qualified=True)
             ),
 
             '''
             <h2>Datasets awaiting review (1)</h2>
             <ul> <li> <a href="{}">Awaiting Review</a> </li> </ul>'''.format(
-                toolkit.url_for('dataset_read', id='awaiting-review', qualified=True)
+                toolkit.url_for('deposited-dataset.read', id='awaiting-review', qualified=True)
             ),
         ]
 
@@ -89,7 +92,7 @@ class TestSummaryMailer(object):
             assert regularise_html(ev) in regularised_body
         assert 'Old Dataset' not in regularised_body
         assert (
-            toolkit.url_for("dataset_read", id="old-dataset", qualified=True)
+            toolkit.url_for("dataset.read", id="old-dataset", qualified=True)
             not in regularised_body
         )
 
@@ -152,27 +155,27 @@ class TestSummaryMailer(object):
 
             '''
             <h2> <a href="{}">Africa</a> (3) </h2>
-            '''.format(toolkit.url_for('data-container_read', id='africa', qualified=True)),
+            '''.format(toolkit.url_for('data-container.read', id='africa', qualified=True)),
 
             '''
             <li> <a href="{dataset}">Burundi Dataset 1</a> in <a href="{container}">Burundi</a> </li>
             '''.format(
-                dataset=toolkit.url_for('dataset_read', id='burundi-dataset1', qualified=True),
-                container=toolkit.url_for('data-container_read', id='burundi', qualified=True),
+                dataset=toolkit.url_for('dataset.read', id='burundi-dataset1', qualified=True),
+                container=toolkit.url_for('data-container.read', id='burundi', qualified=True),
             ),
 
             '''
             <li> <a href="{dataset}">Central Africa Dataset 1</a> in <a href="{container}">Central Africa and the Great Lakes</a> </li>
             '''.format(
-                dataset=toolkit.url_for('dataset_read', id='central-africa-dataset1', qualified=True),
-                container=toolkit.url_for('data-container_read', id='central-africa', qualified=True),
+                dataset=toolkit.url_for('dataset.read', id='central-africa-dataset1', qualified=True),
+                container=toolkit.url_for('data-container.read', id='central-africa', qualified=True),
             ),
 
             '''
             <li> <a href="{dataset}">Africa Dataset 1</a> in <a href="{container}">Africa</a> </li>
             '''.format(
-                dataset=toolkit.url_for('dataset_read', id='africa-dataset1', qualified=True),
-                container=toolkit.url_for('data-container_read', id='africa', qualified=True),
+                dataset=toolkit.url_for('dataset.read', id='africa-dataset1', qualified=True),
+                container=toolkit.url_for('data-container.read', id='africa', qualified=True),
             ),
 
             '''
@@ -181,9 +184,9 @@ class TestSummaryMailer(object):
               <li> <a href="{dataset}">Belarus Dataset 1</a> in <a href="{container}">Belarus</a> </li>
             </ul>
             '''.format(
-                root=toolkit.url_for('data-container_read', id='europe', qualified=True),
-                dataset=toolkit.url_for('dataset_read', id='belarus-dataset1', qualified=True),
-                container=toolkit.url_for('data-container_read', id='belarus', qualified=True),
+                root=toolkit.url_for('data-container.read', id='europe', qualified=True),
+                dataset=toolkit.url_for('dataset.read', id='belarus-dataset1', qualified=True),
+                container=toolkit.url_for('data-container.read', id='belarus', qualified=True),
             ),
         ]
 
@@ -192,7 +195,7 @@ class TestSummaryMailer(object):
             assert regularise_html(ev) in regularised_body
         assert 'Americas' not in regularised_body
         assert (
-            toolkit.url_for('data-container_read', id='americas', qualified=True)
+            toolkit.url_for('data-container.read', id='americas', qualified=True)
             not in regularised_body
         )
 
@@ -239,7 +242,7 @@ class TestAccessRequestMailer(object):
         expected = regularise_html(
             'User <a href="{user_link}">Mr. Test User</a> has requested access to download <a href="{dataset_link}">New Dataset</a>'.format(
                 user_link=toolkit.url_for('user.read', id=user1['id'], qualified=True),
-                dataset_link=toolkit.url_for('dataset_read', id=dataset1['name'], qualified=True),
+                dataset_link=toolkit.url_for('dataset.read', id=dataset1['name'], qualified=True),
             )
         )
 
@@ -261,7 +264,7 @@ class TestAccessRequestMailer(object):
         expected = regularise_html(
             'User <a href="{user_link}">Mr. Test User</a> has requested access to <a href="{container_link}">New Container</a>'.format(
                 user_link=toolkit.url_for('user.read', id=user1['id'], qualified=True),
-                container_link=toolkit.url_for('data-container_read', id=container1['name'], qualified=True),
+                container_link=toolkit.url_for('data-container.read', id=container1['name'], qualified=True),
             )
         )
 
@@ -442,8 +445,7 @@ class TestInfectedFileMailer(object):
         regularised_body = regularise_html(email_body)
 
         resource_link = toolkit.url_for(
-            controller='package',
-            action='resource_read',
+            'resource.read',
             id='package-id',
             resource_id='resource-id',
             qualified=True
@@ -451,3 +453,36 @@ class TestInfectedFileMailer(object):
         assert '<a href="{}">infected resource</a>'.format(resource_link) in regularised_body
         assert 'scanned and found to be infected.' in regularised_body
         assert 'Win.Test.EICAR_HDB-1 FOUND' in regularised_body
+
+
+@pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
+class TestCollaboratorsMailer(object):
+
+    @mock.patch('ckanext.unhcr.mailer.core_mailer.mail_user')
+    def test_email_notification_create(self, mock_mail_user):
+        dataset = factories.Dataset()
+        user = core_factories.User()
+        capacity = 'editor'
+
+        mailer.mail_notification_to_collaborator(
+            dataset['id'], user['id'], capacity, 'create')
+
+        assert mock_mail_user.call_count == 1
+
+    @mock.patch('ckanext.unhcr.mailer.core_mailer.mail_user')
+    def test_email_notification_delete(self, mock_mail_user):
+        dataset = factories.Dataset()
+        user = core_factories.User()
+        capacity = 'editor'
+
+        mailer.mail_notification_to_collaborator(
+            dataset['id'], user['id'], capacity, 'delete')
+
+        assert mock_mail_user.call_count == 1
+
+    # TODO: tests for body function
+
+    def test_subject_unicode(self):
+        dataset = factories.Dataset(title=u'réfugiés')
+        subject = mailer._compose_collaborator_email_subj(model.Package.get(dataset['id']))
+        assert u'réfugiés' in subject

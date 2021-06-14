@@ -1,0 +1,48 @@
+{% ckan_extends %}
+
+{% block primary_content_inner %}
+
+<h3>{{ group_dict.title }}</h3>
+{% if group_dict.image_url %}
+<img src="{{ group_dict.image_url }}" style="max-width: 90px; float: left; margin 10px;"/>
+{% endif %}
+<p>{{ group_dict.description }}</p>
+
+{% set data_container = h.get_data_container(group_dict.id) %}
+{% if group_dict.groups %}
+{% set parent = h.get_data_container(group_dict.groups.0.name).title %}
+{% else %}
+{% set parent = "No Parent" %}
+{% endif %}
+
+<dl>
+    <dt>Packages: {{ group_dict.package_count}}</dt>
+    <dt>Parent: {{ parent }}</dt>
+    
+    {% if data_container.country %}
+    <dt>Countries: </dt>
+        {% for country in data_container.country %}
+        <dd> - {{ h.get_data_container_choice_label('country', country) }}</dd>
+        {% endfor %}
+    {% endif %}
+    
+    {% if data_container.population %}
+    <dt>Population: {{ data_container.population }}</dt>
+    {% endif %}
+
+    {% if data_container.geographic_area %}
+    <dt>Geographic area: {{ data_container.geographic_area }}</dt>
+    {% endif %}
+
+    {% if data_container.sectoral_area %}
+    <dt>Sectoral area:</dt>
+    {% for sectoral_area in data_container.sectoral_area %}
+    <dd> - {{ h.get_data_container_choice_label('sectoral_area', sectoral_area) }}</dd>
+    {% endfor %}
+    {% endif %}
+
+    <dt>Visible to external users: {{ data_container.visible_external }}</dt>
+    
+<dl>
+{% endblock %}
+

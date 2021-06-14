@@ -5,11 +5,9 @@ import json
 import responses
 from ckan import model
 from ckan.plugins import toolkit
-from ckan.tests import helpers as core_helpers
 from ckantoolkit.tests import factories as core_factories
-from ckanext.unhcr.tests import factories, mocks
+from ckanext.unhcr.tests import factories
 from ckanext.unhcr import helpers
-from ckanext.unhcr.activity import log_download_activity
 
 
 @pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
@@ -94,103 +92,6 @@ class TestMicrodata(object):
             action(context, {'id': self.dataset['id']})
 
 
-@pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
-class TestPackageActivityList(object):
-
-    def setup(self):
-        self.sysadmin = core_factories.Sysadmin(name='sysadmin', id='sysadmin')
-        self.container1_admin = core_factories.User()
-        self.container1_member = core_factories.User()
-        self.container1 = factories.DataContainer(
-            users=[
-                {"name": self.container1_admin["name"], "capacity": "admin"},
-                {"name": self.container1_member["name"], "capacity": "member"},
-            ]
-        )
-        self.dataset1 = factories.Dataset(
-            owner_org=self.container1["id"], visibility="restricted"
-        )
-        self.resource1 = factories.Resource(
-            package_id=self.dataset1['id'],
-            upload=mocks.FakeFileStorage(),
-            url = "http://fakeurl/test.txt",
-            url_type='upload',
-        )
-        helpers.create_curation_activity(
-            'dataset_approved',
-            self.dataset1['id'],
-            self.dataset1['name'],
-            self.sysadmin['id'],
-            message='asdf'
-        )
-        log_download_activity({'user': self.sysadmin['name']}, self.resource1['id'])
-
-    def test_container_admin(self):
-        context = {
-            'user': self.container1_admin['name'],
-            'package': model.package.Package.get(self.dataset1['id'])
-        }
-        data_dict = {
-            'id': self.dataset1['id'],
-            'get_internal_activities': True
-        }
-        activities = toolkit.get_action('package_activity_list')(context, data_dict)
-        # a container admin can see all the internal activities
-        assert 2 == len(activities)
-        assert 'download resource' == activities[0]['activity_type']
-        assert 'dataset_approved' == activities[1]['data']['curation_activity']
-
-    def test_dataset_editor(self):
-        collaborator = core_factories.User()
-        core_helpers.call_action(
-            'dataset_collaborator_create',
-            id=self.dataset1['id'],
-            user_id=collaborator['id'],
-            capacity='editor',
-        )
-        context = {
-            'user': collaborator['name'],
-            'package': model.package.Package.get(self.dataset1['id'])
-        }
-        data_dict = {
-            'id': self.dataset1['id'],
-            'get_internal_activities': True
-        }
-        activities = toolkit.get_action('package_activity_list')(context, data_dict)
-        # a dataset editor can only see the curation activities
-        assert 1 == len(activities)
-        assert 'dataset_approved' == activities[0]['data']['curation_activity']
-
-    def test_container_member(self):
-        context = {
-            'user': self.container1_member['name'],
-            'package': model.package.Package.get(self.dataset1['id'])
-        }
-        data_dict = {
-            'id': self.dataset1['id'],
-            'get_internal_activities': True
-        }
-        action = toolkit.get_action('package_activity_list')
-        # a container member can't see any internal activities
-        with pytest.raises(toolkit.NotAuthorized):
-            action(context, data_dict)
-
-    def test_unprivileged_user(self):
-        normal_user = core_factories.User()
-        context = {
-            'user': normal_user['name'],
-            'package': model.package.Package.get(self.dataset1['id'])
-        }
-        data_dict = {
-            'id': self.dataset1['id'],
-            'get_internal_activities': True
-        }
-        action = toolkit.get_action('package_activity_list')
-        # an unprivileged user can't see any internal activities
-        with pytest.raises(toolkit.NotAuthorized):
-            action(context, data_dict)
-
-
 @pytest.mark.usefixtures('clean_db', 'clean_index', 'unhcr_migrate')
 class TestPackageSearch(object):
 
@@ -215,7 +116,7 @@ class TestDatasetCollaboratorCreate(object):
         internal_user = core_factories.User()
         dataset = factories.Dataset()
 
-        toolkit.get_action("dataset_collaborator_create")(
+        toolkit.get_action("package_collaborator_create")(
             {'user': sysadmin['name']},
             {
                 'id': dataset['id'],
@@ -224,11 +125,11 @@ class TestDatasetCollaboratorCreate(object):
             }
         )
 
-        collabs_list = toolkit.get_action("dataset_collaborator_list_for_user")(
+        collabs_list = toolkit.get_action("package_collaborator_list_for_user")(
             {'user': sysadmin['name']},
             {'id': internal_user['id']}
         )
-        assert dataset['id'] == collabs_list[0]['dataset_id']
+        assert dataset['id'] == collabs_list[0]['package_id']
         assert 'member' == collabs_list[0]['capacity']
 
     def test_external_user(self):
@@ -236,7 +137,7 @@ class TestDatasetCollaboratorCreate(object):
         external_user = factories.ExternalUser()
         dataset = factories.Dataset()
 
-        action = toolkit.get_action("dataset_collaborator_create")
+        action = toolkit.get_action("package_collaborator_create")
         with pytest.raises(toolkit.ValidationError):
             action(
                 {'user': sysadmin['name']},

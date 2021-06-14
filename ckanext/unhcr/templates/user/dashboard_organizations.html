@@ -3,9 +3,9 @@
 {% block page_primary_action %}
   {% set group_type = 'data-container' %}
   {% if h.check_access('sysadmin') %}
-    {% link_for 'Add Data Container', controller='organization', action='new', class_='btn btn-primary', icon='plus-square', named_route=group_type + '_new' %}
+    {% link_for 'Add Data Container', named_route='organization.new', class_='btn btn-primary', icon='plus-square', named_route=group_type + '_new' %}
   {% elif h.check_access('organization_create') %}
-    {% link_for 'Request Data Container', controller='organization', action='new', class_='btn btn-primary', icon='plus-square', named_route=group_type + '_new' %}
+    {% link_for 'Request Data Container', named_route='organization.new', class_='btn btn-primary', icon='plus-square', named_route=group_type + '_new' %}
   {% endif %}
 {% endblock %}
 
@@ -28,7 +28,7 @@
     <p class="empty">
       {{ _('You are not a member of any organizations.') }}
       {% if h.check_access('organization_create') %}
-        {% link_for _('Create one now?'), controller='organization', action='new' %}
+        {% link_for _('Create one now?'), named_route='organization.new' %}
       {% endif %}
     </p>
   {% endif %}

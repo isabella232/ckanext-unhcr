@@ -138,7 +138,7 @@ class TestAccessRequestUpdate(object):
                 {'id': self.dataset_request.id, 'status': 'approved'}
             )
 
-        collaborators = toolkit.get_action("dataset_collaborator_list")(
+        collaborators = toolkit.get_action("package_collaborator_list")(
             {"ignore_auth": True}, {"id": self.dataset1["id"]}
         )
         assert 0 == len(collaborators)
@@ -147,14 +147,14 @@ class TestAccessRequestUpdate(object):
 
     def test_access_request_update_approve_dataset_container_admin(self):
         mock_mailer = mock.Mock()
-        with mock.patch('ckanext.collaborators.logic.action.mail_notification_to_collaborator', mock_mailer):
+        with mock.patch('ckanext.unhcr.actions.mailer.mail_notification_to_collaborator', mock_mailer):
             action = toolkit.get_action("access_request_update")
             action(
                 {"model": model, "user": self.container1_admin["name"]},
                 {'id': self.dataset_request.id, 'status': 'approved'}
             )
 
-            collaborators = toolkit.get_action("dataset_collaborator_list")(
+            collaborators = toolkit.get_action("package_collaborator_list")(
                 {"ignore_auth": True}, {"id": self.dataset1["id"]}
             )
             assert self.requesting_user["id"] == collaborators[0]["user_id"]
@@ -178,7 +178,7 @@ class TestAccessRequestUpdate(object):
                 {'id': self.dataset_request.id, 'status': 'rejected'}
             )
 
-        collaborators = toolkit.get_action("dataset_collaborator_list")(
+        collaborators = toolkit.get_action("package_collaborator_list")(
             {"ignore_auth": True}, {"id": self.dataset1["id"]}
         )
         assert 0 == len(collaborators)
@@ -192,7 +192,7 @@ class TestAccessRequestUpdate(object):
             {'id': self.dataset_request.id, 'status': 'rejected'}
         )
 
-        collaborators = toolkit.get_action("dataset_collaborator_list")(
+        collaborators = toolkit.get_action("package_collaborator_list")(
             {"ignore_auth": True}, {"id": self.dataset1["id"]}
         )
         assert 0 == len(collaborators)

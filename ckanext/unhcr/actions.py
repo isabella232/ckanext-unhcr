@@ -21,11 +21,10 @@ import ckan.logic.action.create as create_core
 import ckan.logic.action.delete as delete_core
 import ckan.logic.action.update as update_core
 import ckan.logic.action.patch as patch_core
-import ckan.lib.activity_streams as activity_streams
 import ckan.lib.dictization.model_dictize as model_dictize
-from ckanext.collaborators.logic import action as collaborators_action
 from ckanext.unhcr import helpers, mailer, utils
 from ckanext.unhcr.models import AccessRequest
+from ckanext.unhcr.utils import is_saml2_user
 from ckanext.scheming.helpers import scheming_get_dataset_schema
 
 log = logging.getLogger(__name__)
@@ -62,7 +61,6 @@ def package_update(context, data_dict):
 
     # Send notification if needed
     if notify:
-        dataset['url'] = toolkit.url_for('dataset_read', id=dataset.get('name'), qualified=True)
         curation = helpers.get_deposited_dataset_user_curation_status(dataset, user_obj.id)
         subj = mailer.compose_curation_email_subj(dataset)
         body = mailer.compose_curation_email_body(
@@ -178,7 +176,7 @@ def package_get_microdata_collections(context, data_dict):
 
 
 @toolkit.chained_action
-def dataset_collaborator_create(up_func, context, data_dict):
+def package_collaborator_create(up_func, context, data_dict):
 
     m = context.get('model', model)
     user_id = toolkit.get_or_bust(data_dict, 'user_id')
@@ -190,7 +188,30 @@ def dataset_collaborator_create(up_func, context, data_dict):
         message = 'Partner users can not be a dataset collaborator'
         raise toolkit.ValidationError({'message': message}, error_summary=message)
 
-    return up_func(context, data_dict)
+    collaborator = up_func(context, data_dict)
+
+    mailer.mail_notification_to_collaborator(
+        collaborator['package_id'],
+        collaborator['user_id'],
+        collaborator['capacity'],
+        event='create'
+    )
+
+    return collaborator
+
+
+@toolkit.chained_action
+def package_collaborator_delete(up_func, context, data_dict):
+    up_func(context, data_dict)
+
+    mailer.mail_notification_to_collaborator(
+        data_dict['id'],
+        data_dict['user_id'],
+        capacity='collaborator',
+        event='delete',
+    )
+
+    return
 
 
 # Organization
@@ -381,202 +402,96 @@ def container_request_list(context, data_dict):
 
 # Activity
 
+def _package_activity_list(
+    package_id,
+    limit,
+    offset,
+    include_hidden_activity=False,
+    include_activity_types=None,
+):
+    q = model.activity._package_activity_query(package_id)
 
-def _package_admin_activity_list(full_list):
-    return [
-        a for a in full_list
-        if 'curation_activity' in a.get('data', {})
-        or a["activity_type"] == "download resource"
-    ]
+    if include_activity_types:
+        q = q.filter(model.Activity.activity_type.in_(include_activity_types))
 
-def _package_curation_activity_list(full_list):
-    return [
-        a for a in full_list
-        if 'curation_activity' in a.get('data', {})
-    ]
+    if not include_hidden_activity:
+        q = model.activity._filter_activitites_from_users(q)
 
-def _package_normal_activity_list(context, full_list):
-    activities = [
-        a for a in full_list
-        if 'curation_activity' not in a.get('data', {})
-        and a["activity_type"] != "download resource"
-    ]
-    # Filter out the activities that are related to `curation_state`
-    activities = list(
-        filter(
-            lambda activity: get_core.activity_detail_list(
-                context, {'id': activity['id']}).pop()
-                .get('data', {})
-                .get('package_extra', {})
-                .get('key') not in ('curation_state', 'curator_id'),
-            activities
-        )
+    return model.activity._activities_at_offset(q, limit, offset)
+
+
+@core_logic.validate(core_logic.schema.default_activity_list_schema)
+def package_internal_activity_list(context, data_dict):
+    toolkit.check_access('package_internal_activity_list', context.copy(), data_dict)
+    package_id = toolkit.get_or_bust(data_dict, 'id')
+    model = context['model']
+
+
+    package = model.Package.get(package_id)
+    if package is None:
+        raise toolkit.ObjectNotFound("Package not found")
+    user_is_container_admin = has_user_permission_for_group_or_org(
+        package.owner_org,
+        context['user'],
+        'admin',
     )
-    return activities
+
+    include_hidden_activity = data_dict.get('include_hidden_activity', False)
+
+    limit = data_dict['limit']  # defaulted, limited & made an int by schema
+    offset = int(data_dict.get('offset', 0))
+
+    if user_is_container_admin:
+        include_activity_types = ['changed curation state', 'download resource']
+    else:
+        include_activity_types = ['changed curation state']
+    activity_objects = _package_activity_list(
+        package.id,
+        limit,
+        offset,
+        include_hidden_activity,
+        include_activity_types,
+    )
+
+    return model_dictize.activity_list_dictize(
+        activity_objects, context, include_data=True)
+
+
+def _remove_internal_activities(activities):
+    return [
+        a for a in activities
+        if a['activity_type'] not in ['changed curation state', 'download resource']
+    ]
 
 
 @toolkit.side_effect_free
 @toolkit.chained_action
 def package_activity_list(up_func, context, data_dict):
-    toolkit.check_access('package_activity_list', context, data_dict)
-    get_internal_activities = toolkit.asbool(
-        data_dict.get('get_internal_activities'))
-    package_id = toolkit.get_or_bust(data_dict, 'id')
-
-    package = model.Package.get(package_id)
-    user_is_container_admin = has_user_permission_for_group_or_org(
-        package.owner_org,
-        context['user'],
-        'admin',
-    ) if package else False
-
-    full_list = up_func(context, data_dict)
-    if get_internal_activities and user_is_container_admin:
-        return _package_admin_activity_list(full_list)
-    if get_internal_activities and not user_is_container_admin:
-        return _package_curation_activity_list(full_list)
-    return _package_normal_activity_list(context, full_list)
+    return _remove_internal_activities(up_func(context.copy(), data_dict))
 
 
 @toolkit.side_effect_free
-def dashboard_activity_list(context, data_dict):
-    full_list = get_core.dashboard_activity_list(context, data_dict)
-    return [
-        a for a in full_list
-        if "curation_activity" not in a.get("data", {})
-        and a["activity_type"] != "download resource"
-    ]
-
-@toolkit.side_effect_free
-def user_activity_list(context, data_dict):
-    full_list = get_core.user_activity_list(context, data_dict)
-    return [
-        a for a in full_list
-        if "curation_activity" not in a.get("data", {})
-        and a["activity_type"] != "download resource"
-    ]
+@toolkit.chained_action
+def dashboard_activity_list(up_func, context, data_dict):
+    return _remove_internal_activities(up_func(context.copy(), data_dict))
 
 
 @toolkit.side_effect_free
-def group_activity_list(context, data_dict):
-    full_list = get_core.group_activity_list(context, data_dict)
-    normal_activities = [
-        a for a in full_list if 'curation_activity' not in a.get('data', {})]
-    return normal_activities
+@toolkit.chained_action
+def user_activity_list(up_func, context, data_dict):
+    return _remove_internal_activities(up_func(context.copy(), data_dict))
 
 
 @toolkit.side_effect_free
-def organization_activity_list(context, data_dict):
-    full_list = get_core.organization_activity_list(context, data_dict)
-    normal_activities = [
-        a for a in full_list if 'curation_activity' not in a.get('data', {})]
-    return normal_activities
+@toolkit.chained_action
+def group_activity_list(up_func, context, data_dict):
+    return _remove_internal_activities(up_func(context.copy(), data_dict))
 
 
 @toolkit.side_effect_free
-def recently_changed_packages_activity_list(context, data_dict):
-    full_list = get_core.recently_changed_packages_activity_list(context, data_dict)
-    normal_activities = [
-        a for a in full_list if 'curation_activity' not in a.get('data', {})]
-    return normal_activities
-
-
-# Without this action our `*_activity_list` is not overriden (ckan bug?)
-def package_activity_list_html(context, data_dict):
-    activity_stream = toolkit.get_action('package_activity_list')(context, data_dict)
-    offset = int(data_dict.get('offset', 0))
-    extra_vars = {
-        'controller': 'package',
-        'action': 'activity',
-        'id': data_dict['id'],
-        'offset': offset,
-    }
-    return activity_streams.activity_list_to_html(
-        context, activity_stream, extra_vars)
-
-
-@toolkit.side_effect_free
-def dashboard_activity_list_html(context, data_dict):
-    '''Override core ckan dashboard_activity_list_html action so download resource
-    activities are not rendered in the HTML.
-    '''
-    activity_stream = toolkit.get_action('dashboard_activity_list')(
-        context, data_dict)
-
-    user_id = context['user']
-    offset = int(data_dict.get('offset', 0))
-    extra_vars = {
-        'controller': 'user',
-        'action': 'dashboard',
-        'id': user_id,
-        'offset': offset,
-    }
-    return activity_streams.activity_list_to_html(
-        context, activity_stream, extra_vars
-    )
-
-
-@toolkit.side_effect_free
-def user_activity_list_html(context, data_dict):
-    '''Override core ckan user_activity_list_html action so download resource
-    activities are not rendered in the HTML.
-    '''
-    activity_stream = toolkit.get_action('user_activity_list')(
-        context, data_dict)
-
-    offset = int(data_dict.get('offset', 0))
-    extra_vars = {
-        'controller': 'user',
-        'action': 'activity',
-        'id': data_dict['id'],
-        'offset': offset,
-    }
-    return activity_streams.activity_list_to_html(
-        context, activity_stream, extra_vars
-    )
-
-
-# Without this action the `*_activity_list` is not overriden (ckan bug?)
-def group_activity_list_html(context, data_dict):
-    activity_stream = group_activity_list(context, data_dict)
-    offset = int(data_dict.get('offset', 0))
-    extra_vars = {
-        'controller': 'group',
-        'action': 'activity',
-        'id': data_dict['id'],
-        'offset': offset,
-    }
-    return activity_streams.activity_list_to_html(
-        context, activity_stream, extra_vars)
-
-
-# Without this action the `*_activity_list` is not overriden (ckan bug?)
-def organization_activity_list_html(context, data_dict):
-    activity_stream = organization_activity_list(context, data_dict)
-    offset = int(data_dict.get('offset', 0))
-    extra_vars = {
-        'controller': 'organization',
-        'action': 'activity',
-        'id': data_dict['id'],
-        'offset': offset,
-    }
-
-    return activity_streams.activity_list_to_html(
-        context, activity_stream, extra_vars)
-
-
-# Without this action the `*_activity_list` is not overriden (ckan bug?)
-def recently_changed_packages_activity_list_html(context, data_dict):
-    activity_stream = recently_changed_packages_activity_list(
-        context, data_dict)
-    offset = int(data_dict.get('offset', 0))
-    extra_vars = {
-        'controller': 'package',
-        'action': 'activity',
-        'offset': offset,
-    }
-    return activity_streams.activity_list_to_html(
-        context, activity_stream, extra_vars)
+@toolkit.chained_action
+def organization_activity_list(up_func, context, data_dict):
+    return _remove_internal_activities(up_func(context.copy(), data_dict))
 
 
 # Datastore
@@ -738,7 +653,7 @@ def scan_submit(context, data_dict):
         )
         r.raise_for_status()
     except requests.exceptions.ConnectionError as e:
-        error = {'message': 'Could not connect to Clam AV Service.', 'details': str(e)}
+        error = {'message': ['Could not connect to Clam AV Service.'], 'details': [str(e)]}
         _fail_task(context, task, error)
         raise toolkit.ValidationError(error)
     except requests.exceptions.HTTPError as e:
@@ -777,7 +692,6 @@ def scan_hook(context, data_dict):
     task['error'] = json.dumps(data_dict.get('error'))
 
     task = toolkit.get_action('task_status_update')({'ignore_auth': True}, task)
-    context['session'].refresh(context['task_status'])
 
     if task['state'] == 'error':
         recipients = toolkit.aslist(toolkit.config.get('ckanext.unhcr.error_emails', []))
@@ -995,10 +909,9 @@ def access_request_update(context, data_dict):
             'id': request.object_id,
             'user_id': request.user_id,
             'capacity': request.role,
-            'send_mail': True,
         }
         if status == 'approved':
-            toolkit.get_action('dataset_collaborator_create')(
+            toolkit.get_action('package_collaborator_create')(
                 context, _data_dict
             )
     elif request.object_type == 'organization':
@@ -1124,7 +1037,7 @@ def external_user_update_state(context, data_dict):
 
     toolkit.check_access('external_user_update_state', context, data_dict)
 
-    if state not in m.State.all:
+    if state not in [m.State.ACTIVE, m.State.DELETED]:
         raise toolkit.ValidationError('Invalid state {}'.format(state))
 
     user_obj = m.User.get(user_id)
@@ -1236,6 +1149,7 @@ def user_autocomplete(context, data_dict):
 
     q = data_dict['q']
     limit = data_dict.get('limit', 20)
+    ignore_self = data_dict.get('ignore_self', False)
 
     query = model.User.search(q)
     query = query.filter(model.User.state != model.State.DELETED)
@@ -1245,6 +1159,8 @@ def user_autocomplete(context, data_dict):
             for domain in utils.get_internal_domains()
         ]
         query = query.filter(or_(*conditions))
+    if ignore_self:
+        query = query.filter(model.User.name != user)
     query = query.limit(limit)
 
     user_list = []
@@ -1260,18 +1176,25 @@ def user_autocomplete(context, data_dict):
 
 @toolkit.chained_action
 def user_list(up_func, context, data_dict):
+    """ Appends 'external' field to each user if we ask for a list of dicts """
     users = up_func(context, data_dict)
-    m = context.get('model', model)
 
-    if type(users[0]) == dict:
-        users_db = (
-            m.Session.query(m.User)
-            .filter(m.User.id.in_([u['id'] for u in users]))
-            .all()
-        )
-        id_to_external = {u.id: u.external for u in users_db}
-        for user in users:
-            user['external'] = id_to_external[user['id']]
+    if context.get('return_query'):
+        # users is a query, not a list of dicts
+        return users
+
+    if len(users) == 0:
+        return []
+
+    m = context.get('model', model)
+    users_db = (
+        m.Session.query(m.User)
+        .filter(m.User.id.in_([u['id'] for u in users]))
+        .all()
+    )
+    id_to_external = {u.id: u.external for u in users_db}
+    for user in users:
+        user['external'] = id_to_external[user['id']]
 
     return users
 
@@ -1294,17 +1217,6 @@ def user_show(up_func, context, data_dict):
 
 @toolkit.chained_action
 def user_create(up_func, context, data_dict):
-
-    m = context.get('model', model)
-    if len(m.Session.query(m.User).filter(m.User.email==data_dict['email']).all()) > 0:
-        raise toolkit.ValidationError({
-            'email': [
-                "The email address '{}' already belongs to a registered user.".format(
-                    data_dict['email']
-                )
-            ]
-        })
-
     user = up_func(context, data_dict)
     user_obj = _get_user_obj(context)
 
@@ -1337,6 +1249,26 @@ def user_create(up_func, context, data_dict):
     user['focal_point'] = plugin_extras['unhcr']['focal_point']
     user['default_containers'] = plugin_extras['unhcr']['default_containers']
     return user
+
+
+@toolkit.chained_action
+def user_update(up_func, context, data_dict):
+    user_id = toolkit.get_or_bust(data_dict, 'id')
+    m = context.get('model', model)
+    user_obj = m.User.get(user_id)
+
+    if user_obj is not None and is_saml2_user(user_obj):
+
+        if user_obj.apikey != data_dict.get('apikey'):
+            up_dict = toolkit.get_action('user_show')(context.copy(), {'id': user_id})
+            up_dict['apikey'] = data_dict['apikey']
+            return up_func(context, up_dict)
+
+        raise toolkit.ValidationError({'error': [
+            "User accounts managed by Single Sign-On can't be modified"
+        ]})
+
+    return up_func(context, data_dict)
 
 
 def _init_plugin_extras(plugin_extras):

@@ -1,7 +1,6 @@
 import logging
 import os
 import re
-from datetime import datetime
 from urllib import quote
 from jinja2 import Markup, escape
 from ckan import model
@@ -13,7 +12,7 @@ import ckan.lib.helpers as core_helpers
 import ckan.lib.plugins as lib_plugins
 from ckanext.hierarchy import helpers as hierarchy_helpers
 from ckanext.scheming.helpers import (
-    scheming_get_dataset_schema, scheming_field_by_name
+    scheming_get_dataset_schema, scheming_field_by_name, scheming_get_organization_schema
 )
 from ckanext.unhcr import utils
 from ckanext.unhcr import __VERSION__
@@ -177,17 +176,21 @@ def _render_tree_node(node):
 # Access restriction
 
 def page_authorized():
-    if (toolkit.c.controller == 'error' and
-            toolkit.c.action == 'document' and
-            toolkit.c.code and toolkit.c.code[0] != '403'):
+    blueprint, view = toolkit.get_endpoint()
+
+    if (
+        blueprint == 'error'
+        and view == 'document'
+        and toolkit.c.code
+        and toolkit.c.code[0] != '403'
+    ):
         return True
 
-    # TODO: remove request_reset and perform_reset when LDAP is integrated
-    allowed_controllers = [
+    allowed_blueprints = [
         'user',  # most actions are defined in the core 'user' blueprint
         'unhcr_user',  # we override some actions in the 'unhcr_user' blueprint
     ]
-    allowed_actions = [
+    allowed_views = [
         'logged_in',
         'logged_out',
         'logged_out_page',
@@ -200,10 +203,9 @@ def page_authorized():
     return (
         toolkit.c.userobj
         or (
-            toolkit.c.controller in allowed_controllers
-            and toolkit.c.action in allowed_actions
+            blueprint in allowed_blueprints
+            and view in allowed_views
         )
-        or toolkit.request.path == '/service/login'
     )
 
 
@@ -292,7 +294,7 @@ def get_linked_datasets_for_display(value, context=None):
     ids = utils.normalize_list(value)
     for id in ids:
         dataset = toolkit.get_action('package_show')(context, {'id': id})
-        href = toolkit.url_for('dataset_read', id=dataset['name'], qualified=True)
+        href = toolkit.url_for('dataset.read', id=dataset['name'], qualified=True)
         datasets.append({'text': dataset['title'], 'href': href})
 
     return datasets
@@ -702,47 +704,7 @@ def get_default_container_for_user():
 
 # Internal activity
 
-def create_curation_activity(
-        activity_type, dataset_id, dataset_name, user_id,
-        message=None, **kwargs):
-    activity_context = {'ignore_auth': True}
-    data_dict = {
-        'user_id': user_id,
-        'object_id': dataset_id,
-        'activity_type': 'changed package',
-        'data': {
-            'curation_activity': activity_type,
-            'package': {'name': dataset_name, 'id': dataset_id},
-        }
-    }
-    if message:
-        data_dict['data']['message'] = message
-    if kwargs:
-        for key, value in kwargs.iteritems():
-            data_dict['data'][key] = value
-
-    toolkit.get_action('activity_create')(activity_context, data_dict)
-
-
-def download_resource_renderer(context, activity):
-    resource_name = activity['data']['name'] or 'Unnamed resource'
-    resource_link = toolkit.url_for(
-        action='resource_read',
-        controller='package',
-        id=activity['object_id'],
-        resource_id=activity['data']['id']
-    )
-    return "{actor} downloaded " + core_helpers.tags.link_to(resource_name, resource_link)
-
-def custom_activity_renderer(context, activity):
-    '''
-    Before CKAN 2.9 the only way to customize the activty stream snippets was to
-    monkey patch a renderer, as we do here.
-    '''
-    if 'curation_activity' not in activity.get('data', {}):
-        # Default core one
-        return toolkit._("{actor} updated the dataset {dataset}")
-
+def curation_activity_message(activity):
     activity_name = activity['data']['curation_activity']
 
     output = ''
@@ -752,10 +714,9 @@ def custom_activity_renderer(context, activity):
     elif activity_name == 'dataset_submitted':
         output =  toolkit._("{actor} submitted dataset {dataset} for curation")
     elif activity_name == 'curator_assigned':
-        curator_link = core_helpers.tags.link_to(
+        curator_link = core_helpers.link_to(
             activity['data']['curator_name'],
-            toolkit.url_for(
-                controller='user', action='read', id=activity['data']['curator_name'])
+            toolkit.url_for('user.read', id=activity['data']['curator_name'])
         )
         output =  toolkit._("{actor} assigned %s as Curator for dataset {dataset}" % curator_link)
     elif activity_name == 'curator_removed':
@@ -767,7 +728,7 @@ def custom_activity_renderer(context, activity):
     elif activity_name == 'dataset_rejected':
         output = toolkit._("{actor} rejected dataset {dataset} for publication")
     elif activity_name == 'dataset_withdrawn':
-        output = toolkit._("{actor} withdrawn dataset {dataset} from the data deposit")
+        output = toolkit._("{actor} withdrew dataset {dataset} from the data deposit")
     elif activity_name == 'dataset_approved':
         output = toolkit._("{actor} approved dataset {dataset} for publication")
 
@@ -980,6 +941,18 @@ def get_choice_label(name, value, is_resource=False):
         log.warning('Could not get field {} from deposited-dataset schema'.format(name))
 
 
+def get_data_container_choice_label(name, value):
+    schema = scheming_get_organization_schema('data-container')
+    fields = schema['fields']
+    field = scheming_field_by_name(fields, name)
+    if field:
+        for choice in field.get('choices', []):
+            if choice.get('value') == value:
+                return choice.get('label')
+        return value
+    else:
+        log.warning('Could not get field {} from data-container schema'.format(name))
+
 def normalize_list(value):
     # It takes into account that ''.split(',') == ['']
     if not value:
@@ -1043,7 +1016,3 @@ def nl_to_br(text):
     result = u'\n\n'.join(u'<p>%s</p>' % p.replace('\n', Markup('<br>\n'))
                           for p in _paragraph_re.split(escape(text)))
     return Markup(result)
-
-
-def show_mfa_dialog():
-    return datetime.now() < datetime(2021, 6, 21)

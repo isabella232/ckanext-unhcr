@@ -20,7 +20,7 @@ ACTIONS = [
 ]
 
 
-@pytest.mark.usefixtures('with_request_context', 'unhcr_migrate')
+@pytest.mark.usefixtures('unhcr_migrate', 'with_request_context')
 class TestDepositedDatasetController(object):
 
     def setup_class(self):
@@ -47,30 +47,28 @@ class TestDepositedDatasetController(object):
         )
 
         app = core_helpers._get_test_app()
-        with app.flask_app.test_request_context():
-            # Containers
-            self.deposit = factories.DataContainer(
-                users=[
-                    {'name': 'curator', 'capacity': 'editor'},
-                    {'name': 'depadmin', 'capacity': 'admin'},
-                ],
-                name='data-deposit',
-                id='data-deposit'
-            )
-            self.target = factories.DataContainer(
-                name='data-target',
-                id='data-target',
-                users=[
-                    {'name': 'editor', 'capacity': 'editor'},
-                    {'name': 'target_container_admin', 'capacity': 'admin'},
-                    {'name': 'target_container_member', 'capacity': 'member'},
-                ],
-            )
-            container = factories.DataContainer(
-                users=[
-                    {'name': 'other_container_admin', 'capacity': 'admin'},
-                ]
-            )
+        self.deposit = factories.DataContainer(
+            users=[
+                {'name': 'curator', 'capacity': 'editor'},
+                {'name': 'depadmin', 'capacity': 'admin'},
+            ],
+            name='data-deposit',
+            id='data-deposit'
+        )
+        self.target = factories.DataContainer(
+            name='data-target',
+            id='data-target',
+            users=[
+                {'name': 'editor', 'capacity': 'editor'},
+                {'name': 'target_container_admin', 'capacity': 'admin'},
+                {'name': 'target_container_member', 'capacity': 'member'},
+            ],
+        )
+        container = factories.DataContainer(
+            users=[
+                {'name': 'other_container_admin', 'capacity': 'admin'},
+            ]
+        )
 
     def teardown_class(self):
         core_helpers.reset_db()
@@ -106,16 +104,14 @@ class TestDepositedDatasetController(object):
         )
         env = {'REMOTE_USER': user.encode('ascii')} if user else {}
         data = kwargs.pop('data', {})
-        resp = self.app.post(url, data, extra_environ=env, **kwargs)
+        with self.app.flask_app.test_request_context():
+            resp = self.app.post(url, data=data, extra_environ=env, **kwargs)
         if not dataset_id:
             try:
                 self.dataset = core_helpers.call_action(
                     'package_show', {'user': 'sysadmin'}, id=self.dataset['id'])
             except toolkit.ObjectNotFound:
                 self.dataset = None
-
-        if resp.status_int in [301, 302]:
-            return resp.follow(extra_environ=env, status=200)
 
         return resp
 
@@ -145,7 +141,7 @@ class TestDepositedDatasetController(object):
 
     def test_approve_draft_not_granted(self):
         for user in ['sysadmin', 'depadmin', 'curator', 'creator', 'target_container_admin']:
-            self.check_approve_draft_not_granted(user, 302, "action is not available")
+            self.check_approve_draft_not_granted(user, 200, "action is not available")
         for user in ['depositor', 'target_container_member', 'other_container_admin']:
             self.check_approve_draft_not_granted(user, 403)
 
@@ -187,7 +183,7 @@ class TestDepositedDatasetController(object):
         })
 
         # Approve dataset
-        self.make_request('approve', user=user, status=302)
+        self.make_request('approve', user=user, status=200)
         assert self.dataset['type'] == 'dataset'
         self.assert_mail(mail,
             users=['creator'],
@@ -197,7 +193,7 @@ class TestDepositedDatasetController(object):
 
     def test_approve_submitted_final_review_requested(self):
         for user in ['sysadmin', 'depadmin', 'curator', 'target_container_admin']:
-            self.check_approve_submitted_final_review_requested(user, 302, "action is not available")
+            self.check_approve_submitted_final_review_requested(user, 200, "action is not available")
 
     def check_approve_submitted_final_review_requested(self, user, status, error=None):
 
@@ -213,7 +209,7 @@ class TestDepositedDatasetController(object):
 
     def test_approve_submitted_not_valid(self):
         for user in ['sysadmin', 'depadmin', 'curator', 'target_container_admin']:
-            self.check_approve_submitted_not_valid(user, 302, "action is not available")
+            self.check_approve_submitted_not_valid(user, 200, "action is not available")
 
     def check_approve_submitted_not_valid(self, user, status, error=None):
 
@@ -228,7 +224,7 @@ class TestDepositedDatasetController(object):
 
     def test_approve_submitted_not_granted(self):
         for user in ['creator']:
-            self.check_approve_submitted_not_granted(user, 302, "action is not available")
+            self.check_approve_submitted_not_granted(user, 200, "action is not available")
         for user in ['depositor', 'target_container_member', 'other_container_admin']:
             self.check_approve_submitted_not_granted(user, 403)
 
@@ -265,7 +261,7 @@ class TestDepositedDatasetController(object):
         })
 
         # Approve dataset
-        self.make_request('approve', user=user, status=302)
+        self.make_request('approve', user=user, status=200)
         assert self.dataset['type'] == 'dataset'
         assert self.dataset['owner_org'] == 'data-target'
         mail.assert_not_called()
@@ -290,7 +286,7 @@ class TestDepositedDatasetController(object):
         })
 
         # Approve dataset
-        self.make_request('approve', user=user, status=302)
+        self.make_request('approve', user=user, status=200)
         assert self.dataset['type'] == 'dataset'
         assert self.dataset['owner_org'] == 'data-target'
         self.assert_mail(mail,
@@ -301,7 +297,7 @@ class TestDepositedDatasetController(object):
 
     def test_approve_review_not_granted(self):
         for user in ['sysadmin', 'depadmin', 'curator', 'target_container_admin']:
-            self.check_approve_review_not_granted(user, 302, "action is not available")
+            self.check_approve_review_not_granted(user, 200, "action is not available")
         for user in ['depositor', 'target_container_member', 'other_container_admin']:
             self.check_approve_review_not_granted(user, 403)
 
@@ -321,7 +317,7 @@ class TestDepositedDatasetController(object):
 
     def test_assign_draft_not_granted(self):
         for user in ['sysadmin', 'depadmin', 'curator', 'target_container_admin']:
-            self.check_assign_draft_not_granted(user, 302, "action is not available")
+            self.check_assign_draft_not_granted(user, 200, "action is not available")
         for user in ['depositor', 'target_container_member', 'other_container_admin']:
             self.check_assign_draft_not_granted(user, 403)
 
@@ -349,7 +345,7 @@ class TestDepositedDatasetController(object):
 
         # Assign curator
         params = {'curator_id': self.curator['id']}
-        self.make_request('assign', user=user, data=params, status=302)
+        self.make_request('assign', user=user, data=params, status=200)
         assert self.dataset['curator_id'] == self.curator['id']
         self.assert_mail(mail,
             users=['curator'],
@@ -372,7 +368,7 @@ class TestDepositedDatasetController(object):
 
         # Assign curator
         params = {'curator_id': ''}
-        self.make_request('assign', user=user, data=params, status=302)
+        self.make_request('assign', user=user, data=params, status=200)
         assert self.dataset.get('curator_id') is None
         self.assert_mail(mail,
             users=['curator'],
@@ -394,15 +390,13 @@ class TestDepositedDatasetController(object):
 
         # Assign curator
         params = {'curator_id': ''}
-        self.make_request('assign', user=user, data=params, status=302)
+        self.make_request('assign', user=user, data=params, status=200)
         assert self.dataset.get('curator_id') == None
         mail.assert_not_called()
 
-    # TODO: this one fails with DetachedInstanceError
-    # and breaks sessions for all following tests
-    #def test_assign_submitted_bad_curator_id(self):
-    #    for user in ['sysadmin', 'depadmin']:
-    #        self.check_assign_submitted_bad_curator_id(user)
+    def test_assign_submitted_bad_curator_id(self):
+        for user in ['sysadmin', 'depadmin']:
+            self.check_assign_submitted_bad_curator_id(user)
 
     def check_assign_submitted_bad_curator_id(self, user):
 
@@ -417,7 +411,7 @@ class TestDepositedDatasetController(object):
 
     def test_assign_submitted_not_granted(self):
         for user in ['curator', 'creator']:
-            self.check_assign_submitted_not_granted(user, 302, "action is not available")
+            self.check_assign_submitted_not_granted(user, 200, "action is not available")
         for user in ['depositor', 'target_container_member', 'other_container_admin']:
             self.check_assign_submitted_not_granted(user, 403)
 
@@ -438,7 +432,7 @@ class TestDepositedDatasetController(object):
 
     def test_assign_review_not_granted(self):
         for user in ['sysadmin', 'depadmin', 'curator', 'creator', 'target_container_admin']:
-            self.check_assign_review_not_granted(user, 302, "action is not available")
+            self.check_assign_review_not_granted(user, 200, "action is not available")
         for user in ['depositor', 'target_container_member', 'other_container_admin']:
             self.check_assign_review_not_granted(user, 403)
 
@@ -459,7 +453,7 @@ class TestDepositedDatasetController(object):
 
     def test_request_changes_draft_not_granted(self):
         for user in ['sysadmin', 'depadmin', 'curator', 'creator', 'target_container_admin']:
-            self.check_request_changes_draft_not_granted(user, 302, "action is not available")
+            self.check_request_changes_draft_not_granted(user, 200, "action is not available")
         for user in ['depositor', 'target_container_member', 'other_container_admin']:
             self.check_request_changes_draft_not_granted(user, 403)
 
@@ -485,7 +479,7 @@ class TestDepositedDatasetController(object):
         })
 
         # Request changes
-        self.make_request('request_changes', user=user, status=302)
+        self.make_request('request_changes', user=user, status=200)
         assert self.dataset['curation_state'] == 'draft'
         self.assert_mail(mail,
             users=['creator'],
@@ -495,7 +489,7 @@ class TestDepositedDatasetController(object):
 
     def test_request_changes_submitted_not_granted(self):
         for user in ['creator']:
-            self.check_request_changes_submitted_not_granted(user, 302, "action is not available")
+            self.check_request_changes_submitted_not_granted(user, 200, "action is not available")
         for user in ['depositor', 'target_container_member', 'other_container_admin']:
             self.check_request_changes_submitted_not_granted(user, 403)
 
@@ -533,7 +527,7 @@ class TestDepositedDatasetController(object):
         })
 
         # Request changes
-        self.make_request('request_changes', user=user, status=302)
+        self.make_request('request_changes', user=user, status=200)
         assert self.dataset['curation_state'] == 'submitted'
         self.assert_mail(mail,
             users=['curator'],
@@ -543,7 +537,7 @@ class TestDepositedDatasetController(object):
 
     def test_request_changes_review_not_granted(self):
         for user in ['sysadmin', 'depadmin', 'curator', 'target_container_admin']:
-            self.check_request_changes_review_not_granted(user, 302, "action is not available")
+            self.check_request_changes_review_not_granted(user, 200, "action is not available")
         for user in ['depositor', 'target_container_member', 'other_container_admin']:
             self.check_request_changes_review_not_granted(user, 403)
 
@@ -563,7 +557,7 @@ class TestDepositedDatasetController(object):
 
     def test_request_review_draft(self):
         for user in ['sysadmin', 'depadmin', 'curator', 'creator', 'target_container_admin']:
-            self.check_request_review_draft(user, 302, "action is not available")
+            self.check_request_review_draft(user, 200, "action is not available")
         for user in ['depositor', 'target_container_member', 'other_container_admin']:
             self.check_request_review_draft(user, 403)
 
@@ -606,7 +600,7 @@ class TestDepositedDatasetController(object):
         })
 
         # Request review
-        self.make_request('request_review', user=user, status=302)
+        self.make_request('request_review', user=user, status=200)
         assert self.dataset['curation_state'] == 'review'
         self.assert_mail(mail,
             users=['creator'],
@@ -616,7 +610,7 @@ class TestDepositedDatasetController(object):
 
     def test_request_review_submitted_not_final_review_requested(self):
         for user in ['sysadmin', 'depadmin', 'curator', 'target_container_admin']:
-            self.check_request_review_submitted_not_final_review_requested(user, 302, "action is not available")
+            self.check_request_review_submitted_not_final_review_requested(user, 200, "action is not available")
 
     def check_request_review_submitted_not_final_review_requested(self, user, status, error=None):
 
@@ -638,7 +632,7 @@ class TestDepositedDatasetController(object):
 
     def test_request_review_submitted_not_valid(self):
         for user in ['sysadmin', 'depadmin', 'curator', 'target_container_admin']:
-            self.check_request_review_submitted_not_valid(user, 302, "action is not available")
+            self.check_request_review_submitted_not_valid(user, 200, "action is not available")
 
     def check_request_review_submitted_not_valid(self, user, status, error=None):
 
@@ -654,7 +648,7 @@ class TestDepositedDatasetController(object):
 
     def test_request_review_submitted_not_granted(self):
         for user in ['creator']:
-            self.check_request_review_submitted_not_granted(user, 302, "action is not available")
+            self.check_request_review_submitted_not_granted(user, 200, "action is not available")
         for user in ['depositor', 'target_container_member', 'other_container_admin']:
             self.check_request_review_submitted_not_granted(user, 403)
 
@@ -675,7 +669,7 @@ class TestDepositedDatasetController(object):
 
     def test_request_review_review_not_granted(self):
         for user in ['sysadmin', 'depadmin', 'curator', 'creator', 'target_container_admin']:
-            self.check_request_review_review_not_granted(user, 302, "action is not available")
+            self.check_request_review_review_not_granted(user, 200, "action is not available")
         for user in ['depositor', 'target_container_member', 'other_container_admin']:
             self.check_request_review_review_not_granted(user, 403)
 
@@ -695,7 +689,7 @@ class TestDepositedDatasetController(object):
 
     def test_reject_draft_not_granted(self):
         for user in ['sysadmin', 'depadmin', 'curator', 'creator', 'target_container_admin']:
-            self.check_reject_draft_not_granted(user, 302, "action is not available")
+            self.check_reject_draft_not_granted(user, 200, "action is not available")
         for user in ['depositor', 'target_container_member', 'other_container_admin']:
             self.check_reject_draft_not_granted(user, 403)
 
@@ -721,7 +715,7 @@ class TestDepositedDatasetController(object):
         })
 
         # Reject dataset
-        self.make_request('reject', user=user, status=302)
+        self.make_request('reject', user=user, status=200)
         assert self.dataset['state'] == 'deleted'
         assert '-rejected-' in self.dataset['name']
         self.assert_mail(mail,
@@ -732,7 +726,7 @@ class TestDepositedDatasetController(object):
 
     def test_reject_submitted_not_granted(self):
         for user in ['creator']:
-            self.check_reject_submitted_not_granted(user, 302, "action is not available")
+            self.check_reject_submitted_not_granted(user, 200, "action is not available")
         for user in ['depositor', 'target_container_member', 'other_container_admin']:
             self.check_reject_submitted_not_granted(user, 403)
 
@@ -752,7 +746,7 @@ class TestDepositedDatasetController(object):
 
     def test_reject_review_not_granted(self):
         for user in ['sysadmin', 'depadmin', 'curator', 'creator', 'target_container_admin']:
-            self.check_reject_review_not_granted(user, 302, "action is not available")
+            self.check_reject_review_not_granted(user, 200, "action is not available")
         for user in ['depositor', 'target_container_member', 'other_container_admin']:
             self.check_reject_review_not_granted(user, 403)
 
@@ -778,7 +772,7 @@ class TestDepositedDatasetController(object):
     def check_submit_draft(self, user, mail):
 
         # Submit dataset
-        self.make_request('submit', user=user, status=302)
+        self.make_request('submit', user=user, status=200)
 
         assert self.dataset['curation_state'] == 'submitted'
         subject = '[UNHCR RIDL] Curation: Test Dataset'
@@ -795,7 +789,7 @@ class TestDepositedDatasetController(object):
 
     def test_submit_draft_not_granted(self):
         for user in ['sysadmin', 'depadmin', 'curator', 'target_container_admin']:
-            self.check_submit_draft_not_granted(user, 302, "action is not available")
+            self.check_submit_draft_not_granted(user, 200, "action is not available")
         for user in ['depositor', 'target_container_member', 'other_container_admin']:
             self.check_submit_draft_not_granted(user, 403)
 
@@ -810,7 +804,7 @@ class TestDepositedDatasetController(object):
 
     def test_submit_submitted_not_granted(self):
         for user in ['sysadmin', 'depadmin', 'curator', 'creator', 'target_container_admin']:
-            self.check_submit_submitted_not_granted(user, 302, "action is not available")
+            self.check_submit_submitted_not_granted(user, 200, "action is not available")
         for user in ['depositor', 'target_container_member', 'other_container_admin']:
             self.check_submit_submitted_not_granted(user, 403)
 
@@ -830,7 +824,7 @@ class TestDepositedDatasetController(object):
 
     def test_submit_reviw_not_granted(self):
         for user in ['sysadmin', 'depadmin', 'curator', 'creator', 'target_container_admin']:
-            self.check_submit_review_not_granted(user, 302, "action is not available")
+            self.check_submit_review_not_granted(user, 200, "action is not available")
         for user in ['depositor', 'target_container_member', 'other_container_admin']:
             self.check_submit_review_not_granted(user, 403)
 
@@ -856,7 +850,7 @@ class TestDepositedDatasetController(object):
     def check_withdraw_draft(self, user, mail):
 
         # Withdraw dataset
-        self.make_request('withdraw', user=user, status=302)
+        self.make_request('withdraw', user=user, status=200)
         assert self.dataset['state'] == 'deleted'
         assert '-withdrawn-' in self.dataset['name']
         self.assert_mail(mail,
@@ -867,7 +861,7 @@ class TestDepositedDatasetController(object):
 
     def test_withdraw_draft_not_granted(self):
         for user in ['sysadmin', 'depadmin', 'curator', 'target_container_admin']:
-            self.check_withdraw_draft_not_granted(user, 302, "action is not available")
+            self.check_withdraw_draft_not_granted(user, 200, "action is not available")
         for user in ['depositor', 'target_container_member', 'other_container_admin']:
             self.check_withdraw_draft_not_granted(user, 403)
 
@@ -882,7 +876,7 @@ class TestDepositedDatasetController(object):
 
     def test_withdraw_submitted_not_granted(self):
         for user in ['sysadmin', 'depadmin', 'curator', 'creator', 'target_container_admin']:
-            self.check_withdraw_submitted(user, 302, "action is not available")
+            self.check_withdraw_submitted(user, 200, "action is not available")
         for user in ['depositor', 'target_container_member', 'other_container_admin']:
             self.check_withdraw_submitted(user, 403)
 
@@ -902,7 +896,7 @@ class TestDepositedDatasetController(object):
 
     def test_withdraw_review_not_granted(self):
         for user in ['sysadmin', 'depadmin', 'curator', 'creator', 'target_container_admin']:
-            self.check_withdraw_review(user, 302, "action is not available")
+            self.check_withdraw_review(user, 200, "action is not available")
         for user in ['depositor', 'target_container_member', 'other_container_admin']:
             self.check_withdraw_review(user, 403)
 
@@ -931,14 +925,16 @@ class TestDepositedDatasetController(object):
             'external_access_level': 'open_access',
         })
 
-        self.make_request('approve', user='sysadmin', status=302)
+        self.make_request('approve', user='sysadmin', status=200)
 
-    @mock.patch('ckanext.unhcr.blueprints.deposited_dataset.mailer.mail_user_by_id')
-    def test_activites_shown_on_deposited_dataset(self, mail):
+    def test_activites_shown_on_deposited_dataset(self, app):
 
         env = {'REMOTE_USER': self.creator['name'].encode('ascii')}
-        resp = self.app.get(
-            url=toolkit.url_for('deposited-dataset_read', id=self.dataset['id']), extra_environ=env)
+        resp = app.get(
+            url=toolkit.url_for('deposited-dataset.read', id=self.dataset['id']),
+            extra_environ=env,
+            status=200,
+        )
         assert 'Internal Activity' in resp.body
 
     @pytest.mark.parametrize("user", ['sysadmin', 'editor', 'target_container_admin'])
@@ -951,9 +947,12 @@ class TestDepositedDatasetController(object):
         self._approve_dataset()
 
         env = {'REMOTE_USER': user.encode('ascii')}
-        resp = self.app.get(
-            url=toolkit.url_for('dataset_read', id=self.dataset['id']), extra_environ=env)
-
+        with self.app.flask_app.test_request_context():
+            resp = self.app.get(
+                url=toolkit.url_for('deposited-dataset.read', id=self.dataset['id']),
+                extra_environ=env,
+                status=200,
+            )
         assert 'Internal Activity' in resp.body
 
     @pytest.mark.parametrize("user", ['depositor', 'curator', 'target_container_member', 'other_container_admin'])
@@ -965,22 +964,27 @@ class TestDepositedDatasetController(object):
 
         self._approve_dataset()
 
-        env = {'REMOTE_USER': user.encode('ascii')} if user else {}
-        resp = self.app.get(
-            url=toolkit.url_for('dataset_read', id=self.dataset['id']), extra_environ=env)
-
+        env = {'REMOTE_USER': user.encode('ascii')}
+        with self.app.flask_app.test_request_context():
+            resp = self.app.get(
+                url=toolkit.url_for('deposited-dataset.read', id=self.dataset['id']),
+                extra_environ=env,
+                status=200,
+            )
         assert 'Internal Activity' not in resp.body
 
     @mock.patch('ckan.plugins.toolkit.enqueue_job')
-    def test_activity_created_in_deposited_dataset(self, mail):
-        self.make_request('submit', user=self.creator['name'], status=302)
+    def test_activity_created_in_deposited_dataset(self, mail, app):
+        self.make_request('submit', user=self.creator['name'], status=200)
         params = {'curator_id': self.curator['id']}
         self.make_request('assign', user=self.depadmin['name'], data=params)
 
         env = {'REMOTE_USER': self.curator['name'].encode('ascii')}
-        resp = self.app.get(
-            url=toolkit.url_for('deposited-dataset_internal_activity', dataset_id=self.dataset['name']), extra_environ=env)
-
+        resp = app.get(
+            url=toolkit.url_for('unhcr_deposited-dataset.internal_activity', dataset_id=self.dataset['name']),
+            extra_environ=env,
+            status=200,
+        )
         assert 'deposited dataset' in resp.body
         assert 'submitted dataset' in resp.body
         assert 'assigned' in resp.body

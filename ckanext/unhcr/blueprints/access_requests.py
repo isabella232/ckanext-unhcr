@@ -4,6 +4,7 @@ from flask import Blueprint
 from ckan import model
 import ckan.plugins.toolkit as toolkit
 from ckanext.unhcr import mailer
+from ckanext.unhcr.utils import require_user
 
 
 unhcr_access_requests_blueprint = Blueprint(
@@ -13,10 +14,8 @@ unhcr_access_requests_blueprint = Blueprint(
 )
 
 
+@require_user
 def approve(request_id):
-    if (not hasattr(toolkit.c, "user") or not toolkit.c.user):
-        return toolkit.abort(403, "Forbidden")
-
     try:
         toolkit.get_action('access_request_update')(
             {'user': toolkit.c.user}, {'id': request_id, 'status': 'approved'}
@@ -28,13 +27,11 @@ def approve(request_id):
 
     toolkit.h.flash_success('Access Request Approved')
 
-    return toolkit.redirect_to('dashboard.requests')
+    return toolkit.redirect_to('unhcr_dashboard.requests')
 
 
+@require_user
 def reject(request_id):
-    if (not hasattr(toolkit.c, "user") or not toolkit.c.user):
-        return toolkit.abort(403, "Forbidden")
-
     message = toolkit.request.form.get('message')
     if not message:
         return toolkit.abort(400, "'message' is required")
@@ -61,7 +58,7 @@ def reject(request_id):
 
     toolkit.h.flash_success('Access Request Rejected')
 
-    return toolkit.redirect_to('dashboard.requests')
+    return toolkit.redirect_to('unhcr_dashboard.requests')
 
 
 unhcr_access_requests_blueprint.add_url_rule(

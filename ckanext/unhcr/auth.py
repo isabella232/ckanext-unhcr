@@ -5,10 +5,11 @@ from ckan.plugins import toolkit
 import ckan.logic.auth.create as auth_create_core
 import ckan.logic.auth.update as auth_update_core
 import ckanext.datastore.logic.auth as auth_datastore_core
+from ckanext.saml2auth.helpers import is_default_login_enabled
 from ckan.logic.auth import get as core_get, get_resource_object
 from ckanext.unhcr import helpers
 from ckanext.unhcr.models import AccessRequest
-from ckanext.unhcr.utils import get_module_functions
+from ckanext.unhcr.utils import get_module_functions, is_saml2_user
 log = logging.getLogger(__name__)
 
 
@@ -32,8 +33,6 @@ def restrict_access_to_get_auth_functions():
         'organization_list_for_user',  # Because of #4097
         'get_site_user',
         'user_reset',  # saml2
-        'user_create',  # saml2
-        'user_delete',  # saml2
         'request_reset',  # saml2
     ]
 
@@ -49,7 +48,6 @@ def restrict_access_to_get_auth_functions():
     overriden_auth_functions['site_read'] = site_read
     overriden_auth_functions['organization_list_for_user'] = \
         organization_list_for_user
-    overriden_auth_functions['package_activity_list'] = package_activity_list
 
     return overriden_auth_functions
 
@@ -58,9 +56,6 @@ def restrict_access_to_get_auth_functions():
 def site_read(context, data_dict):
     if toolkit.request.path.startswith('/api'):
         # Let individual API actions deal with their auth
-        return {'success': True}
-    elif toolkit.request.path == '/service/login':
-        # Allow local logins
         return {'success': True}
 
     userobj = context.get('auth_user_obj')
@@ -195,16 +190,12 @@ def package_update(next_auth, context, data_dict):
     return next_auth(context, data_dict)
 
 
-def package_activity_list(context, data_dict):
-    if toolkit.asbool(data_dict.get('get_internal_activities')):
-        # Check if the user can see the internal activity,
-        # for now we check if the user can edit the dataset
-        try:
-            toolkit.check_access('package_update', context, data_dict)
-            return {'success': True}
-        except toolkit.NotAuthorized:
-            return {'success': False}
-    return {'success': True}
+def package_internal_activity_list(context, data_dict):
+    try:
+        toolkit.check_access('package_update', context, data_dict)
+        return {'success': True}
+    except toolkit.NotAuthorized:
+        return {'success': False}
 
 
 # Resource
@@ -259,13 +250,13 @@ def resource_download(context, data_dict):
         if user_in_owner_org:
             return {'success': True}
 
-    # Support for ckanext-collaborators style auth
-    action = toolkit.get_action('dataset_collaborator_list_for_user')
+    # Check if the user is a dataset collaborator
+    action = toolkit.get_action('package_collaborator_list_for_user')
     if user and action:
         datasets = action(context, {'id': user})
         return {
             'success': resource.package_id in [
-                d['dataset_id'] for d in datasets
+                d['package_id'] for d in datasets
             ]
         }
 
@@ -333,7 +324,7 @@ def scan_hook(context, data_dict):
 
 
 @toolkit.chained_auth_function
-def dataset_collaborator_create(next_auth, context, data_dict):
+def package_collaborator_create(next_auth, context, data_dict):
     dataset = toolkit.get_action('package_show')(
         {'ignore_auth': True}, {'id': data_dict['id']})
     if dataset['type'] == 'deposited-dataset':
@@ -449,3 +440,41 @@ def user_show(next_auth, context, data_dict):
             return next_auth(context, data_dict)
         return {'success': False}
     return next_auth(context, data_dict)
+
+
+# Password resets
+
+def _get_user(username_or_email):
+    userobj = model.User.get(username_or_email)
+    if userobj:
+        return userobj
+    users = model.User.by_email(username_or_email)
+    if len(users) == 1:
+        return users[0]
+    return None
+
+
+@toolkit.chained_auth_function
+@toolkit.auth_allow_anonymous_access
+@toolkit.auth_sysadmins_check
+def user_reset(next_auth, context, data_dict):
+    if is_default_login_enabled():
+        return next_auth(context, data_dict)
+    return {'success': False, 'msg': 'Users cannot reset passwords.'}
+
+
+@toolkit.chained_auth_function
+@toolkit.auth_allow_anonymous_access
+@toolkit.auth_sysadmins_check
+def request_reset(next_auth, context, data_dict):
+    username_or_email = toolkit.request.form.get('user', '')
+    method = toolkit.request.method
+
+    if is_default_login_enabled():
+        userobj = _get_user(username_or_email)
+        if (
+            method == 'GET' or userobj is None or
+            (method == 'POST' and not is_saml2_user(userobj))
+        ):
+            return next_auth(context, data_dict)
+    return {'success': False, 'msg': 'Users cannot reset passwords.'}

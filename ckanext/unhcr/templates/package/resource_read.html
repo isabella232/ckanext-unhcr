@@ -12,21 +12,24 @@
 {% endblock %}
 
 {% block resource_actions_inner %}
-  {% if h.check_access('package_update', {'id': pkg.id}) %}
-    <li>{% link_for _('Copy'), controller='ckanext.unhcr.controllers.extended_package:ExtendedPackageController', action='resource_copy', id=pkg.name, resource_id=res.id, class_='btn', icon='copy' %}</li>
-  {% endif %}
-  {% if h.check_access('package_update', {'id':pkg.id }) %}
-    <li>{% link_for _('Manage'), controller='package', action='resource_edit', id=pkg.name, resource_id=res.id, class_='btn', icon='wrench' %}</li>
+  {% if h.check_access('package_update', {'id': pkg.id}) and not is_activity_archive %}
+    {% if pkg.type == 'deposited-dataset' %}
+      <li>{% link_for _('Copy'), named_route='unhcr_deposited-dataset.resource_copy', dataset_id=pkg.name, resource_id=res.id, class_='btn', icon='copy' %}</li>
+    {% else %}
+      <li>{% link_for _('Copy'), named_route='unhcr_resource.copy', dataset_id=pkg.name, resource_id=res.id, class_='btn', icon='copy' %}</li>
+    {% endif %}
+
+    <li>{% link_for _('Manage'), named_route=pkg.type ~ '_resource.edit', id=pkg.name, resource_id=res.id, class_='btn', icon='wrench' %}</li>
   {% endif %}
   {% if res.url and h.is_url(res.url) %}
-    {% if h.can_download(pkg) %}
+    {% if h.can_download(pkg) and not is_activity_archive %}
       <li>
         <a class="btn btn-primary resource-url-analytics resource-type-{{ res.resource_type }}" href="{{ res.url }}">
           {% if res.resource_type in ('listing', 'service') %}
             <i class="fa fa-eye"></i> {{ _('View') }}
           {% elif  res.resource_type == 'api' %}
             <i class="fa fa-key"></i> {{ _('API Endpoint') }}
-          {% elif (not res.has_views or not res.can_be_previewed) and not res.url_type == 'upload' %}
+          {% elif not res.has_views and not res.url_type == 'upload' %}
             <i class="fa fa-external-link"></i> {{ _('Go to resource') }}
           {% else %}
             <i class="fa fa-arrow-circle-o-down"></i> {{ _('Download') }}
@@ -49,9 +52,16 @@
   {% else %}
     {% if not h.get_existing_access_request(c.userobj.id, pkg.id, 'requested') %}
       {% snippet "snippets/request_access.html", pkg=pkg %}
-      {% endif %}
+    {% endif %}
   {% endif %}
 {% endblock %}
 
 {% block secondary_content %}
+{% endblock %}
+
+{% block footer %}
+  {{ super() }}
+  {% if not h.can_download(pkg) %}
+    {% snippet "package/snippets/collaboration_modals.html", pkg=pkg %}
+  {% endif %}
 {% endblock %}
