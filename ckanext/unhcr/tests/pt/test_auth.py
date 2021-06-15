@@ -554,10 +554,12 @@ class TestPackageCreateAuth(object):
 
     def test_unit_data_deposit(self):
         creator = core_factories.User(name='creator')
-        result = auth.package_create(
-            {'user': 'creator'}, {'owner_org': 'data-deposit'}
+        
+        assert toolkit.check_access(
+            'package_create',
+            context={'user': 'creator'},
+            data_dict={'owner_org': 'data-deposit'}
         )
-        assert result['success']
 
     def test_unit_user_is_container_admin(self):
         creator = core_factories.User(name='creator')
@@ -566,10 +568,12 @@ class TestPackageCreateAuth(object):
                 {'name': 'creator', 'capacity': 'admin'},
             ],
         )
-        result = auth.package_create(
-            {'user': 'creator'}, {'owner_org': container['name']}
+        
+        assert toolkit.check_access(
+            'package_create',
+            context={'user': 'creator'},
+            data_dict={'owner_org': container['name']}
         )
-        assert result['success']
 
     def test_unit_user_is_not_container_admin(self):
         creator = core_factories.User(name='creator')
@@ -578,21 +582,25 @@ class TestPackageCreateAuth(object):
                 {'name': 'creator', 'capacity': 'member'},
             ],
         )
-        result = auth.package_create(
-            {'user': 'creator'}, {'owner_org': container1['name']}
-        )
-        assert not result['success']
+        with pytest.raises(toolkit.NotAuthorized):
+            toolkit.check_access(
+                'package_create',
+                context={'user': 'creator'},
+                data_dict={'owner_org': container1['name']}
+            )
 
         container2 = factories.DataContainer()
-        result = auth.package_create(
-            {'user': 'creator'}, {'owner_org': container2['name']}
-        )
-        assert not result['success']
+        with pytest.raises(toolkit.NotAuthorized):
+            toolkit.check_access(
+                'package_create',
+                context={'user': 'creator'},
+                data_dict={'owner_org': container2['name']}
+            )
 
     def test_unit_no_data_dict(self):
         creator = core_factories.User(name='creator')
-        result = auth.package_create({'user': 'creator'}, None)
-        assert not result['success']
+        with pytest.raises(toolkit.NotAuthorized):
+            toolkit.check_access('package_create', context={'user': 'creator'}, data_dict=None)
 
     @pytest.mark.ckan_config('ckan.auth.create_unowned_dataset', False)
     def test_integration_new_deposit(self, app):

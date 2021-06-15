@@ -2,11 +2,9 @@ import logging
 from ckan import model
 from ckan.authz import has_user_permission_for_group_or_org
 from ckan.plugins import toolkit
-import ckan.logic.auth.create as auth_create_core
-import ckan.logic.auth.update as auth_update_core
-import ckanext.datastore.logic.auth as auth_datastore_core
 from ckanext.saml2auth.helpers import is_default_login_enabled
 from ckan.logic.auth import get as core_get, get_resource_object
+import ckanext.datastore.logic.auth as auth_datastore_core
 from ckanext.unhcr import helpers
 from ckanext.unhcr.models import AccessRequest
 from ckanext.unhcr.utils import get_module_functions, is_saml2_user
@@ -102,7 +100,8 @@ def organization_list_all_fields(next_auth, context, data_dict):
         return {'success': False}
 
 
-def organization_create(context, data_dict):
+@toolkit.chained_auth_function
+def organization_create(next_auth, context, data_dict):
     user_orgs = toolkit.get_action('organization_list_for_user')(context, {})
 
     # Allow to see `Request data container` button if user is an admin for an org
@@ -112,7 +111,7 @@ def organization_create(context, data_dict):
                 return {'success': True}
 
     # Base access check
-    result = auth_create_core.organization_create(context, data_dict)
+    result = next_auth(context, data_dict)
     if not result['success']:
         return result
 
@@ -141,8 +140,8 @@ def group_list_authz(context, data_dict):
 
 
 # Package
-
-def package_create(context, data_dict):
+@toolkit.chained_auth_function
+def package_create(next_auth, context, data_dict):
     # Data deposit
     if not data_dict:
         try:
@@ -164,8 +163,7 @@ def package_create(context, data_dict):
 
     # Data container
     context['model'] = context.get('model') or model
-    return auth_create_core.package_create(context, data_dict)
-
+    return next_auth(context, data_dict)
 
 @toolkit.chained_auth_function
 def package_update(next_auth, context, data_dict):

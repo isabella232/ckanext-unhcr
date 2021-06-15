@@ -5,9 +5,6 @@ from flask import Blueprint
 import ckan.logic as logic
 from ckan import model
 import ckan.lib.navl.dictization_functions as dict_fns
-import ckan.logic.action.get as get_core
-import ckan.logic.action.patch as patch_core
-import ckan.logic.action.delete as delete_core
 import ckan.plugins.toolkit as toolkit
 from ckanext.unhcr import helpers
 from ckanext.unhcr import mailer
@@ -51,10 +48,10 @@ def approve(container_id):
     _raise_not_authz_or_not_pending(container_id)
 
     # organization_patch state=active
-    org_dict = patch_core.organization_patch({}, {'id': container_id, 'state': 'active'})
+    org_dict = toolkit.get_action('organization_patch')({}, {'id': container_id, 'state': 'active'})
 
     # send approve email
-    for member in get_core.member_list(context, {'id': org_dict['id']}):
+    for member in toolkit.get_action('member_list')(context, {'id': org_dict['id']}):
         user = model.User.get(member[0])
         if user and user.email:
             subj = mailer.compose_container_email_subj(org_dict, event='approval')
@@ -74,8 +71,8 @@ def reject(container_id):
     _raise_not_authz_or_not_pending(container_id)
 
     # send rejection email
-    org_dict = get_core.organization_show({'model': model}, {'id': container_id})
-    for member in get_core.member_list(context, {'id': org_dict['id']}):
+    org_dict = toolkit.get_action('organization_show')({'model': model}, {'id': container_id})
+    for member in toolkit.get_action('member_list')(context, {'id': org_dict['id']}):
         user = model.User.get(member[0])
         if user and user.email:
             subj = mailer.compose_container_email_subj(org_dict, event='rejection')
@@ -83,7 +80,7 @@ def reject(container_id):
             mailer.mail_user(user, subj, body)
 
     # call organization_purge
-    delete_core.organization_purge({'model': model}, {'id': container_id})
+    toolkit.get_action('organization_purge')({'model': model}, {'id': container_id})
 
     # show flash message and redirect
     toolkit.h.flash_error(u'Data container "{}" rejected'.format(org_dict['title']))

@@ -16,11 +16,6 @@ from ckan.lib.mailer import MailerException
 import ckan.lib.plugins as lib_plugins
 from ckan.lib.search import index_for, commit
 import ckan.logic as core_logic
-import ckan.logic.action.get as get_core
-import ckan.logic.action.create as create_core
-import ckan.logic.action.delete as delete_core
-import ckan.logic.action.update as update_core
-import ckan.logic.action.patch as patch_core
 import ckan.lib.dictization.model_dictize as model_dictize
 from ckanext.unhcr import helpers, mailer, utils
 from ckanext.unhcr.models import AccessRequest
@@ -42,8 +37,8 @@ def _get_user_obj(context):
 
 
 # Package
-
-def package_update(context, data_dict):
+@toolkit.chained_action
+def package_update(up_func, context, data_dict):
     notify = False
     if not context.get('ignore_auth'):
         user_obj = _get_user_obj(context)
@@ -57,7 +52,7 @@ def package_update(context, data_dict):
                 notify = True
 
     # Update dataset
-    dataset = update_core.package_update(context, data_dict)
+    dataset = up_func(context, data_dict)
 
     # Send notification if needed
     if notify:
@@ -215,13 +210,13 @@ def package_collaborator_delete(up_func, context, data_dict):
 
 
 # Organization
-
-def organization_create(context, data_dict):
+@toolkit.chained_action
+def organization_create(up_func, context, data_dict):
 
     # When creating an organization, if the user is not a sysadmin it will be
     # created as pending, and sysadmins notified
 
-    org_dict = create_core.organization_create(context, data_dict)
+    org_dict = up_func(context, data_dict)
 
     # We create an organization as usual because we can't set
     # state=approval_needed on creation step and then
@@ -229,12 +224,12 @@ def organization_create(context, data_dict):
 
     # Notify sysadmins
     notify_sysadmins = False
-    user = get_core.user_show(context, {'id': context['user']})
+    user = toolkit.get_action('user_show')(context, {'id': context['user']})
     if not user['sysadmin']:
         # Not a sysadmin, create as pending and notify sysadmins (if all went
         # well)
         context['__unhcr_state_pending'] = True
-        org_dict = patch_core.organization_patch(context,
+        org_dict = toolkit.get_action('organization_patch')(context,
             {'id': org_dict['id'], 'state': 'approval_needed'})
         notify_sysadmins = True
     if notify_sysadmins:
@@ -255,7 +250,8 @@ def organization_create(context, data_dict):
     return org_dict
 
 
-def organization_member_create(context, data_dict):
+@toolkit.chained_action
+def organization_member_create(up_func, context, data_dict):
 
     m = context.get('model', model)
     username = toolkit.get_or_bust(data_dict, 'username')
@@ -278,10 +274,11 @@ def organization_member_create(context, data_dict):
         body = mailer.compose_membership_email_body(container, user, 'create')
         mailer.mail_user_by_id(user['id'], subj, body)
 
-    return create_core.organization_member_create(context, data_dict)
+    return up_func(context, data_dict)
 
 
-def organization_member_delete(context, data_dict):
+@toolkit.chained_action
+def organization_member_delete(up_func, context, data_dict):
 
     if not data_dict.get('not_notify'):
 
@@ -294,7 +291,7 @@ def organization_member_delete(context, data_dict):
         body = mailer.compose_membership_email_body(container, user, 'delete')
         mailer.mail_user_by_id(user['id'], subj, body)
 
-    return delete_core.organization_member_delete(context, data_dict)
+    return up_func(context, data_dict)
 
 
 def organization_list_all_fields(context, data_dict):

@@ -80,6 +80,8 @@ class TestResourceFields(object):
             'description': 'Some description',
             'type': 'attachment',
             'file_type': 'report',
+            # TODO add 'visibility' after merge #583 
+            # 'visibility': 'public',
         }
         resource2 = {
             'name': 'Test Data file',
@@ -95,10 +97,15 @@ class TestResourceFields(object):
         with pytest.raises(toolkit.ValidationError) as e:
             call_action('package_update', {'user': self.sysadmin['name']}, **dataset)
 
+        # First resource it's ok
+        assert e.value.error_dict['resources'][0] == {}
+
         errors = e.value.error_dict['resources'][1]
 
+        # TODO add 'visibility' after merge #583 
         for field in ['identifiability', 'date_range_end',
-                      'version', 'date_range_start', 'process_status']:
+                      'version', 'date_range_start',
+                      'process_status']:
             error = errors[field]
 
             assert error == ['Missing value']
