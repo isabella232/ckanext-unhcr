@@ -18,6 +18,8 @@
   width:  calc(var(--format-icon-height) / 1.07);
   height: var(--format-icon-height);
   background-position: calc(calc(var(--$type) - 1) * calc(-200px * var(--format-icon-scale)) - 13px) -11px;
+  transform: scale(1);
+  margin: 2px;
 }
 
 .format-label {

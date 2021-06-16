@@ -1575,7 +1575,10 @@ ol.unstyled {
   background-size: auto 93px;
   width:  37.38318px;
   height: 40px;
-  background-position: -1005px -11px
+  background-position: -1005px -11px;
+  -webkit-transform: scale(1);
+  transform: scale(1);
+  margin: 2px
 }
 
 .format-label[data-format=rdf],
@@ -1583,6 +1586,9 @@ ol.unstyled {
   width:  37.38318px;
   height: 40px;
   background-position: -695px -11px;
+  -webkit-transform: scale(1);
+  transform: scale(1);
+  margin: 2px;
 }
 
 .format-label[data-format=pdf],
@@ -1590,6 +1596,9 @@ ol.unstyled {
   width:  37.38318px;
   height: 40px;
   background-position: -633px -11px;
+  -webkit-transform: scale(1);
+  transform: scale(1);
+  margin: 2px;
 }
 
 .format-label[data-format=api],
@@ -1597,6 +1606,9 @@ ol.unstyled {
   width:  37.38318px;
   height: 40px;
   background-position: -571px -11px;
+  -webkit-transform: scale(1);
+  transform: scale(1);
+  margin: 2px;
 }
 
 .format-label[data-format=zip],
@@ -1604,6 +1616,9 @@ ol.unstyled {
   width:  37.38318px;
   height: 40px;
   background-position: -509px -11px;
+  -webkit-transform: scale(1);
+  transform: scale(1);
+  margin: 2px;
 }
 
 .format-label[data-format=xls],
@@ -1611,6 +1626,9 @@ ol.unstyled {
   width:  37.38318px;
   height: 40px;
   background-position: -447px -11px;
+  -webkit-transform: scale(1);
+  transform: scale(1);
+  margin: 2px;
 }
 
 .format-label[data-format=csv],
@@ -1618,6 +1636,9 @@ ol.unstyled {
   width:  37.38318px;
   height: 40px;
   background-position: -385px -11px;
+  -webkit-transform: scale(1);
+  transform: scale(1);
+  margin: 2px;
 }
 
 .format-label[data-format=txt],
@@ -1625,6 +1646,9 @@ ol.unstyled {
   width:  37.38318px;
   height: 40px;
   background-position: -199px -11px;
+  -webkit-transform: scale(1);
+  transform: scale(1);
+  margin: 2px;
 }
 
 .format-label[data-format=xml],
@@ -1632,6 +1656,9 @@ ol.unstyled {
   width:  37.38318px;
   height: 40px;
   background-position: -137px -11px;
+  -webkit-transform: scale(1);
+  transform: scale(1);
+  margin: 2px;
 }
 
 .format-label[data-format=json],
@@ -1639,6 +1666,9 @@ ol.unstyled {
   width:  37.38318px;
   height: 40px;
   background-position: -75px -11px;
+  -webkit-transform: scale(1);
+  transform: scale(1);
+  margin: 2px;
 }
 
 .format-label[data-format=html],
@@ -1646,6 +1676,9 @@ ol.unstyled {
   width:  37.38318px;
   height: 40px;
   background-position: -13px -11px;
+  -webkit-transform: scale(1);
+  transform: scale(1);
+  margin: 2px;
 }
 
 .dropdown.heading {
