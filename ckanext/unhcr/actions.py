@@ -936,8 +936,6 @@ def access_request_update(context, data_dict):
             subj = mailer.compose_account_approved_email_subj()
             body = mailer.compose_account_approved_email_body(user)
             mailer.mail_user_by_id(user['id'], subj, body)
-    else:
-        raise toolkit.Invalid("Unknown Object Type")
 
     request.status = status
     request.actioned_by = model.User.by_name(context['user']).id

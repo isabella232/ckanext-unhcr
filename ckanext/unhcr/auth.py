@@ -348,6 +348,8 @@ def access_request_update(context, data_dict):
     request = model.Session.query(AccessRequest).get(request_id)
     if not request:
         raise toolkit.ObjectNotFound("Access Request not found")
+    if request.object_type not in ['organization', 'package', 'user']:
+        raise toolkit.Invalid("Unknown Object Type")
 
     if request.object_type == 'package':
         package = toolkit.get_action('package_show')(
