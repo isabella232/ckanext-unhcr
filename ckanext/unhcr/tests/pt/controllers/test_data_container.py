@@ -8,6 +8,7 @@ from ckan.tests import helpers as core_helpers
 from ckantoolkit.tests import factories as core_factories
 from ckanext.unhcr.models import AccessRequest
 from ckanext.unhcr.tests import factories
+from ckanext.unhcr.helpers import get_allowable_parent_groups
 
 
 @pytest.mark.usefixtures('clean_db', 'unhcr_migrate', 'with_request_context')
@@ -260,3 +261,46 @@ class TestDataContainerViews(object):
     def test_membership_remove_no_access(self, app):
         url = '/data-container/membership_remove?username=default_test&contname=container1'
         resp = self.post_request(app, url, {}, user='user3', status=403)
+
+
+@pytest.mark.usefixtures('clean_db', 'unhcr_migrate', 'with_request_context')
+class TestDataContainerRequestsNew(object):
+
+    def setup(self):
+        self.deposit = factories.DataContainer(
+            name='data-deposit',
+            id='data-deposit',
+        )
+        # self.user = factories.ExternalUser()
+        self.user = core_factories.User()
+        self.sysadmin = core_factories.Sysadmin(name='sysadmin', id='sysadmin')
+        self.container_admin = factories.DataContainer(
+            users=[
+                {'name': self.user['name'], 'capacity': 'admin'},
+            ]
+        )
+        self.container_member = factories.DataContainer(
+            users=[
+                {'name': self.user['name'], 'capacity': 'member'},
+            ]
+        )
+
+    def test_get_allowable_parent_groups_for_user(self, app):
+        """ test allowed parents for requesting data containers """
+        with app.flask_app.test_request_context():
+            toolkit.c.user = self.user['name']
+            toolkit.c.userobj = model.User.get(self.user['name'])
+            groups = get_allowable_parent_groups(group_id=None)
+            # this user should only see containers in which is admin
+            assert self.container_admin['name'] in [group.name for group in groups]
+            assert self.container_member['name'] not in [group.name for group in groups]
+
+    def test_get_allowable_parent_groups_for_sysadmin(self, app):
+        """ test allowed parents for new data containers """
+        with app.flask_app.test_request_context():
+            toolkit.c.user = self.sysadmin['name']
+            toolkit.c.userobj = model.User.get(self.sysadmin['name'])
+            groups = get_allowable_parent_groups(group_id=None)
+            # sysadmin should see all containers
+            assert self.container_admin['name'] in [group.name for group in groups]
+            assert self.container_member['name'] in [group.name for group in groups]
