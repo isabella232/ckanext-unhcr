@@ -899,6 +899,9 @@ def access_request_update(context, data_dict):
     if not request:
         raise toolkit.ObjectNotFound("Access Request not found")
 
+    if request.object_type not in ['organization', 'package', 'user']:
+        raise toolkit.Invalid("Unknown Object Type")
+
     toolkit.check_access('access_request_update', context, data_dict)
 
     if request.object_type == 'package':
@@ -933,8 +936,6 @@ def access_request_update(context, data_dict):
             subj = mailer.compose_account_approved_email_subj()
             body = mailer.compose_account_approved_email_body(user)
             mailer.mail_user_by_id(user['id'], subj, body)
-    else:
-        raise toolkit.Invalid("Unknown Object Type")
 
     request.status = status
     request.actioned_by = model.User.by_name(context['user']).id
