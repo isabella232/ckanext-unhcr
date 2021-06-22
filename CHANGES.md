@@ -1,5 +1,13 @@
 # RIDL Changelog
 
+## v3.0.1 - 2021-06-22
+
+Bug fixes:
+- Fix pagination on data container pages
+- Hide activities from site user
+- Adopt package_revise in background jobs to resolve some race conditions for API users
+- Fix resource icon sizes
+
 ## v3.0.0 - 2021-06-14
 
 Behaviour changes:
