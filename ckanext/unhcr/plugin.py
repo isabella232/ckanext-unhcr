@@ -332,7 +332,7 @@ class UnhcrPlugin(
 
         try:
             blueprint, view = toolkit.get_endpoint()
-        except TypeError:
+        except (TypeError, RuntimeError):
             return search_params
 
         if blueprint in blueprints and view != 'edit':
