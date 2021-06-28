@@ -129,9 +129,21 @@ def get_dataset_count():
 
 def get_allowable_parent_groups(group_id):
     deposit = get_data_deposit()
-    groups = hierarchy_helpers.get_allowable_parent_groups(group_id)
-    groups = filter(lambda group: group.name != deposit.get('name'), groups)
-    return groups
+    if group_id:
+        groups = hierarchy_helpers.get_allowable_parent_groups(group_id)
+    else:
+        groups = model.Group.all(group_type='data-container')
+    org_list_func = toolkit.get_action('organization_list_for_user')
+    user_admins = org_list_func({'ignore_auth': True}, {'id': toolkit.c.userobj.id, 'permission': 'admin'})
+    user_admins_names = [org['name'] for org in user_admins]
+    allowed_groups = []
+    for group in groups:
+        if group.name == deposit.get('name'):
+            continue
+        if group.name not in user_admins_names:
+            continue
+        allowed_groups.append(group)
+    return allowed_groups
 
 
 def render_tree(top_nodes=None):
