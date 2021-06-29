@@ -51,7 +51,7 @@ def create_curation_activity(
     if message:
         data_dict['data']['message'] = message
     if kwargs:
-        for key, value in kwargs.iteritems():
+        for key, value in kwargs.items():
             data_dict['data'][key] = value
 
     toolkit.get_action('activity_create')(activity_context, data_dict)

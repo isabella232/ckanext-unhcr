@@ -21,7 +21,7 @@ def ignore_if_attachment(key, data, errors, context):
 
 
 def _is_attachment(index, data):
-    for field, value in data.iteritems():
+    for field, value in data.items():
         if (field[0] == 'resources' and
                 field[1] == index and
                 field[2] == 'type' and
