@@ -93,7 +93,7 @@ def url_for(*args, **kw):
             and "/dataset/" in url
         ):
             url = url.replace('/dataset/', '/deposited-dataset/')
-    except TypeError:
+    except (TypeError, RuntimeError):
         pass
 
     return url
