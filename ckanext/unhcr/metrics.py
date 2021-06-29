@@ -141,7 +141,7 @@ def get_containers_by_date(context):
         'type': 'timeseries_graph',
         'short_title': 'Containers',
         'title': title,
-        'total': dates.values()[-1] if len(dates.values()) > 0 else None,
+        'total': list(dates.values())[-1] if len(dates.values()) > 0 else None,
         'id': slugify(title),
         'data': [
             ['x'] + [str(date) for date in dates.keys()],

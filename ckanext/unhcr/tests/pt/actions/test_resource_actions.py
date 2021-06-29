@@ -69,7 +69,7 @@ class TestResourceUpload(object):
                 package_id=dataset['id'],
                 url='https://example.com/some.data.csv'
             )
-        assert exc.value.error_dict.keys() == ['url']
+        assert list(exc.value.error_dict.keys()) == ['url']
 
         assert (
             exc.value.error_dict['url'] ==
@@ -97,7 +97,7 @@ class TestResourceUpload(object):
         with pytest.raises(toolkit.ValidationError) as exc:
             factories.Resource(package_id=dataset['id'])
 
-        assert exc.value.error_dict.keys() == ['url']
+        assert list(exc.value.error_dict.keys()) == ['url']
 
         assert (
             exc.value.error_dict['url'] ==
