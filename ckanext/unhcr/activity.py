@@ -8,7 +8,7 @@ def create_download_activity(context, resource_id):
     """
     user = context['user']
     user_id = None
-    user_by_name = model.User.by_name(user.decode('utf8'))
+    user_by_name = model.User.by_name(user)
     if user_by_name is not None:
         user_id = user_by_name.id
 
