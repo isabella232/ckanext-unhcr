@@ -3,7 +3,7 @@ import datetime
 import json
 import logging
 import requests
-from urlparse import urljoin
+from urllib.parse import urljoin
 from dateutil.parser import parse as parse_date
 from sqlalchemy import and_, desc, or_, select
 from sqlalchemy.dialects.postgresql import array

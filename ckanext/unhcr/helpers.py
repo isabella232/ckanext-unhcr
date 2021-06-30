@@ -1,7 +1,7 @@
 import logging
 import os
 import re
-from urllib import quote
+from urllib.parse import quote
 from jinja2 import Markup, escape
 from ckan import model
 from ckan.lib import uploader
