@@ -228,6 +228,7 @@ class UnhcrPlugin(
             'get_max_resource_size': helpers.get_max_resource_size,
             'get_google_analytics_id': helpers.get_google_analytics_id,
             'nl_to_br': helpers.nl_to_br,
+            'is_plugin_loaded': helpers.is_plugin_loaded,
         }
 
     # IPackageController

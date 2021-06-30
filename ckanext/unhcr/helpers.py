@@ -1028,3 +1028,8 @@ def nl_to_br(text):
     result = u'\n\n'.join(u'<p>%s</p>' % p.replace('\n', Markup('<br>\n'))
                           for p in _paragraph_re.split(escape(text)))
     return Markup(result)
+
+
+def is_plugin_loaded(plugin):
+    plugins = toolkit.config.get('ckan.plugins', '').split()
+    return plugin in plugins
