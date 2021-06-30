@@ -152,7 +152,7 @@ def get_containers_by_date(context):
 def get_tags(context):
     data = _get_facet_table('tags', context)
     for row in data:
-        row['link'] = toolkit.url_for('dataset', tags=row['name'])
+        row['link'] = toolkit.url_for('dataset.search', tags=row['name'])
 
     title = 'Tags'
     return {
@@ -166,7 +166,7 @@ def get_tags(context):
 def get_keywords(context):
     data = _get_facet_table('vocab_keywords', context)
     for row in data:
-        row['link'] = toolkit.url_for('dataset', vocab_keywords=row['name'])
+        row['link'] = toolkit.url_for('dataset.search', vocab_keywords=row['name'])
 
     title = 'Keywords'
     return {
