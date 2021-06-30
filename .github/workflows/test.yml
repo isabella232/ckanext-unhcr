@@ -2,24 +2,18 @@ name: Run tests
 on: [push, pull_request]
 
 jobs:
-  test:
-    strategy:
-      matrix:
-        ckan-version: ['2.9-py2', '2.9']
-      fail-fast: false
-
-    name: CKAN ${{ matrix.ckan-version }}
+  build:
     runs-on: ubuntu-latest
 
     container:
-      image: openknowledge/ckan-dev:${{ matrix.ckan-version }}
+      image: openknowledge/ckan-dev:2.9-py2
 
     services:
       solr:
-        image: ckan/ckan-solr-dev:${{ matrix.ckan-version }}
+        image: ckan/ckan-solr-dev:2.9-py2
 
       postgres:
-        image: ckan/ckan-postgres-dev:${{ matrix.ckan-version }}
+        image: ckan/ckan-postgres-dev:2.9-py2
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -53,10 +47,13 @@ jobs:
         run: ./bin/apply-patches.bash
 
       - name: Install CKAN extensions required under test
-        run: ./bin/install-extensions-${{ matrix.ckan-version }}.bash
+        run: ./bin/install-extensions.bash
 
       - name: Install ckanext-unhcr plugin
-        run: ./bin/install-unhcr-${{ matrix.ckan-version }}.bash
+        run: |
+          python setup.py develop
+          pip install --upgrade -r requirements.txt
+          pip install --upgrade -r dev-requirements.txt
 
       - name: Initialize DB
         run: ./bin/init-db.bash
