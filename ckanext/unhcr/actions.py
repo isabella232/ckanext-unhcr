@@ -654,7 +654,9 @@ def scan_submit(context, data_dict):
         _fail_task(context, task, error)
         raise toolkit.ValidationError(error)
     except requests.exceptions.HTTPError as e:
-        m = 'An Error occurred while sending the job: {0}'.format(e.message)
+        m = 'An Error occurred while sending the job: {0}'.format(
+            getattr(e, 'message', '')
+        )
         try:
             body = e.response.json()
         except ValueError:
