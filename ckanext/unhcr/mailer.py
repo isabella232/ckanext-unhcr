@@ -5,11 +5,19 @@ import itertools
 import logging
 from ckan import model
 from ckan.plugins import toolkit
+from ckan.lib import jinja_extensions
 from ckan.lib import mailer as core_mailer
-from ckan.lib.base import render_jinja2
 from ckan.lib.dictization import model_dictize
 from ckanext.unhcr import helpers
 log = logging.getLogger(__name__)
+
+
+def render_jinja2(template_name, extra_vars):
+    env = jinja_extensions.Environment(
+        **jinja_extensions.get_jinja_env_options()
+    )
+    template = env.get_template(template_name)
+    return template.render(**extra_vars)
 
 
 # General
