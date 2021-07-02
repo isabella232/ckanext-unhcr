@@ -53,6 +53,27 @@ class AccessRequest(Base):
     actioned_by = Column(UnicodeText, nullable=True)  # user who approved or rejected the request
 
 
+class GisStatus(object):
+    ACTIVE = 'active'
+    INACTIVE = 'inactive'
+
+
+class Geography(Base):
+    __tablename__ = u'geography'
+
+    globalid = Column(UnicodeText, primary_key=True)
+    pcode = Column(UnicodeText, nullable=False)
+    iso3 = Column(UnicodeText, nullable=False)
+    gis_name = Column(UnicodeText, nullable=False)
+    gis_status = Column(
+        Enum(GisStatus.ACTIVE, GisStatus.INACTIVE, name='geography_gis_statuse_enum'),
+        nullable=False
+    )
+    layer = Column(UnicodeText, nullable=False)
+    hierarchy_pcode = Column(UnicodeText, nullable=False)
+    # TODO: PostGIS geometry column
+
+
 def create_metric_columns():
     cols = ['datasets_count', 'deposits_count', 'containers_count']
     table = TimeSeriesMetric.__tablename__
