@@ -7,7 +7,7 @@ from ckan import model
 from ckan.lib import uploader
 from operator import itemgetter
 from ckan.logic import ValidationError
-from ckan.plugins import toolkit
+from ckan.plugins import toolkit, plugin_loaded
 import ckan.lib.helpers as core_helpers
 import ckan.lib.plugins as lib_plugins
 from ckanext.hierarchy import helpers as hierarchy_helpers
@@ -1030,6 +1030,5 @@ def nl_to_br(text):
     return Markup(result)
 
 
-def is_plugin_loaded(plugin):
-    plugins = toolkit.config.get('ckan.plugins', '').split()
-    return plugin in plugins
+def is_plugin_loaded(plugin_name):
+    return plugin_loaded(plugin_name)
