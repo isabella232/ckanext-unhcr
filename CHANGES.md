@@ -1,5 +1,10 @@
 # RIDL Changelog
 
+## v3.1.1 - 2021-07-14
+
+Bug fixes:
+- Fix users login [#632](https://github.com/okfn/ckanext-unhcr/pull/632/files?diff=split&w=1)
+
 ## v3.1.0 - 2021-07-14
 
 Features:
