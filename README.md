@@ -55,7 +55,7 @@ $ git clone git@github.com:okfn/ckanext-unhcr.git
 $ cd ckanext-unhcr
 ```
 
-It's designed to support live development of extensions. The only one requirement is that the folder with the project should be inside `docker-ckan-unhcr/src`. See `docker-ckan-unhcr` for more information.
+It's designed to support live development of extensions. The only one requirement is that the folder with the project should be inside `docker-ckan-unhcr-aws/src`. See `docker-ckan-unhcr-aws` for more information.
 
 ## Working with docker
 
@@ -115,21 +115,17 @@ See the `how to write E2E tests` guide:
 
 ## Building static assets
 
-Put your images/fonts/etc inside the `ckanext/unhcr/fanstatic` folder. It can be used as usual ckan `fanstatic` and `public` contents. At the same time, we use JS and CSS preprocessors to build. Put your scripts/styles inside the `ckanext/unhcr/src` and build it:
+We use JS and SCSS preprocessors to compile static assets. Put your scripts/styles inside the `ckanext/unhcr/src` and build it:
 
 ```bash
 $ make assets
 ```
 
-Processed styles will be put to the `ckanext/unhcr/fanstatic` folder.
+Processed styles will be written to the `ckanext/unhcr/fanstatic` folder. The compiled assets should be committed. Any custom images/fonts/etc can be stored directly in `ckanext/unhcr/fanstatic` folder and added to `webassets.yml`.
 
 ## Working with i18n
 
-To extract i18n messages and compile the catalog we have to have our development server running. In another terminal window run a command:
-
-```
-$ make i18n
-```
+We have (ab)used i18n to make an English-to-English translation which changes the terminology used in CKAN. Occasionally this will need maintenance as the upstream text changes. Example PR: example PR: https://github.com/okfn/ckanext-unhcr/pull/575
 
 See CKAN documentation for more on i18n management.
 
@@ -176,11 +172,13 @@ pip install -r scripts/requirements.txt
 
 ## Generate deposited-dataset schema
 
-It will be generated based on the `dataset` schema (re-writing existent `deposited-dataset` schema).
+We maintain the `dataset` schema (https://github.com/okfn/ckanext-unhcr/blob/master/ckanext/unhcr/schemas/dataset.json ) manually. The `deposited_dataset` schema (https://github.com/okfn/ckanext-unhcr/blob/master/ckanext/unhcr/schemas/deposited_dataset.json ) should not be edited by hand. It is the output of running.
 
 ```
 $ python scripts/generate_deposited_dataset_schema.py
 ```
+
+The compiled schema should be committed.
 
 ## Create data containers and data deposit
 
