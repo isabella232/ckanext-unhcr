@@ -1,5 +1,15 @@
 # RIDL Changelog
 
+## v3.1.0 - 2021-07-14
+
+Features:
+- Python 3 support. RIDL no longer supports Python 2. There are no related user facing changes.
+
+Bug fixes:
+- Fix exception when Requesting Data Containers. When requesting a new data container to be nested
+  inside another one, you now have to be an admin of the parent data container.
+
+
 ## v3.0.1 - 2021-06-22
 
 Bug fixes:
