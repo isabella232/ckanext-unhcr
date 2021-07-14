@@ -1254,7 +1254,7 @@ def user_create(up_func, context, data_dict):
 @toolkit.chained_action
 def user_update(up_func, context, data_dict):
 
-    if not context.get('ignore_auth', False):
+    if not context.get('ignore_auth'):
         # allow plugins to update the user
         user_id = toolkit.get_or_bust(data_dict, 'id')
         m = context.get('model', model)
