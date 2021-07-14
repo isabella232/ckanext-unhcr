@@ -4,13 +4,15 @@
     <img src="/base/images/ckan-logo.png" alt="{{ g.site_title }}" title="{{ g.site_title }}" width="210" />
     {% endif %}
     <h2>{% trans %}You must be logged in to access the RIDL site.{% endtrans %}</h2>
-    <p>
-      <a class="btn btn-inverse btn-lg"
-        href="{{ h.url_for('saml2auth.saml2login', came_from=h.get_came_from_param()) }}"
-        title="Log in using your UNHCR Active Directory account">
-        Log in as UNHCR staff
-      </a>
-    </p>
+    {% if h.is_plugin_loaded('saml2auth') %}
+      <p>
+        <a class="btn btn-inverse btn-lg"
+          href="{{ h.url_for('saml2auth.saml2login', came_from=h.get_came_from_param()) }}"
+          title="Log in using your UNHCR Active Directory account">
+          Log in as UNHCR staff
+        </a>
+      </p>
+    {% endif %}
     <hr />
     <p>
       <a class="btn btn-inverse btn-lg"

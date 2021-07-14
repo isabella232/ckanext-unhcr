@@ -1,3 +1,4 @@
+{% if h.is_plugin_loaded('saml2auth') %}
 <section class="module module-narrow module-shallow">
   <h2 class="module-heading"><i class="fa fa-user"></i> UNHCR Staff</h2>
   <nav>
@@ -10,6 +11,7 @@
     </div>
   </nav>
 </section>
+{% endif %}
 
 <section class="module module-narrow module-shallow">
   <h2 class="module-heading"><i class="fa fa-user"></i> Partners</h2>

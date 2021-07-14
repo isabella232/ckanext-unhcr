@@ -93,7 +93,7 @@ def url_for(*args, **kw):
             and "/dataset/" in url
         ):
             url = url.replace('/dataset/', '/deposited-dataset/')
-    except TypeError:
+    except (TypeError, RuntimeError):
         pass
 
     return url
@@ -228,6 +228,7 @@ class UnhcrPlugin(
             'get_max_resource_size': helpers.get_max_resource_size,
             'get_google_analytics_id': helpers.get_google_analytics_id,
             'nl_to_br': helpers.nl_to_br,
+            'is_plugin_loaded': helpers.is_plugin_loaded,
         }
 
     # IPackageController
@@ -332,7 +333,7 @@ class UnhcrPlugin(
 
         try:
             blueprint, view = toolkit.get_endpoint()
-        except TypeError:
+        except (TypeError, RuntimeError):
             return search_params
 
         if blueprint in blueprints and view != 'edit':

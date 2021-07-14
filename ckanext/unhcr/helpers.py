@@ -1,13 +1,13 @@
 import logging
 import os
 import re
-from urllib import quote
+from urllib.parse import quote
 from jinja2 import Markup, escape
 from ckan import model
 from ckan.lib import uploader
 from operator import itemgetter
 from ckan.logic import ValidationError
-from ckan.plugins import toolkit
+from ckan.plugins import toolkit, plugin_loaded
 import ckan.lib.helpers as core_helpers
 import ckan.lib.plugins as lib_plugins
 from ckanext.hierarchy import helpers as hierarchy_helpers
@@ -681,7 +681,7 @@ def get_dataset_validation_report(pkg_dict, error_dict):
     for index, resource in enumerate(pkg_dict.get('resources', [])):
         try:
             fields = sorted(error_dict['resources'][index])
-        except KeyError, IndexError:
+        except (KeyError, IndexError):
             continue
         if fields:
             report['resources'].append({
@@ -1028,3 +1028,7 @@ def nl_to_br(text):
     result = u'\n\n'.join(u'<p>%s</p>' % p.replace('\n', Markup('<br>\n'))
                           for p in _paragraph_re.split(escape(text)))
     return Markup(result)
+
+
+def is_plugin_loaded(plugin_name):
+    return plugin_loaded(plugin_name)

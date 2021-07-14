@@ -8,7 +8,7 @@ def create_download_activity(context, resource_id):
     """
     user = context['user']
     user_id = None
-    user_by_name = model.User.by_name(user.decode('utf8'))
+    user_by_name = model.User.by_name(user)
     if user_by_name is not None:
         user_id = user_by_name.id
 
@@ -51,7 +51,7 @@ def create_curation_activity(
     if message:
         data_dict['data']['message'] = message
     if kwargs:
-        for key, value in kwargs.iteritems():
+        for key, value in kwargs.items():
             data_dict['data'][key] = value
 
     toolkit.get_action('activity_create')(activity_context, data_dict)

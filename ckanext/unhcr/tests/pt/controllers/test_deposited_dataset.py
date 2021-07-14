@@ -99,7 +99,7 @@ class TestDepositedDatasetController(object):
 
     def make_request(self, action, dataset_id=None, user=None, **kwargs):
         url = '/deposited-dataset/%s/%s' % (
-            dataset_id or self.dataset['id'].encode('ascii'),
+            dataset_id or self.dataset['id'],
             action
         )
         env = {'REMOTE_USER': user.encode('ascii')} if user else {}

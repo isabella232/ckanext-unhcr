@@ -35,7 +35,6 @@ class TestHooks(object):
         }
         self.new_resource_dict = {
             'package_id': self.dataset['id'],
-            'upload': mocks.FakeFileStorage(),
             'url': 'http://fakeurl/test.txt',
             'url_type': 'upload',
             'type': 'data',

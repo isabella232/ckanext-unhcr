@@ -45,7 +45,12 @@ def approve(package_type, dataset_id):
         # We also set type in context to allow type switching by ckan patch
         dataset = helpers.convert_deposited_dataset_to_regular_dataset(dataset)
         dataset = toolkit.get_action('package_update')(
-                dict(context.items() + {'type': dataset['type']}.items()), dataset)
+            dict(
+                list(context.items()) +
+                list({'type': dataset['type']}.items())
+            ),
+            dataset
+        )
     except toolkit.ValidationError as error:
         message = 'Deposited dataset "%s" is invalid\n(validation error summary: %s)'
         return toolkit.abort(403, message % (id, error.error_summary))

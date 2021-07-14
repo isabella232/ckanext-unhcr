@@ -152,7 +152,7 @@ def package_create(next_auth, context, data_dict):
                 toolkit.request.path.startswith('/deposited-dataset/edit/')
             ):
                 return {'success': True}
-        except TypeError:
+        except (TypeError, RuntimeError):
             return {
                 'success': False,
                 'msg': 'package_create requires either a web request or a data_dict'
