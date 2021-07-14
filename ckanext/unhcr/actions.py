@@ -1259,9 +1259,9 @@ def user_update(up_func, context, data_dict):
 
     if user_obj is not None and is_saml2_user(user_obj):
 
-        if user_obj.apikey != data_dict.get('apikey'):
+        if data_dict.get('apikey') and user_obj.apikey != data_dict.get('apikey'):
             up_dict = toolkit.get_action('user_show')(context.copy(), {'id': user_id})
-            up_dict['apikey'] = data_dict['apikey']
+            up_dict['apikey'] = data_dict.get('apikey')
             return up_func(context, up_dict)
 
         raise toolkit.ValidationError({'error': [
