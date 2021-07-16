@@ -1,0 +1,83 @@
+{
+  "type": "FeatureCollection",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "EPSG:4326"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": 1,
+      "geometry": null,
+      "properties": {
+        "objectid": 1,
+        "iso3": "VAT",
+        "hcr3": null,
+        "gis_name": "Holy See",
+        "name_fr": "Saint-Siège",
+        "name_sp": "Vaticano",
+        "color_code": "VAT",
+        "terr_id": 107,
+        "terr_name": "Holy See",
+        "secondary_territory": 0,
+        "status_un": "The City of Vatican",
+        "update_by": null,
+        "update_date": null,
+        "comments": null,
+        "globalid": "{61259BF7-137E-479C-BBA7-86B489733B2D}",
+        "st_area(shape)": 898858.344085085,
+        "st_length(shape)": 3665.5184970669143
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2,
+      "geometry": null,
+      "properties": {
+        "objectid": 2,
+        "iso3": "ISL",
+        "hcr3": "ICE",
+        "gis_name": "Iceland",
+        "name_fr": "Islande",
+        "name_sp": "Islandia",
+        "color_code": "ISL",
+        "terr_id": 112,
+        "terr_name": "Iceland",
+        "secondary_territory": 0,
+        "status_un": "Member State",
+        "update_by": null,
+        "update_date": null,
+        "comments": null,
+        "globalid": "{26EA8E38-FEC5-461F-A44C-55887195CAD3}",
+        "st_area(shape)": 571847925654.1724,
+        "st_length(shape)": 14989480.597646412
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 3,
+      "geometry": null,
+      "properties": {
+        "objectid": 3,
+        "iso3": "OMN",
+        "hcr3": "OMN",
+        "gis_name": "Oman",
+        "name_fr": "Oman",
+        "name_sp": "Omán",
+        "color_code": "OMN",
+        "terr_id": 184,
+        "terr_name": "Oman",
+        "secondary_territory": 0,
+        "status_un": "Member State",
+        "update_by": null,
+        "update_date": null,
+        "comments": null,
+        "globalid": "{FB304291-744D-4E91-8141-545BE7BD21C2}",
+        "st_area(shape)": 354169682958.53534,
+        "st_length(shape)": 4442444.598828204
+      }
+    }
+  ]
+}

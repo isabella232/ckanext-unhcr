@@ -1,0 +1,86 @@
+{
+  "type": "FeatureCollection",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "EPSG:4326"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": 4,
+      "geometry": null,
+      "properties": {
+        "objectid": 4,
+        "iso3": "TUR",
+        "pcode": "20TUR075",
+        "gis_name": "Ardahan",
+        "adm1_source_code": "TR75",
+        "focus_id": null,
+        "progres_id": null,
+        "gis_status": 14,
+        "source": "General Command of Mapping",
+        "src_date": 1501200000000,
+        "mod_by": "Regional IM Working Group - Europe",
+        "mod_date": 1501718400000,
+        "update_by": "FICSS-UNHCR",
+        "update_date": 1501804800000,
+        "comments": " ",
+        "globalid": "{3EDFE328-D271-45B3-9274-FB723C14CBAC}",
+        "st_area(shape)": 8702623924.67597,
+        "st_length(shape)": 523069.306810701
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 5,
+      "geometry": null,
+      "properties": {
+        "objectid": 5,
+        "iso3": "IDN",
+        "pcode": "20IDN007",
+        "gis_name": "Gorontalo",
+        "adm1_source_code": "75",
+        "focus_id": null,
+        "progres_id": null,
+        "gis_status": 14,
+        "source": "Badan Pusat Statistik",
+        "src_date": 1356998400000,
+        "mod_by": "WFP",
+        "mod_date": 1388534400000,
+        "update_by": "FICSS-UNHCR",
+        "update_date": 1524441600000,
+        "comments": " ",
+        "globalid": "{FCBCCBC2-8082-4051-9C9A-EA0D5ED0FA06}",
+        "st_area(shape)": 12124760713.268938,
+        "st_length(shape)": 1209148.3243010535
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 6,
+      "geometry": null,
+      "properties": {
+        "objectid": 6,
+        "iso3": "VNM",
+        "pcode": "20VNM509",
+        "gis_name": "Phu Yen",
+        "adm1_source_code": "509",
+        "focus_id": null,
+        "progres_id": null,
+        "gis_status": 14,
+        "source": "Pacific Disaster Center (PDC)",
+        "src_date": 1424217600000,
+        "mod_by": "OCHA ROAP",
+        "mod_date": 1513900800000,
+        "update_by": "FICSS-UNHCR",
+        "update_date": 1517961600000,
+        "comments": " ",
+        "globalid": "{D1C5AA2A-8379-48D4-A0CD-BFE42502DE45}",
+        "st_area(shape)": 5320483295.121974,
+        "st_length(shape)": 634861.7490927649
+      }
+    }
+  ]
+}

@@ -108,6 +108,9 @@ def print_summary(session):
         )
 
 
+URL_TEMPLATE = 'https://gis.unhcr.org/arcgis/rest/services/core_v2/{}/MapServer/0/query'
+
+
 LAYERS = [
     'wrl_polbnd_int_1m_a_unhcr',
     'wrl_polbnd_adm1_a_unhcr',
@@ -184,7 +187,7 @@ def import_geographies():
     )
 
     for layer in LAYERS:
-        base_url = 'https://gis.unhcr.org/arcgis/rest/services/core_v2/{}/MapServer/0/query'.format(layer)
+        base_url = URL_TEMPLATE.format(layer)
         has_next_page = True
         pagination_params = {
             'resultOffset': 0,

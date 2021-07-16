@@ -1,0 +1,89 @@
+{
+  "type": "FeatureCollection",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "EPSG:4326"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": 4,
+      "geometry": null,
+      "properties": {
+        "objectid": 4,
+        "iso3": "AFG",
+        "pcode": "20AFG026004",
+        "gis_name": "Nadirshahkot",
+        "adm2_source_code": "2604",
+        "adm1_pcode": "20AFG026",
+        "focus_id": null,
+        "progres_id": null,
+        "gis_status": 14,
+        "source": "AGCHO",
+        "src_date": null,
+        "mod_by": null,
+        "mod_date": null,
+        "update_by": "IVANC",
+        "update_date": 1621324191000,
+        "comments": " ",
+        "globalid": "{67CCB67B-EE93-4E56-AC0B-B4FF59C62110}",
+        "st_area(shape)": 480036726.42687845,
+        "st_length(shape)": 107288.46790065673
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 5,
+      "geometry": null,
+      "properties": {
+        "objectid": 5,
+        "iso3": "SYR",
+        "pcode": "20SYR003005",
+        "gis_name": "Yabroud",
+        "adm2_source_code": "SY0305",
+        "adm1_pcode": "20SYR003",
+        "focus_id": null,
+        "progres_id": null,
+        "gis_status": 14,
+        "source": "UNCS, UNOCHA",
+        "src_date": null,
+        "mod_by": null,
+        "mod_date": null,
+        "update_by": "IVANC",
+        "update_date": 1621324191000,
+        "comments": " ",
+        "globalid": "{8FEDCEBD-5E81-41E1-8D89-FE37A1E9A4F5}",
+        "st_area(shape)": 848830077.6867183,
+        "st_length(shape)": 126256.00931849546
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 6,
+      "geometry": null,
+      "properties": {
+        "objectid": 6,
+        "iso3": "BRA",
+        "pcode": "20BRA024090",
+        "gis_name": "Nova Cruz",
+        "adm2_source_code": "2408300",
+        "adm1_pcode": "20BRA024",
+        "focus_id": null,
+        "progres_id": null,
+        "gis_status": 14,
+        "source": "IBGE",
+        "src_date": null,
+        "mod_by": null,
+        "mod_date": null,
+        "update_by": "IVANC",
+        "update_date": 1621324191000,
+        "comments": " ",
+        "globalid": "{9B543C48-CA8F-4E15-81FB-07342F50F7A2}",
+        "st_area(shape)": 283052843.31210625,
+        "st_length(shape)": 91374.6030991532
+      }
+    }
+  ]
+}
