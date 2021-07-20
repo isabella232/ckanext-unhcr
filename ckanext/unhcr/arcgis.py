@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import json
 from time import sleep
 import requests
 from requests.exceptions import RequestException
@@ -203,7 +204,13 @@ def import_geographies():
                 base_url,
                 params=merge_dicts(BASE_PARAMS, pagination_params)
             )
-            geoj = r.json()
+            """
+            Note we are passing r.content (bytes) to json.loads() here instead
+            of r.json() here because the responses are not served with the
+            correct character encoding header. This causes requests to decode
+            the response incorrectly and .json() gives us mangled text.
+            """
+            geoj = json.loads(r.content)
 
             features = geoj['features']
             print("importing {} features..".format(len(features)))
