@@ -7,7 +7,15 @@ from requests.exceptions import RequestException
 from retry import retry
 from sqlalchemy import func
 from ckan import model
-from ckanext.unhcr.models import Geography, GisStatus
+from ckanext.unhcr.models import (
+    Geography,
+    GisStatus,
+    ADMIN1,
+    ADMIN2,
+    COUNTRY,
+    POC,
+    PRP,
+)
 
 
 def get_gis_status(properties):
@@ -113,15 +121,15 @@ URL_TEMPLATE = 'https://gis.unhcr.org/arcgis/rest/services/core_v2/{}/MapServer/
 
 
 LAYERS = [
-    'wrl_polbnd_int_1m_a_unhcr',
-    'wrl_polbnd_adm1_a_unhcr',
-    'wrl_polbnd_adm2_a_unhcr',
+    COUNTRY['layer_name'],
+    ADMIN1['layer_name'],
+    ADMIN2['layer_name'],
 
     # Order is significant here. We import the PRPs first,
     # then we import PoCs and overwrite layer='wrl_prp_p_unhcr_PoC'
     # for any PRPs that are also a PoC.
-    'wrl_prp_p_unhcr_ALL',
-    'wrl_prp_p_unhcr_PoC',
+    PRP['layer_name'],
+    POC['layer_name'],
 ]
 
 
@@ -181,7 +189,7 @@ def import_geographies():
     model.Session.query(
         Geography
     ).filter(
-        Geography.layer=='wrl_polbnd_int_1m_a_unhcr'
+        Geography.layer==COUNTRY['layer_name']
     ).update(
         {Geography.gis_status: GisStatus.INACTIVE},
         synchronize_session=False
