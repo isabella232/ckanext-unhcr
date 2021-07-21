@@ -221,6 +221,8 @@ def import_geographies():
             geoj = json.loads(r.content)
 
             features = geoj['features']
+            for feature in features:
+                feature['properties']['globalid'] = feature['properties']['globalid'].strip('{}')
             print("importing {} features..".format(len(features)))
 
             features_to_upsert = {
