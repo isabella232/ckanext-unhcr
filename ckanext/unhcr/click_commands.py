@@ -32,8 +32,7 @@ def init_db():
     u'import-geographies',
     short_help=u'Import geographies from UNHCR GeoPortal'
 )
-@click.option('-v', '--verbose', count=True)
-def import_geographies(verbose):
+def import_geographies():
     arcgis_import_geographies()
 
 
