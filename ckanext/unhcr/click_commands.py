@@ -5,6 +5,7 @@ import click
 from ckan.plugins import toolkit
 import ckan.model as model
 
+from ckanext.unhcr.arcgis import import_geographies as arcgis_import_geographies
 from ckanext.unhcr.models import create_tables, TimeSeriesMetric
 from ckanext.unhcr.mailer import (
     compose_summary_email_body,
@@ -25,6 +26,14 @@ def unhcr():
 def init_db():
     create_tables()
     print(u'UNHCR tables initialized')
+
+
+@unhcr.command(
+    u'import-geographies',
+    short_help=u'Import geographies from UNHCR GeoPortal'
+)
+def import_geographies():
+    arcgis_import_geographies()
 
 
 @unhcr.command(

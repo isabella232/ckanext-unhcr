@@ -1,0 +1,86 @@
+{
+  "type": "FeatureCollection",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "EPSG:4326"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": 1,
+      "geometry": null,
+      "properties": {
+        "objectid": 1,
+        "iso3": "IRN",
+        "pcode": "20IRN003",
+        "gis_name": "Bushehr",
+        "adm1_source_code": "269575",
+        "focus_id": null,
+        "progres_id": null,
+        "gis_status": 14,
+        "source": "OpenStreetMap (OSM)",
+        "src_date": 1491436800000,
+        "mod_by": "unknown",
+        "mod_date": -2208988800000,
+        "update_by": "FICSS-UNHCR",
+        "update_date": 1491955200000,
+        "comments": " ",
+        "globalid": "{8F43E6AA-1D96-4419-80FE-D7A72563752E}",
+        "st_area(shape)": 29545789601.977146,
+        "st_length(shape)": 1908484.5750105197
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 2,
+      "geometry": null,
+      "properties": {
+        "objectid": 2,
+        "iso3": "AUS",
+        "pcode": "20AUS003",
+        "gis_name": "Northern Territory",
+        "adm1_source_code": "7",
+        "focus_id": null,
+        "progres_id": null,
+        "gis_status": 14,
+        "source": "Australian Bureau of Statistics",
+        "src_date": 1451606400000,
+        "mod_by": "unknown",
+        "mod_date": -2208988800000,
+        "update_by": "FICSS-UNHCR",
+        "update_date": 1524096000000,
+        "comments": " ",
+        "globalid": "{4482FA97-F927-4C36-8266-1C2C9C888E06}",
+        "st_area(shape)": 1531499118762.5886,
+        "st_length(shape)": 13715247.79786031
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 3,
+      "geometry": null,
+      "properties": {
+        "objectid": 3,
+        "iso3": "ZMB",
+        "pcode": "20ZMB007",
+        "gis_name": "Northern",
+        "adm1_source_code": "N/A",
+        "focus_id": null,
+        "progres_id": null,
+        "gis_status": 14,
+        "source": "earthworks.stanford.edu",
+        "src_date": 1262304000000,
+        "mod_by": "FICSS-UNHCR",
+        "mod_date": 1509926400000,
+        "update_by": "FICSS-UNHCR",
+        "update_date": 1509926400000,
+        "comments": " ",
+        "globalid": "{B9245F97-4B15-4856-B615-D212473196B8}",
+        "st_area(shape)": 80531779820.83931,
+        "st_length(shape)": 1747290.3042569
+      }
+    }
+  ]
+}

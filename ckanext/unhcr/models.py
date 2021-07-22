@@ -6,6 +6,7 @@ import logging
 from sqlalchemy import Column, DateTime, Integer
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.types import Enum, UnicodeText
 
@@ -51,6 +52,56 @@ class AccessRequest(Base):
     object_id = Column(UnicodeText, nullable=False)
     data = Column(MutableDict.as_mutable(JSONB), nullable=True)
     actioned_by = Column(UnicodeText, nullable=True)  # user who approved or rejected the request
+
+
+class GisStatus(object):
+    ACTIVE = 'active'
+    INACTIVE = 'inactive'
+
+
+ADMIN1 = {
+    'layer_name': 'wrl_polbnd_adm1_a_unhcr',
+    'display_name': 'Admin 1',
+}
+ADMIN2 = {
+    'layer_name': 'wrl_polbnd_adm2_a_unhcr',
+    'display_name': 'Admin 2',
+}
+COUNTRY = {
+    'layer_name': 'wrl_polbnd_int_1m_a_unhcr',
+    'display_name': 'Country',
+}
+POC = {
+    'layer_name': 'wrl_prp_p_unhcr_PoC',
+    'display_name': 'Pop. of Concern',
+}
+PRP = {
+    'layer_name': 'wrl_prp_p_unhcr_ALL',
+    'display_name': 'Reference Place',
+}
+LAYER_TO_DISPLAY_NAME = {
+    l['layer_name']: l['display_name'] for l in [ADMIN1, ADMIN2, COUNTRY, POC, PRP]
+}
+
+
+class Geography(Base):
+    __tablename__ = u'geography'
+
+    globalid = Column(UnicodeText, primary_key=True)
+    pcode = Column(UnicodeText, nullable=False)
+    iso3 = Column(UnicodeText, nullable=False)
+    gis_name = Column(UnicodeText, nullable=False)
+    gis_status = Column(
+        Enum(GisStatus.ACTIVE, GisStatus.INACTIVE, name='geography_gis_statuse_enum'),
+        nullable=False
+    )
+    layer = Column(UnicodeText, nullable=False)
+    hierarchy_pcode = Column(UnicodeText, nullable=False)
+    # TODO: PostGIS geometry column
+
+    @hybrid_property
+    def display_name(self):
+        return f'{LAYER_TO_DISPLAY_NAME[self.layer]}: {self.gis_name} ({self.hierarchy_pcode})'
 
 
 def create_metric_columns():
