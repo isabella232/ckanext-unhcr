@@ -571,6 +571,9 @@ def get_deposited_dataset_user_curation_actions(status):
         "reject", "request_changes", "assign", "request_review", "approve"
     :rtype: list
     '''
+    if not status['active']:
+        return []
+
     actions = []
 
     # Draft
