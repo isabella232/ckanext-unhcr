@@ -8,6 +8,8 @@ from ckantoolkit.tests import factories as core_factories
 from ckanext.unhcr.models import AccessRequest
 from ckanext.unhcr.tests import factories
 from ckanext.unhcr import helpers
+from ckanext.unhcr.activity import create_curation_activity
+from ckanext.unhcr.mailer import notify_renewal_request
 
 
 @pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
@@ -843,3 +845,84 @@ class TestDepositedDatasetHelpers(object):
         assert self.depadmin['name'] in curator_names
         assert self.curator['name'] in curator_names
         assert self.target_container_admin['name'] in curator_names
+
+
+@pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
+class TestRenewalMailer(object):
+
+    def setup(self):
+        self.sysadmin = core_factories.Sysadmin()
+        self.external_user1 = factories.ExternalUser(name='external1')
+        self.external_user2 = factories.ExternalUser(name='external2')
+
+        # =========================
+        self.admin1 = core_factories.User(name='admin1')
+        self.curator1 = core_factories.User(name='curator1')
+        self.container1 = factories.DataContainer(
+            users=[
+                {'name': self.admin1['name'], 'capacity': 'admin'},
+            ]
+        )
+        self.dataset1 = factories.Dataset(
+            user=self.external_user1,
+            owner_org=self.container1['id']
+        )
+
+        create_curation_activity(
+            activity_type='dataset_approved',
+            dataset_id=self.dataset1["id"],
+            dataset_name=self.dataset1["name"],
+            user_id=self.curator1["id"]
+        )
+
+        # =========================
+        self.admin2 = core_factories.User(name='admin2')
+        self.curator2 = core_factories.User(name='curator2')
+        self.container2 = factories.DataContainer(
+            users=[
+                {'name': self.admin2['name'], 'capacity': 'admin'},
+            ]
+        )
+        self.dataset2 = factories.Dataset(
+            user=self.external_user2,
+            owner_org=self.container2['id']
+        )
+
+        create_curation_activity(
+            activity_type='dataset_approved',
+            dataset_id=self.dataset2["id"],
+            dataset_name=self.dataset2["name"],
+            user_id=self.curator2["id"]
+        )
+
+    def test_get_user_packages(self):
+        packages = helpers.get_user_packages(self.external_user1['id'])
+        assert self.dataset1['id'] in [p.id for p in packages]
+        assert self.dataset2['id'] not in [p.id for p in packages]
+
+        packages = helpers.get_user_packages(self.external_user2['id'])
+        assert self.dataset1['id'] not in [p.id for p in packages]
+        assert self.dataset2['id'] in [p.id for p in packages]
+
+    def test_get_user_admins(self):
+        admins = helpers.get_user_admins(self.external_user1['id'])
+        assert self.admin1["id"] in admins
+        assert self.admin2["id"] not in admins
+
+        admins = helpers.get_user_admins(self.external_user2['id'])
+        assert self.admin1["id"] not in admins
+        assert self.admin2["id"] in admins
+
+    def test_get_user_curators(self):
+
+        curators = helpers.get_user_curators(self.external_user1['id'])
+        assert self.curator1["id"] in curators
+        assert self.curator2["id"] not in curators
+
+        curators = helpers.get_user_curators(self.external_user2['id'])
+        assert self.curator1["id"] not in curators
+        assert self.curator2["id"] in curators
+
+    def test_notify_renewal_request_fallback_sysadmin(self):
+        recipient_ids = notify_renewal_request(user_id=self.external_user1['id'], message='Hi!', recipient_ids=[])
+        assert self.sysadmin['id'] in recipient_ids

@@ -5,7 +5,7 @@ import logging
 import requests
 from urllib.parse import urljoin
 from dateutil.parser import parse as parse_date
-from sqlalchemy import and_, desc, or_, select
+from sqlalchemy import and_, desc, or_, select, not_
 from sqlalchemy.dialects.postgresql import array
 from sqlalchemy.orm import aliased
 from ckan import model
@@ -18,9 +18,9 @@ from ckan.lib.search import index_for, commit
 import ckan.logic as core_logic
 import ckan.lib.dictization.model_dictize as model_dictize
 from ckanext.unhcr import helpers, mailer, utils
-from ckanext.unhcr.models import AccessRequest
+from ckanext.unhcr.models import AccessRequest, USER_REQUEST_TYPE_NEW, USER_REQUEST_TYPE_RENEWAL
 from ckanext.unhcr.utils import is_saml2_user
-from ckanext.scheming.helpers import scheming_get_dataset_schema
+
 
 log = logging.getLogger(__name__)
 
@@ -768,6 +768,10 @@ def dictize_access_request(req):
     access_request = extract_keys_by_prefix(req, 'access_requests_')
     access_request['user'] = user
     access_request['object'] = group if group['id'] else package
+
+    if access_request['object_type'] == 'user':
+        access_request['is_renewal'] = access_request['data'].get('user_request_type', USER_REQUEST_TYPE_NEW) == USER_REQUEST_TYPE_RENEWAL
+
     return access_request
 
 
@@ -843,6 +847,7 @@ def access_request_list_for_user(context, data_dict):
     organizations = toolkit.get_action("organization_list_for_user")(
         context, {"id": user_id, "permission": "admin"}
     )
+
     containers = [o["id"] for o in organizations]
     if not containers:
         return []
@@ -859,7 +864,17 @@ def access_request_list_for_user(context, data_dict):
             ),
             and_(
                 access_requests_table.c.object_type == "user",
+                or_(
+                    not_(access_requests_table.c.data.has_key("user_request_type")),
+                    access_requests_table.c.data["user_request_type"].astext == USER_REQUEST_TYPE_NEW,
+                ),
                 access_requests_table.c.data["default_containers"].has_any(array(containers)),
+            ),
+            and_(
+                access_requests_table.c.object_type == "user",
+                access_requests_table.c.data["user_request_type"].astext == USER_REQUEST_TYPE_RENEWAL,
+                access_requests_table.c.data.has_key("users_who_can_approve"),
+                access_requests_table.c.data["users_who_can_approve"].contains([user.id]),
             )
         )
     )
@@ -931,17 +946,22 @@ def access_request_update(context, data_dict):
                 context, _data_dict
             )
     elif request.object_type == 'user':
+        data = request.data
         state = {'approved':  m.State.ACTIVE, 'rejected': m.State.DELETED}[status]
         _data_dict = {'id': request.object_id, 'state': state}
+        renew_expiry_date = data.get('user_request_type', USER_REQUEST_TYPE_NEW) == USER_REQUEST_TYPE_RENEWAL
+        _data_dict['renew_expiry_date'] = renew_expiry_date
+
         user = toolkit.get_action('external_user_update_state')(
             context, _data_dict
         )
 
-        if status == 'approved':
+        if status == 'approved' and not renew_expiry_date:
             # Notify the user
-            subj = mailer.compose_account_approved_email_subj()
-            body = mailer.compose_account_approved_email_body(user)
-            mailer.mail_user_by_id(user['id'], subj, body)
+            if data.get('user_request_type', USER_REQUEST_TYPE_NEW) == USER_REQUEST_TYPE_NEW:
+                subj = mailer.compose_account_approved_email_subj()
+                body = mailer.compose_account_approved_email_body(user)
+                mailer.mail_user_by_id(user['id'], subj, body)
 
     request.status = status
     request.actioned_by = model.User.by_name(context['user']).id
@@ -982,6 +1002,17 @@ def access_request_create(context, data_dict):
         ['object_id', 'object_type', 'message', 'role'],
     )
     data = data_dict.get('data', {})
+
+    # Users could ask for new account but also to renewal and expired account
+    if object_type == 'user':
+        user_request_type = data.get('user_request_type')
+        if user_request_type is None:
+            # default is a new user asking for permission
+            data['user_request_type'] = USER_REQUEST_TYPE_NEW
+        elif user_request_type == USER_REQUEST_TYPE_RENEWAL:
+            role = 'member'  # TODO role is not really to renew an user
+        elif user_request_type != USER_REQUEST_TYPE_NEW:
+            raise toolkit.ValidationError({'data': ["Invalid user request type"]})
 
     if not message:
         raise toolkit.ValidationError({'message': ["'message' is required"]})
@@ -1026,10 +1057,17 @@ def access_request_create(context, data_dict):
 def external_user_update_state(context, data_dict):
     """
     Change the status of an external user
-    Any internal user with container admin privileges or higher
-    can change the status of another user when:
-    - The target user is external
-    - The target user's current status is 'pending'
+    This could be related with a new user or a renewal of an existing user
+    datadict["renew_expiry_date"] indicates if is a new user
+    If new user:
+        Any internal user with container admin privileges or higher
+        can change the status of another user when:
+        - The target user is external
+        - The target user's current status is 'pending'
+    If renewal:
+        Any internal user with container editor privileges or higher
+        can change the status of another user when:
+        - The target user is external
     Additionally, a sysadmin may change the status of another user at any time.
 
     :param id: The id or name of the target user
@@ -1038,6 +1076,7 @@ def external_user_update_state(context, data_dict):
     :type state: string
     """
     m = context.get('model', model)
+    renew_expiry_date = data_dict.get('renew_expiry_date', False)
     user_id, state = toolkit.get_or_bust(data_dict, ['id', 'state'])
 
     toolkit.check_access('external_user_update_state', context, data_dict)
@@ -1048,6 +1087,16 @@ def external_user_update_state(context, data_dict):
     user_obj = m.User.get(user_id)
     if not user_obj:
         raise toolkit.ObjectNotFound("User not found")
+
+    if state == m.State.ACTIVE:
+
+        if renew_expiry_date:
+            plugin_extras = _init_plugin_extras(user_obj.plugin_extras)
+            days = toolkit.config.get('ckanext.unhcr.external_accounts_expiry_delta', 180)
+            new_expiry_date = datetime.date.today() + datetime.timedelta(days)
+            plugin_extras['unhcr']['expiry_date'] = new_expiry_date.isoformat()
+            user_obj.plugin_extras = plugin_extras
+
     user_obj.state = state
     m.Session.commit()
     m.Session.refresh(user_obj)
@@ -1234,13 +1283,17 @@ def user_create(up_func, context, data_dict):
     if not isinstance(data_dict.get('default_containers'), list):
         raise toolkit.ValidationError({'default_containers': ["Specify one or more containers"]})
 
-    plugin_extras = _init_plugin_extras(user_obj.plugin_extras)
-    expiry_date = datetime.date.today() + datetime.timedelta(
-        days=toolkit.config.get(
-            'ckanext.unhcr.external_accounts_expiry_delta',
-            180  # six months-ish
+    if not data_dict.get('expiry_date'):
+        expiry_date = datetime.date.today() + datetime.timedelta(
+            days=toolkit.config.get(
+                'ckanext.unhcr.external_accounts_expiry_delta',
+                180  # six months-ish
+            )
         )
-    )
+    else:
+        expiry_date = data_dict.get('expiry_date')
+
+    plugin_extras = _init_plugin_extras(user_obj.plugin_extras)
     plugin_extras['unhcr']['expiry_date'] = expiry_date.isoformat()
     plugin_extras['unhcr']['focal_point'] = data_dict['focal_point']
     plugin_extras['unhcr']['default_containers'] = data_dict['default_containers']

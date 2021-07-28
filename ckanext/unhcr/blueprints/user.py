@@ -12,6 +12,7 @@ from ckan.views.user import (
     login as core_login
 )
 from ckanext.unhcr.helpers import get_data_deposit
+from ckanext.unhcr.models import USER_REQUEST_TYPE_NEW
 from ckanext.unhcr.utils import require_user, get_internal_domains
 from ckanext.unhcr import mailer
 
@@ -118,7 +119,10 @@ class RegisterView(BaseRegisterView):
                 'object_type': 'user',
                 'message': data_dict['message'],
                 'role': 'member',
-                'data': {'default_containers': containers}
+                'data': {
+                    'default_containers': containers,
+                    'user_request_type': USER_REQUEST_TYPE_NEW
+                }
             }
             toolkit.get_action(u'access_request_create')(
                 {'user': user['id'], 'ignore_auth': True, 'defer_commit': True},

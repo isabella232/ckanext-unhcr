@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import datetime
+import mock
 import pytest
 from ckan import model
 from ckan.plugins import toolkit
@@ -7,6 +9,10 @@ from ckan.tests.helpers import call_action
 from ckantoolkit.tests import factories as core_factories
 from ckanext.unhcr.tests import factories
 from ckanext.unhcr.actions import user_list
+from ckanext.unhcr.activity import create_curation_activity
+from ckanext.unhcr.commands import expired_users_list, request_renewal
+from ckanext.unhcr.helpers import get_existing_access_request
+from ckanext.unhcr.models import USER_REQUEST_TYPE_RENEWAL
 
 
 @pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
@@ -96,6 +102,166 @@ class TestUserActions(object):
         # add a filter to get 0 results
         users = action(context, {'email': 'not-exist@example.com'})
         assert users.count() == 0
+
+    def test_expired_user_list(self):
+        not_expired_date = datetime.date.today() + datetime.timedelta(days=35)
+        about_expire_date = datetime.date.today() + datetime.timedelta(days=25)
+        expired_date = datetime.date.today() - datetime.timedelta(days=5)
+        user1 = factories.ExternalUser(
+            name='not-expired-user',
+            email='not-expired@external.org',
+            expiry_date=not_expired_date
+        )
+        user2 = factories.ExternalUser(
+            name='expired-user',
+            email='expired@external.org',
+            expiry_date=expired_date
+        )
+        user3 = factories.ExternalUser(
+            name='about-expire-user',
+            email='about-expired@external.org',
+            expiry_date=about_expire_date
+        )
+
+        dataset = factories.Dataset()
+
+        activity = core_factories.Activity(
+            user_id=user2["id"],
+            object_id=dataset["id"],
+            activity_type="new package",
+            data={"package": dataset, "actor": "Mr Someone"},
+        )
+
+        expired_users = expired_users_list(include_activities=True)
+        assert len(expired_users) == 1
+        ids = [u['id'] for u in expired_users]
+        assert user1['id'] not in ids
+        assert user2['id'] in ids
+        assert user3['id'] not in ids
+
+        expired_user = expired_users[0]
+        activities = expired_user['activities']
+        assert len(activities) == 2
+        assert activities[0]['activity_type'] == activity['activity_type']
+        assert activities[1]['activity_type'] == 'new user'
+
+    def test_about_expire_user_list(self):
+        not_expired_date = datetime.date.today() + datetime.timedelta(days=35)
+        about_expire_date = datetime.date.today() + datetime.timedelta(days=25)
+        expired_date = datetime.date.today() - datetime.timedelta(days=5)
+
+        user1 = factories.ExternalUser(
+            name='not-expired-user',
+            email='not-expired@external.org',
+            expiry_date=not_expired_date
+        )
+        user2 = factories.ExternalUser(
+            name='expired-user',
+            email='expired@external.org',
+            expiry_date=expired_date
+        )
+        user3 = factories.ExternalUser(
+            name='about-expire-user',
+            email='about-expire@external.org',
+            expiry_date=about_expire_date
+        )
+
+        dataset = factories.Dataset()
+
+        activity = core_factories.Activity(
+            user_id=user3["id"],
+            object_id=dataset["id"],
+            activity_type="new package",
+            data={"package": dataset, "actor": "Mr Someone"},
+        )
+
+        expired_users = expired_users_list(before_expire_days=30, include_activities=True)
+        assert len(expired_users) == 1
+        ids = [u['id'] for u in expired_users]
+        assert user1['id'] not in ids
+        assert user2['id'] not in ids
+        assert user3['id'] in ids
+
+        expired_user = expired_users[0]
+        activities = expired_user['activities']
+        assert len(activities) == 2
+        assert activities[0]['activity_type'] == activity['activity_type']
+        assert activities[1]['activity_type'] == 'new user'
+
+    @mock.patch('ckanext.unhcr.commands.notify_renewal_request')
+    def test_request_renewal(self, mock_notify_renewal_request):
+        user = factories.ExternalUser()
+        dataset = factories.Dataset()
+
+        activity = core_factories.Activity(
+            user_id=user["id"],
+            object_id=dataset["id"],
+            activity_type="new package",
+            data={"package": dataset, "actor": "Mr Someone"},
+        )
+
+        mock_notify_renewal_request.return_value = []
+        created, reason = request_renewal(user, activity)
+        assert created
+        assert reason is None
+
+        mock_notify_renewal_request.assert_called_once()
+        call = mock_notify_renewal_request.call_args_list[0]
+        args, kwargs = call
+        user_id = kwargs['user_id']
+        message = kwargs['message']
+        assert user_id == user['id']
+        assert 'User {} will expire on'.format(user['name']) in message
+        assert 'Last activity: "{}" registered on'.format(activity['activity_type']) in message
+
+        created, reason = request_renewal(user, activity)
+        assert not created
+        assert reason == 'The request already exists'
+
+    @mock.patch('ckanext.unhcr.commands.notify_renewal_request')
+    def test_users_who_can_approve(self, mock_notify_renewal_request):
+        """ Check what users can approve a renewal """
+        user = factories.ExternalUser()
+        container_admin = core_factories.User()
+        container_member = core_factories.User()
+        curator = core_factories.User()
+        container = factories.DataContainer(
+            users=[
+                {"name": container_admin["name"], "capacity": "admin"},
+                {"name": container_member["name"], "capacity": "member"},
+            ]
+        )
+        dataset = factories.Dataset(
+            user=user,
+            owner_org=container['id']
+        )
+
+        activity = create_curation_activity(
+            'dataset_approved',
+            dataset['id'],
+            dataset['name'],
+            curator['id'],
+            message='x'
+        )
+
+        mock_notify_renewal_request.return_value = []
+        created, reason = request_renewal(user, activity)
+        assert created
+        assert reason is None
+        mock_notify_renewal_request.assert_called_once()
+
+        access_requests = get_existing_access_request(
+            user_id=user['id'],
+            object_id=user['id'],
+            status='requested',
+        )
+        access_request = access_requests[0]
+        users_who_can_approve = access_request.data.get('users_who_can_approve')
+        assert user['id'] not in users_who_can_approve
+        assert container_member['id'] not in users_who_can_approve
+
+        assert container_admin['id'] in users_who_can_approve
+        assert curator['id'] in users_who_can_approve
 
     def test_user_show(self):
         sysadmin = core_factories.Sysadmin()
@@ -300,6 +466,54 @@ class TestExternalUserUpdateState(object):
                 {"user": requesting_user["name"]},
                 {'id': target_user['id'], 'state': model.State.ACTIVE}
             )
+
+    def test_renewal_not_allowed(self):
+        target_user = factories.ExternalUser()
+        access_request_data_dict = {
+            'object_id': target_user['id'],
+            'object_type': 'user',
+            'message': 'asdf',
+            'role': 'member',
+            'data': {
+                'user_request_type': USER_REQUEST_TYPE_RENEWAL,
+                'users_who_can_approve': [self.container1_admin['id']]
+            }
+        }
+        toolkit.get_action(u'access_request_create')(
+            {'user': target_user['id'], 'ignore_auth': True},
+            access_request_data_dict
+        )
+        requesting_user = core_factories.User()
+
+        action = toolkit.get_action("external_user_update_state")
+        with pytest.raises(toolkit.NotAuthorized):
+            action(
+                {"user": requesting_user["name"]},
+                {'id': target_user['id'], 'state': model.State.ACTIVE, 'renew_expiry_date': True}
+            )
+
+    def test_renewal_allowed(self):
+        target_user = factories.ExternalUser()
+        access_request_data_dict = {
+            'object_id': target_user['id'],
+            'object_type': 'user',
+            'message': 'asdf',
+            'role': 'member',
+            'data': {
+                'user_request_type': USER_REQUEST_TYPE_RENEWAL,
+                'users_who_can_approve': [self.container1_admin['id']]
+            }
+        }
+        toolkit.get_action(u'access_request_create')(
+            {'user': target_user['id'], 'ignore_auth': True},
+            access_request_data_dict
+        )
+
+        action = toolkit.get_action("external_user_update_state")
+        action(
+            {"user": self.container1_admin["name"]},
+            {'id': target_user['id'], 'state': model.State.ACTIVE, 'renew_expiry_date': True}
+        )
 
     def test_requesting_user_is_not_admin_of_required_container(self):
         target_user = factories.ExternalUser(state=model.State.PENDING)

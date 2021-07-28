@@ -18,6 +18,8 @@ from ckan.model.types import make_uuid
 log = logging.getLogger(__name__)
 
 Base = declarative_base(metadata=metadata)
+USER_REQUEST_TYPE_NEW = 'new-user'
+USER_REQUEST_TYPE_RENEWAL = 'renewal'
 
 
 class TimeSeriesMetric(Base):

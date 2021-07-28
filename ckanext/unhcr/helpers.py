@@ -6,6 +6,7 @@ from jinja2 import Markup, escape
 from ckan import model
 from ckan.lib import uploader
 from operator import itemgetter
+from ckan.authz import get_group_or_org_admin_ids
 from ckan.logic import ValidationError
 from ckan.plugins import toolkit, plugin_loaded
 import ckan.lib.helpers as core_helpers
@@ -16,7 +17,7 @@ from ckanext.scheming.helpers import (
 )
 from ckanext.unhcr import utils
 from ckanext.unhcr import __VERSION__
-from ckanext.unhcr.models import AccessRequest
+from ckanext.unhcr.models import AccessRequest, USER_REQUEST_TYPE_NEW
 
 
 log = logging.getLogger(__name__)
@@ -346,11 +347,16 @@ def get_existing_access_request(user_id, object_id, status):
 
 
 def get_access_request_for_user(user_id):
-    return model.Session.query(AccessRequest).filter(
+
+    requests = model.Session.query(AccessRequest).filter(
         AccessRequest.object_id==user_id,
         AccessRequest.object_type=='user',
-    ).one_or_none()
+    ).all()
 
+    for request in requests:
+        if request.data.get('user_request_type', USER_REQUEST_TYPE_NEW) == USER_REQUEST_TYPE_NEW:
+            return request
+    return None
 
 # Deposited datasets
 
@@ -1047,3 +1053,39 @@ def nl_to_br(text):
 
 def is_plugin_loaded(plugin_name):
     return plugin_loaded(plugin_name)
+
+
+def get_user_packages(user_id):
+    datasets = model.Session.query(model.Package).filter_by(creator_user_id=user_id)
+    return datasets
+
+
+def get_user_curators(user_id):
+    """ Get who approved user datasets """
+    datasets = get_user_packages(user_id)
+    curators = []
+    for dataset in datasets:
+        curations = model.Session.query(
+            model.Activity
+        ).filter_by(
+            object_id=dataset.id,
+            activity_type="changed curation state",
+        ).all()
+        for curation in curations:
+            if curation.data.get('curation_activity') == 'dataset_approved':
+                if curation.user_id not in curators:
+                    curators.append(curation.user_id)
+
+    return curators
+
+
+def get_user_admins(user_id):
+    """ get containers admins for user datasets """
+    datasets = get_user_packages(user_id)
+    user_admins = []
+    for dataset in datasets:
+        for admin in get_group_or_org_admin_ids(dataset.owner_org):
+            if admin not in user_admins:
+                user_admins.append(admin)
+
+    return user_admins

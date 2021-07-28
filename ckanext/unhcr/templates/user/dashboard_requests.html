@@ -93,6 +93,20 @@
     </p>
   {% endif %}
 
+  <h2><i class="fa fa-user"></i>Requests for renewal User Accounts</h2>
+  <hr>
+  {% if user_renewal_requests %}
+    {% snippet
+      'user/snippets/access_request_list.html',
+      requests=user_renewal_requests,
+      table_type='User'
+    %}
+  {% else %}
+    <p class="empty">
+      No outstanding requests
+    </p>
+  {% endif %}
+
 {% endblock %}
 
 {% block footer %}
@@ -100,4 +114,5 @@
   {% snippet 'user/snippets/access_request_modals.html', requests=container_access_requests %}
   {% snippet 'user/snippets/access_request_modals.html', requests=dataset_access_requests %}
   {% snippet 'user/snippets/access_request_modals.html', requests=user_account_requests %}
+  {% snippet 'user/snippets/access_request_modals.html', requests=user_renewal_requests %}
 {% endblock %}

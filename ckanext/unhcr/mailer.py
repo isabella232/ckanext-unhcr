@@ -9,6 +9,9 @@ from ckan.lib import jinja_extensions
 from ckan.lib import mailer as core_mailer
 from ckan.lib.dictization import model_dictize
 from ckanext.unhcr import helpers
+from ckanext.unhcr.models import USER_REQUEST_TYPE_RENEWAL
+
+
 log = logging.getLogger(__name__)
 
 
@@ -360,7 +363,47 @@ def compose_account_approved_email_body(recipient):
     return render_jinja2('emails/user/account_approved.html', context)
 
 
+def notify_renewal_request(user_id, message, recipient_ids):
+    """ A user require to renew their account.
+        Ask all related related users to validate this request """
+
+    user = model.User.get(user_id)
+    subj = 'Renewal request for {}'.format(user.name)
+    context = {
+        'requesting_user': user,
+        'message': message,
+        'h': toolkit.h
+    }
+
+    if recipient_ids == []:
+        recipient_ids = [sysadmin['id'] for sysadmin in _get_sysadmins()]
+    for recipient_id in recipient_ids:
+        recipient = model.User.get(recipient_id)
+        context['recipient'] = recipient
+        body = render_jinja2('emails/access_requests/access_renewal_request.html', context)
+        toolkit.enqueue_job(mail_user_by_id, [recipient_id, subj, body])
+
+    return recipient_ids
+
+
+def notify_rejection(request, message):
+    recipient = model.User.get(request['user_id'])
+    obj = toolkit.get_action('{}_show'.format(request['object_type']))(
+        {'user': toolkit.c.user}, {'id': request['object_id']}
+    )
+    if request['object_type'] == 'user':
+        if request['data'].get('user_request_type') == USER_REQUEST_TYPE_RENEWAL:
+            # we don't notify renewal rejections
+            return
+        subj = '[UNHCR RIDL] - User account rejected'
+    else:
+        subj = compose_request_rejected_email_subj(obj)
+    body = compose_request_rejected_email_body(request['object_type'], recipient, obj, message)
+    mail_user_by_id(recipient.name, subj, body)
+
+
 # Clam AV Scan
+
 
 def get_infected_file_email_recipients():
     return _get_sysadmins()

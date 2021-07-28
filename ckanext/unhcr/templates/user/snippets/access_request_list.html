@@ -12,7 +12,11 @@
             requested {{ req.role }} access to container
             {{ h.link_to(req.object.title or req.object.name, h.url_for('data-container.read', id=req.object.name, qualified=True)) }}
           {% elif req.object_type == 'user' %}
+            {% if req.is_renewal %}
+            is about to expire and a renewal request was generated
+            {% else %}
             requested access to deposit datasets
+            {% endif %}
           {% else %}
             &nbsp;
           {% endif %}

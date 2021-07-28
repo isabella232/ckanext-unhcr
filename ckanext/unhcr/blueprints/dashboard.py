@@ -43,7 +43,12 @@ def requests():
         req for req in access_requests if req['object_type'] == 'package'
     ]
     user_account_requests = [
-        req for req in access_requests if req['object_type'] == 'user'
+        req for req in access_requests
+        if req['object_type'] == 'user' and not req['is_renewal']
+    ]
+    user_renewal_requests = [
+        req for req in access_requests
+        if req['object_type'] == 'user' and req['is_renewal']
     ]
 
     context = {
@@ -62,6 +67,7 @@ def requests():
     template_vars['container_access_requests'] = container_access_requests
     template_vars['dataset_access_requests'] = dataset_access_requests
     template_vars['user_account_requests'] = user_account_requests
+    template_vars['user_renewal_requests'] = user_renewal_requests
 
     return toolkit.render('user/dashboard_requests.html', template_vars)
 

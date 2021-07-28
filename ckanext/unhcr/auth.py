@@ -6,7 +6,7 @@ from ckanext.saml2auth.helpers import is_default_login_enabled
 from ckan.logic.auth import get_resource_object
 import ckanext.datastore.logic.auth as auth_datastore_core
 from ckanext.unhcr import helpers
-from ckanext.unhcr.models import AccessRequest
+from ckanext.unhcr.models import AccessRequest, USER_REQUEST_TYPE_NEW, USER_REQUEST_TYPE_RENEWAL
 from ckanext.unhcr.utils import get_module_functions, is_saml2_user
 log = logging.getLogger(__name__)
 
@@ -339,6 +339,7 @@ def access_request_list_for_user(context, data_dict):
         {"user": user},
         {"id": user, "permission": "admin"}
     )
+
     return {'success': len(orgs) > 0}
 
 
@@ -369,7 +370,11 @@ def access_request_update(context, data_dict):
             )
         }
     elif request.object_type == 'user':
-        return external_user_update_state(context, {'id': request.object_id})
+        data_dict = {
+            'id': request.object_id,
+            'renew_expiry_date': request.data.get('user_request_type', USER_REQUEST_TYPE_NEW) == USER_REQUEST_TYPE_RENEWAL
+        }
+        return external_user_update_state(context, data_dict)
 
 
 def access_request_create(context, data_dict):
@@ -377,6 +382,9 @@ def access_request_create(context, data_dict):
 
 
 def external_user_update_state(context, data_dict):
+    # New users only can be approved by admins and renewal could also be approved by curators/editors
+
+    renew_expiry_date = data_dict.pop('renew_expiry_date', False)
     m = context.get('model', model)
     request_userobj = context.get('auth_user_obj')
     if not request_userobj:
@@ -392,8 +400,6 @@ def external_user_update_state(context, data_dict):
 
     if not target_userobj.external:
         return {'success': False, 'msg': "Can only perform this action on an external user"}
-    if target_userobj.state != m.State.PENDING:
-        return {'success': False, 'msg': "Can only change state of a 'pending' user"}
 
     access_requests = model.Session.query(AccessRequest).filter(
         AccessRequest.user_id==target_userobj.id,
@@ -402,13 +408,40 @@ def external_user_update_state(context, data_dict):
         AccessRequest.object_type=='user',
     ).all()
 
-    if not access_requests or len(access_requests) > 1:
+    if renew_expiry_date:
+        renewal_requests = [
+            req for req in access_requests
+            if req.data.get('user_request_type', USER_REQUEST_TYPE_NEW) == USER_REQUEST_TYPE_RENEWAL
+        ]
+        if len(renewal_requests) != 1:
+            return {
+                'success': False,
+                'msg': "User must be associated with exactly one pending renewal request"
+            }
+        renewal_request = renewal_requests[0]
+        # Just a renewal, only "users_who_can_approve" are allowed
+        return {'success': request_userobj.id in renewal_request.data.get('users_who_can_approve')}
+
+    # ==========================================
+    # This is a new user asking for permission
+
+    if target_userobj.state != m.State.PENDING:
+        return {'success': False, 'msg': "Can only change state of a 'pending' user"}
+
+    if not access_requests:
+        access_requests_new_user = []
+    else:
+        access_requests_new_user = [
+            req for req in access_requests
+            if req.data.get('user_request_type', USER_REQUEST_TYPE_NEW) == USER_REQUEST_TYPE_NEW
+        ]
+    if len(access_requests_new_user) != 1:
         return {
             'success': False,
             'msg': "User must be associated with exactly one pending access request"
         }
 
-    for container in access_requests[0].data['default_containers']:
+    for container in access_requests_new_user[0].data['default_containers']:
         if has_user_permission_for_group_or_org(
             container, request_userobj.id, 'admin'
         ):
