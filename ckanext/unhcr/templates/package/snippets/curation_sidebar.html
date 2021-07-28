@@ -11,6 +11,7 @@
   </section>
 
   {# Actions #}
+  {% if pkg.state == 'active' %}
   <section class="module module-narrow module-shallow curation-actions">
     <h2 class="module-heading"><i class="fa fa-bars"></i>Actions</h2>
 
@@ -81,6 +82,7 @@
     </div>
 
   </section>
+  {% endif %}
 
   {# Contacts #}
   <section class="module module-narrow module-shallow curation-contacts">
@@ -116,6 +118,7 @@
   </section>
 
   {# Validation #}
+  {% if pkg.state == 'active' %}
   <section class="module module-narrow module-shallow curation-validation">
     {% if curation.error %}
       <h2 class="module-heading"><i class="fa fa-times"></i>Validation</h2>
@@ -143,6 +146,7 @@
       </p>
     {% endif %}
   </section>
+  {% endif %}
 
   {# Modals #}
   <div class="modals">
