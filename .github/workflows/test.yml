@@ -58,6 +58,18 @@ jobs:
       - name: Initialize DB
         run: ./bin/init-db.bash
 
+      - name: Ensure assets are up-to-date
+        run: |
+          apk add --update npm
+          npm ci
+          make assets
+          git diff --exit-code ./ckanext/unhcr/fanstatic
+
+      - name: Ensure deposited_dataset schema is up-to-date
+        run: |
+          python3 scripts/generate_deposited_dataset_schema.py
+          git diff --exit-code ./ckanext/unhcr/schemas
+
       - name: Run tests
         run: |
           pytest \
