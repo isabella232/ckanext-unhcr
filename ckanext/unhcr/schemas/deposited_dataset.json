@@ -3,6 +3,7 @@
     "dataset_type": "deposited-dataset",
     "about": "CKAN dataset schema customized for the UN HCR RIDL project",
     "about_url": "http://github.com/okfn/ckanext-unhcr",
+    "warning": "This is an automatically generated file. Do not change it manually.",
     "dataset_fields": [
         {
             "field_name": "title",
@@ -94,10 +95,11 @@
         {
             "field_name": "visibility",
             "label": "Internal Access Level",
-            "validators": "not_missing visibility_validator",
+            "validators": "ignore_empty ignore_missing visibility_validator",
             "preset": "select",
             "display_snippet": null,
-            "required": true,
+            "form_snippet": null,
+            "required": false,
             "choices": [
                 {
                     "value": "restricted",
@@ -790,7 +792,7 @@
             "label": "Resource type",
             "form_snippet": "resource_type.html",
             "preset": "select",
-            "required": false,
+            "required": true,
             "choices": [
                 {
                     "label": "Data file",
@@ -821,6 +823,24 @@
             "form_snippet": "markdown.html",
             "label": "Description",
             "required": false
+        },
+        {
+            "field_name": "visibility",
+            "label": "Internal Access Level",
+            "validators": "not_missing visibility_validator_resource",
+            "preset": "select",
+            "display_snippet": null,
+            "required": true,
+            "choices": [
+                {
+                    "value": "restricted",
+                    "label": "Private"
+                },
+                {
+                    "value": "public",
+                    "label": "Internally Visible"
+                }
+            ]
         },
         {
             "field_name": "format",

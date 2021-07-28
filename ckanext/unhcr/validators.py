@@ -192,6 +192,16 @@ def visibility_validator(key, data, error, context):
         data[('private',)] = False
 
 
+def visibility_validator_resource(key, data, error, context):
+    ''' Validates visibility has a correct value.
+    Visibility only has two values in the schema, 'restricted' and 'public'. 
+    '''
+    value = data.get(key)
+
+    if value not in ('restricted', 'public'):
+        raise Invalid('Invalid value for the visibility field')
+
+
 # File types
 
 def file_type_validator(key, data, errors, context):

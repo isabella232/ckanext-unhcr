@@ -25,7 +25,6 @@ class TestHooks(object):
             'archived': 'False',
             'data_collector': 'test',
             'data_collection_technique': 'nf',
-            'visibility': 'public',
             'name': 'test',
             'notes': 'test',
             'unit_of_measurement': 'test',
@@ -43,6 +42,7 @@ class TestHooks(object):
             'date_range_start': '2018-01-01',
             'date_range_end': '2019-01-01',
             'process_status': 'anonymized',
+            'visibility': 'public',
             'version': '1',
         }
 

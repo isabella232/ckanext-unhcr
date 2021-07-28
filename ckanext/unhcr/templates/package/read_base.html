@@ -1,11 +1,5 @@
 {% ckan_extends %}
 
-{% set can_request_access = (
-  pkg_dict.resources|length > 0 and
-  not h.can_download(pkg_dict) and
-  not h.get_existing_access_request(c.userobj.id, pkg_dict.id, 'requested')
-) %}
-
 {% if pkg.type == 'deposited-dataset' %}
   {% set curation = h.get_deposited_dataset_user_curation_status(pkg_dict, c.userobj.id) %}
 {% endif %}
@@ -28,18 +22,7 @@
 {% endblock %}
 
 {% block content_action %}
-  {% if can_request_access %}
-    <a
-      href="#collaboration-dataset-request-access"
-      role="button"
-      class="btn"
-      data-toggle="modal"
-      title="Request access to {{ pkg.title }}"
-      data-target="#collaboration-dataset-request-access"
-    >
-      <i class="fa fa-key"></i>Request Access
-    </a>
-  {% endif %}
+
   {% if h.organizations_available('create_dataset') and not is_activity_archive %}
     {% link_for _('Copy'), named_route='unhcr_%s.copy' % dataset_type, dataset_id=pkg.id, class_='btn', icon='copy' %}
   {% endif %}
@@ -67,10 +50,10 @@
 
 {% block footer %}
   {{ super() }}
-  {% if can_request_access %}
+  {% if h.can_request_access(c.userobj, pkg_dict) %}
     {% snippet "package/snippets/collaboration_modals.html", pkg=pkg %}
   {% endif %}
   {% if pkg.type == 'deposited-dataset' %}
     {% snippet "package/snippets/curation_modals.html", pkg=pkg, curation=curation %}
   {% endif %}
-{% endblock %}
+  {% endblock %}

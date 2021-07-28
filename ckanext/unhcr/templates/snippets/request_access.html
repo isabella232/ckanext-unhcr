@@ -1,15 +1,17 @@
 <div class="alert alert-warning">
   {% if pkg.owner_org %}
     <p>
-      {{ _("You are not authorized to download the resources from this dataset.") }}
+      {{ _("You are not authorized to download the private resources from this dataset.") }}
       If you need access to the dataset, you can
       <a
         href="#collaboration-dataset-request-access"
         data-toggle="modal"
         title="Request access to {{ pkg.title }}"
+        role="button"
+        class="btn"
         data-target="#collaboration-dataset-request-access"
       >
-        Request access
+      <i class="fa fa-key"></i>Request access
       </a>
     </p>
   {% endif %}

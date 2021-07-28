@@ -62,11 +62,11 @@ class TestAuthUI(object):
         )
         dataset = factories.Dataset(
             owner_org=data_container['id'],
-            visibility='restricted'
         )
         resource = factories.Resource(
             package_id=dataset['id'],
             url_type='upload',
+            visibility='restricted',
         )
         helpers.call_action(
             'package_collaborator_create',
@@ -85,10 +85,7 @@ class TestAuthUI(object):
             # these users can see the dataset_read view
             assert 'You must be logged in' not in response.body
             # these users can also download the resource attached to dataset
-            assert (
-                'You are not authorized to download the resources from this dataset'
-                not in response.body
-            )
+            assert 'You are not authorized to download the private resources from this dataset' not in response.body
 
         response = app.get(
             '/dataset/{}'.format(dataset['name']),
@@ -98,12 +95,9 @@ class TestAuthUI(object):
         # other_user is allowed to see the dataset_read view too
         assert 'You must be logged in' not in response.body
         # other_user is not allowed to download the resource
-        assert (
-            'You are not authorized to download the resources from this dataset'
-            in response.body
-        )
+        assert 'You are not authorized to download the private resources from this dataset' in response.body
         # but they can request access to it if they like
-        assert '<i class="fa fa-key"></i>Request Access' in response.body
+        assert 'If you need access to the dataset' in response.body
 
     def test_external_users_endpoints(self, app):
         external_user = factories.ExternalUser()
@@ -250,11 +244,11 @@ class TestAuthUnit(object):
         )
         dataset = factories.Dataset(
             owner_org=data_container['id'],
-            visibility='restricted'
         )
         resource = factories.Resource(
             package_id=dataset['id'],
             url_type='upload',
+            visibility='restricted'
         )
         helpers.call_action(
             'package_collaborator_create',
@@ -718,7 +712,6 @@ class TestExternalUserPackageAuths(object):
         )
         self.dataset = factories.Dataset(
             owner_org=target['id'],
-            visibility='restricted'
         )
 
         self.external_dataset_resources = [
@@ -727,12 +720,14 @@ class TestExternalUserPackageAuths(object):
                 package_id=self.external_user_dataset['id'],
                 url_type='upload',
                 user=self.external_user,
+                visibility='restricted'
             ),
             factories.Resource(
                 description='resource created by someone else attached to deposited dataset created by external_user',
                 package_id=self.external_user_dataset['id'],
                 url_type='upload',
-                user=user
+                user=user,
+                visibility='restricted'
             ),
         ]
         self.internal_dataset_resources = [

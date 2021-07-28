@@ -296,7 +296,7 @@ class TestPendingRequests(object):
         )
         container3 = factories.DataContainer()
         dataset1 = factories.Dataset(
-            owner_org=container3["id"], visibility="restricted"
+            owner_org=container3["id"],
         )
         requesting_user = core_factories.User()
         model.Session.add(

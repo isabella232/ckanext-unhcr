@@ -987,6 +987,18 @@ def can_download(package_dict):
         return False
 
 
+def can_request_access(user, pkg):
+    """ Define if user is able to request access for private resources in dataset """
+    resources = pkg['resources'] if type(pkg) == dict else pkg.resources
+    if len(resources) == 0:
+        return False
+    if can_download(pkg):
+        return False
+    pkg_id = pkg['id'] if type(pkg) == dict else pkg.id
+    access_already_requested = get_existing_access_request(user.id, pkg_id, 'requested')
+    return not access_already_requested
+
+
 def get_resource_file_path(resource):
     if resource.get(u'url_type') == u'upload':
         upload = uploader.get_resource_uploader(resource)

@@ -205,12 +205,12 @@ def resource_download(context, data_dict):
     of a resource file, as opposed to seeing the metadata of a resource (handled
     by `resource_show`
 
-    If the parent dataset is marked as public or private in the custom visibility
+    If this resource is marked as public or private in the custom visibility
     field, the authorization check is deferred to `resource_show` as the standard
     logic applies (we assume that the necessary validators are applied to keep
     `visibility` and `private` fields in sync).
 
-    If the parent dataset is marked as `restricted` then  only users belonging to
+    If this resource is marked as `restricted` then only users belonging to
     the dataset organization can download the file.
     '''
 
@@ -220,7 +220,7 @@ def resource_download(context, data_dict):
     resource = get_resource_object(context, data_dict)
     dataset = toolkit.get_action('package_show')(
         {'ignore_auth': True}, {'id': resource.package_id})
-    visibility = dataset.get('visibility')
+    visibility = resource.extras.get('visibility')
 
     # Use default check
     user_id = getattr(context.get('auth_user_obj'), 'id', None)

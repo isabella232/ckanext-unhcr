@@ -56,6 +56,9 @@ def process_dataset_on_update(package_id):
 # Internal
 
 def _process_dataset_fields(package_id):
+    """ Process some specific fields that depend on others.
+        These fields should be updated every time we save a 
+        package (create or update). """
 
     # Get package
     package_show = toolkit.get_action('package_show')
@@ -65,7 +68,11 @@ def _process_dataset_fields(package_id):
     package = _modify_package(package)
 
     # Update package
-    default_user = toolkit.get_action('get_site_user')({ 'ignore_auth': True })
+    default_user = toolkit.get_action('get_site_user')({'ignore_auth': True})
+
+    # we only want to update visibility for resources, nothing else
+    to_update_resources = [{'id': res['id'], 'visibility': res['visibility']} for res in package['resources']]
+
     data_dict = {
         'match': {'id': package['id']},
         'update': {
@@ -74,6 +81,7 @@ def _process_dataset_fields(package_id):
             'visibility': package['visibility'],
             'date_range_start': package['date_range_start'],
             'date_range_end': package['date_range_end'],
+            'resources': to_update_resources,
         },
     }
     package_revise = toolkit.get_action('package_revise')
@@ -82,21 +90,26 @@ def _process_dataset_fields(package_id):
 
 def _modify_package(package):
 
+    # Update resources before update package
+    for resource in package.get('resources', []):
+        if resource.get('identifiability') == 'personally_identifiable':
+            resource['visibility'] = 'restricted'
+
     # data_range
     package = _modify_date_range(package, 'date_range_start', 'date_range_end')
 
     # process_status
-    weights = {'raw' : 3, 'cleaned': 2, 'anonymized': 1}
+    weights = {'raw': 3, 'cleaned': 2, 'anonymized': 1}
     package = _modify_weighted_field(package, 'process_status', weights)
 
     # identifiability
-    weights = {'personally_identifiable' : 4, 'anonymized_enclave': 3, 'anonymized_scientific': 2,  'anonymized_public': 1}
+    weights = {'personally_identifiable': 4, 'anonymized_enclave': 3, 'anonymized_scientific': 2,  'anonymized_public': 1}
     package = _modify_weighted_field(package, 'identifiability', weights)
 
     # visibility
-    # TODO: clarify what level of anonymization required
-    if package['identifiability'] == 'personally_identifiable':
-        package['visibility'] = 'restricted'
+    # if some of the resources is restricted then the package will be restricted
+    weights = {'restricted': 2, 'public': 1}
+    package = _modify_weighted_field(package, 'visibility', weights, default_value='public')
 
     return package
 
@@ -118,17 +131,18 @@ def _modify_date_range(package, key_start, key_end):
     return package
 
 
-def _modify_weighted_field(package, key, weights):
+def _modify_weighted_field(package, key, weights, default_value=None):
+    """ Set a Package level field considering the MAX value for the same field at all resources """
 
     # Reset for generated
-    package[key] = None
+    package[key] = default_value
 
     # Iterate resources
     for resource in package['resources']:
         if resource.get(key) is None:
             continue
-        package_weight = weights.get(package[key], 0)
-        resource_weight = weights.get(resource[key], 0)
+        package_weight = weights.get(package.get(key), 0)
+        resource_weight = weights.get(resource.get(key), 0)
         if resource_weight > package_weight:
             package[key] = resource[key]
 

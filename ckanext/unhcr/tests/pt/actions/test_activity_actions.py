@@ -23,11 +23,12 @@ class TestActivityListActions(object):
             ]
         )
         self.dataset1 = factories.Dataset(
-            owner_org=self.container1["id"], visibility="restricted"
+            owner_org=self.container1["id"]
         )
         self.resource1 = factories.Resource(
             package_id=self.dataset1['id'],
             upload=mocks.FakeFileStorage(),
+            visibility="restricted",
             url = "http://fakeurl/test.txt",
             url_type='upload',
         )

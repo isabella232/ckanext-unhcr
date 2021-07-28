@@ -36,6 +36,7 @@ class Resource(factories.Resource):
     date_range_end = '2019-01-01'
     process_status = 'anonymized'
     version = '1'
+    visibility = 'public'
 
 
 class DepositedDataset(factories.Dataset):

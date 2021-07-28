@@ -1,5 +1,20 @@
 {% ckan_extends %}
 
+{% block resource_item_title %}
+
+  {% if res.visibility == 'restricted' %}
+
+  <span class="dataset-private label label-inverse">
+      <i class="fa fa-lock"></i>
+      {{ _('Private') }}
+    </span>
+
+  {% endif %}
+
+  {{ super() }}
+
+  {% endblock %}
+
 {% block resource_item_explore_links %}
   <li>
     <a href="{{ url }}">

@@ -45,7 +45,6 @@ class TestResourceViews(object):
             sampling_procedure = 'nonprobability',
             operational_purpose_of_data = 'cartography',
             user=self.user1,
-            visibility='restricted',
         )
 
         # Resources
@@ -53,6 +52,7 @@ class TestResourceViews(object):
             name='resource1',
             package_id='dataset1',
             url_type='upload',
+            visibility='restricted',
             upload=mocks.FakeFileStorage(),
         )
 
@@ -207,7 +207,7 @@ class TestResourceViews(object):
             'version': self.resource1['version'],
             'process_status': self.resource1['process_status'],
             'identifiability': self.resource1['identifiability'],
-
+            'visibility': self.resource1['visibility'],
             'url': 'test.txt',
             'save': ''
 

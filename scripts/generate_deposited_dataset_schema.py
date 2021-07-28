@@ -15,15 +15,16 @@ def generate_deposited_dataset_schema():
 
     # Update dataset type
     schema['dataset_type'] = 'deposited-dataset'
+    schema['warning'] = 'This is an automatically generated file. Do not change it manually.'
 
     # Remove dataset required flags
-    for field in schema['dataset_fields'] + schema['resource_fields']:
-        if field['field_name'] not in ['title', 'visibility']:
+    for field in schema['dataset_fields']:
+        if field['field_name'] not in ['title']:
             field['required'] = False
 
     # Remove resource required flags
-    for field in schema['resource_fields'] + schema['resource_fields']:
-        if field['field_name'] not in ['type']:
+    for field in schema['resource_fields']:
+        if field['field_name'] not in ['title', 'type', 'visibility']:
             field['required'] = False
 
     for field in schema['dataset_fields'] + schema['resource_fields']:
