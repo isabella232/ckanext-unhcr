@@ -1,5 +1,6 @@
 import factory
 from ckantoolkit.tests import factories
+from ckanext.unhcr.utils import get_internal_domains
 
 
 def _generate_email(user):
@@ -52,3 +53,27 @@ class ExternalUser(factories.User):
     email = factory.LazyAttribute(_generate_email)
     focal_point = 'focal-point'
     default_containers = []
+
+
+def _generate_internal_email(user):
+    """Return an email address for the given User factory stub object."""
+
+    internal_domain = get_internal_domains()[0]
+    return "{0}@{1}".format(user.name, internal_domain).lower()
+
+
+def _generate_plugin_extras(user):
+
+    plugin_extras = {
+        'saml2auth': {
+            'saml_id': "saml_id_{}".format(user.name)
+        }
+    }
+
+    return plugin_extras
+
+
+class InternalUser(factories.User):
+
+    email = factory.LazyAttribute(_generate_internal_email)
+    plugin_extras = factory.LazyAttribute(_generate_plugin_extras)

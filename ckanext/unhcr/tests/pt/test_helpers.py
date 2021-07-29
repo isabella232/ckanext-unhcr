@@ -848,6 +848,47 @@ class TestDepositedDatasetHelpers(object):
 
 
 @pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
+class TestUserOrgs(object):
+
+    def setup(self):
+        self.internal_user = factories.InternalUser()
+        self.internal_editor_user = factories.InternalUser()
+        self.internal_admin_user = factories.InternalUser()
+        self.external_user = factories.ExternalUser()
+
+        self.data_container = factories.DataContainer(
+            users=[
+                {'name': self.internal_admin_user['name'], 'capacity': 'admin'},
+                {'name': self.internal_editor_user['name'], 'capacity': 'editor'},
+            ]
+        )
+
+    def test_empty_internal_user(self):
+        assert 0 == len(helpers.user_orgs(permission='admin', user_name=self.internal_user['name']))
+        assert 0 == len(helpers.user_orgs(permission='create_dataset', user_name=self.internal_user['name']))
+        assert not helpers.user_is_container_admin(self.internal_user['name'])
+        assert not helpers.user_is_editor(self.internal_user['name'])
+
+    def test_editor_internal_user(self):
+        assert 0 == len(helpers.user_orgs(permission='admin', user_name=self.internal_editor_user['name']))
+        assert 1 == len(helpers.user_orgs(permission='create_dataset', user_name=self.internal_editor_user['name']))
+        assert not helpers.user_is_container_admin(self.internal_editor_user['name'])
+        assert helpers.user_is_editor(self.internal_editor_user['name'])
+
+    def test_admin_internal_user(self):
+        assert 1 == len(helpers.user_orgs(permission='admin', user_name=self.internal_admin_user['name']))
+        assert 1 == len(helpers.user_orgs(permission='create_dataset', user_name=self.internal_admin_user['name']))
+        assert helpers.user_is_container_admin(self.internal_admin_user['name'])
+        assert helpers.user_is_editor(self.internal_admin_user['name'])
+
+    def test_external_user(self):
+        assert 0 == len(helpers.user_orgs(permission='admin', user_name=self.external_user['name']))
+        assert 0 == len(helpers.user_orgs(permission='create_dataset', user_name=self.external_user['name']))
+        assert not helpers.user_is_container_admin(self.external_user['name'])
+        assert not helpers.user_is_editor(self.external_user['name'])
+
+
+@pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
 class TestRenewalMailer(object):
 
     def setup(self):

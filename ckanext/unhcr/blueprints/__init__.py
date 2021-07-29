@@ -10,3 +10,4 @@ from .metrics import unhcr_metrics_blueprint
 from .resource import unhcr_resource_blueprint
 from .search_index import unhcr_search_index_blueprint
 from .user import unhcr_user_blueprint
+from .kobo import unhcr_kobo_blueprint

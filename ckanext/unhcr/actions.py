@@ -18,6 +18,7 @@ from ckan.lib.search import index_for, commit
 import ckan.logic as core_logic
 import ckan.lib.dictization.model_dictize as model_dictize
 from ckanext.unhcr import helpers, mailer, utils
+from ckanext.unhcr.kobo.api import KoBoAPI
 from ckanext.unhcr.models import AccessRequest, USER_REQUEST_TYPE_NEW, USER_REQUEST_TYPE_RENEWAL
 from ckanext.unhcr.utils import is_saml2_user
 
@@ -1259,12 +1260,11 @@ def user_show(up_func, context, data_dict):
     user_obj = _get_user_obj(context)
     user['external'] = user_obj.external
 
-    extras = _init_plugin_extras(user_obj.plugin_extras)
-    extras = _validate_plugin_extras(extras['unhcr'])
-
-    user['focal_point'] = extras['focal_point']
-    user['expiry_date'] = extras['expiry_date']
-    user['default_containers'] = extras['default_containers']
+    plugin_extras = _init_plugin_extras(user_obj.plugin_extras)
+    unhcr_extras = _validate_plugin_extras(plugin_extras['unhcr'])
+    user['focal_point'] = unhcr_extras['focal_point']
+    user['expiry_date'] = unhcr_extras['expiry_date']
+    user['default_containers'] = unhcr_extras['default_containers']
 
     return user
 
@@ -1318,10 +1318,41 @@ def user_update(up_func, context, data_dict):
         user_obj = m.User.get(user_id)
 
         if user_obj is not None and is_saml2_user(user_obj):
+            # Only allow to change apiKey or kobo_token
+            up_dict = toolkit.get_action('user_show')(context, {'id': user_id})
 
-            if data_dict.get('apikey') and user_obj.apikey != data_dict.get('apikey'):
-                up_dict = toolkit.get_action('user_show')(context.copy(), {'id': user_id})
+            new_api_key = data_dict.get('apikey')
+            apikey_changed = new_api_key and data_dict.get('apikey') and user_obj.apikey != new_api_key
+            if apikey_changed:
                 up_dict['apikey'] = data_dict.get('apikey')
+
+            plugin_extras = {} if user_obj.plugin_extras is None else user_obj.plugin_extras
+            old_kobo_token = plugin_extras.get('unhcr', {}).get('kobo_token')
+            new_kobo_token = data_dict.get('plugin_extras', {}).get('unhcr', {}).get('kobo_token')
+            kobo_token_changed = new_kobo_token and old_kobo_token != new_kobo_token
+
+            if kobo_token_changed:
+
+                up_dict['plugin_extras'] = copy.deepcopy(plugin_extras)
+                if 'unhcr' not in up_dict['plugin_extras']:
+                    up_dict['plugin_extras']['unhcr'] = {}
+
+                if new_kobo_token == 'REMOVE':
+                    del up_dict['plugin_extras']['unhcr']['kobo_token']
+                else:
+                    if context.get('validate_token', True):
+                        # check if the token is valid
+                        kobo_url = toolkit.config.get('ckanext.unhcr.kobo_url', 'https://kobo.unhcr.org')
+                        kobo = KoBoAPI(new_kobo_token, kobo_url)
+                        if not kobo.test_token():
+                            raise toolkit.ValidationError({'kobo_token': [
+                                "KoBo token is not valid"
+                            ]})
+                    up_dict['plugin_extras']['unhcr']['kobo_token'] = new_kobo_token
+
+            if apikey_changed or kobo_token_changed:
+                site_user = toolkit.get_action(u'get_site_user')({u'ignore_auth': True}, {})
+                context['user'] = site_user['name']
                 return up_func(context, up_dict)
 
             raise toolkit.ValidationError({'error': [

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import datetime
 import mock
 import pytest
@@ -84,7 +82,7 @@ class TestUserActions(object):
         sysadmin = core_factories.Sysadmin()
         external_user = factories.ExternalUser()
         internal_user = core_factories.User()
-        default_user = toolkit.get_action('get_site_user')({ 'ignore_auth': True })
+        default_user = toolkit.get_action('get_site_user')({'ignore_auth': True})
 
         action = toolkit.get_action('user_list')
         context = {'user': sysadmin['name'], 'return_query': True}
@@ -95,7 +93,7 @@ class TestUserActions(object):
         sysadmin = core_factories.Sysadmin()
         external_user = factories.ExternalUser()
         internal_user = core_factories.User()
-        default_user = toolkit.get_action('get_site_user')({ 'ignore_auth': True })
+        default_user = toolkit.get_action('get_site_user')({'ignore_auth': True})
 
         action = toolkit.get_action('user_list')
         context = {'user': sysadmin['name'], 'return_query': True}
@@ -287,21 +285,27 @@ class TestUserActions(object):
         assert 'expiry_date' in user
         assert 'Alice' == user['focal_point']
 
-    def test_user_update_saml2_user(self):
-        saml_user = core_factories.User()
-        userobj = model.User.get(saml_user['id'])
-        userobj.plugin_extras = {'saml2auth': { 'saml_id': 'abc123' }}
-        model.Session.commit()
+    def test_fail_user_update_saml2_user(self):
+        saml_user = factories.InternalUser()
 
         context = {'user': saml_user['name']}
         with pytest.raises(toolkit.ValidationError):
             toolkit.get_action('user_update')(context, saml_user)
 
-    def test_user_generate_apikey_saml2_user(self):
-        saml_user = core_factories.User()
+    @mock.patch('ckanext.unhcr.blueprints.kobo.KoBoAPI.get_surveys')
+    def test_user_update_kobo_token_saml2_user(self, kobo_surveys):
+        kobo_surveys.return_value = []
+        saml_user = factories.InternalUser()
+
+        context = {'user': saml_user['name']}
+        # this should not raise an exception
+        saml_user['plugin_extras'] = {'unhcr': {'kobo_token': 'abc123'}}
+        toolkit.get_action('user_update')(context, saml_user)
         userobj = model.User.get(saml_user['id'])
-        userobj.plugin_extras = {'saml2auth': { 'saml_id': 'abc123' }}
-        model.Session.commit()
+        assert userobj.plugin_extras['unhcr']['kobo_token'] == 'abc123'
+
+    def test_user_generate_apikey_saml2_user(self):
+        saml_user = factories.InternalUser()
 
         context = {'user': saml_user['name']}
         data_dict = {'id': saml_user['id']}
@@ -310,10 +314,7 @@ class TestUserActions(object):
         assert saml_user['apikey'] != result['apikey']
 
     def test_user_update_change_apikey_saml2_user(self):
-        saml_user = core_factories.User()
-        userobj = model.User.get(saml_user['id'])
-        userobj.plugin_extras = {'saml2auth': { 'saml_id': 'abc123' }}
-        model.Session.commit()
+        saml_user = factories.InternalUser()
 
         context = {'user': saml_user['name']}
         data_dict = saml_user.copy()

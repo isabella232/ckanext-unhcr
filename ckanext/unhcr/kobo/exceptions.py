@@ -1,0 +1,2 @@
+class KoboApiError(Exception):
+    pass

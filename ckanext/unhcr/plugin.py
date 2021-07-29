@@ -197,7 +197,9 @@ class UnhcrPlugin(
             'page_authorized': helpers.page_authorized,
             'get_came_from_param': helpers.get_came_from_param,
             'user_is_curator': helpers.user_is_curator,
+            'user_is_editor': helpers.user_is_editor,
             'user_is_container_admin': helpers.user_is_container_admin,
+            'user_orgs': helpers.user_orgs,
             # Linked datasets
             'get_linked_datasets_for_form': helpers.get_linked_datasets_for_form,
             'get_linked_datasets_for_display': helpers.get_linked_datasets_for_display,
@@ -231,6 +233,8 @@ class UnhcrPlugin(
             'get_google_analytics_id': helpers.get_google_analytics_id,
             'nl_to_br': helpers.nl_to_br,
             'is_plugin_loaded': helpers.is_plugin_loaded,
+            'get_kobo_token': helpers.get_kobo_token,
+            'get_kobo_url': helpers.get_kobo_url,
         }
 
     # IPackageController
@@ -603,4 +607,5 @@ class UnhcrPlugin(
             blueprints.unhcr_resource_blueprint,
             blueprints.unhcr_search_index_blueprint,
             blueprints.unhcr_user_blueprint,
+            blueprints.unhcr_kobo_blueprint,
         ]

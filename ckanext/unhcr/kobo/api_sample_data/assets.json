@@ -1,0 +1,60 @@
+{
+	"count": 1,
+	"next": null,
+	"previous": null,
+	"results": [{
+		"url": "https://kobo.unhcr.org/assets/XXXXXXXXXXX.json",
+		"date_modified": "2021-07-07T15:12:42.870166Z",
+		"date_created": "2021-07-07T15:11:55.937046Z",
+		"owner": "https://kobo.unhcr.org/users/avazquez.json",
+		"summary": {
+			"geo": false,
+			"labels": ["Select Country", "Name", "Sex", "Document", "Family Members"],
+			"columns": ["name", "type", "label", "required", "select_from_list_name", "calculation"],
+			"languages": [null],
+			"row_count": 8,
+			"default_translation": null
+		},
+		"owner__username": "avazquez",
+		"parent": null,
+		"uid": "XXXXXXXXXXXX",
+		"tag_string": "",
+		"settings": {
+			"sector": {
+				"label": "Public Administration",
+				"value": "Public Administration"
+			},
+			"country": {
+				"label": "Argentina",
+				"value": "ARG"
+			},
+			"description": "Some description",
+			"share-metadata": true
+		},
+		"kind": "asset",
+		"name": "TEST aaZSQ29VRHJmofjGSfDDv4",
+		"asset_type": "survey",
+		"version_id": "XXXXXXXXXXXXXX",
+		"has_deployment": false,
+		"deployed_version_id": null,
+		"deployment__identifier": null,
+		"deployment__active": false,
+		"deployment__submission_count": 0,
+		"permissions": [{
+			"uid": "XXXXXXXXXXXXX",
+			"kind": "objectpermission",
+			"url": "https://kobo.unhcr.org/permissions/XXXXXXXXXXXXXXX.json",
+			"user": "https://kobo.unhcr.org/users/avazquez.json",
+			"permission": "view_submissions",
+			"deny": false,
+			"inherited": true
+		}],
+		"downloads": [{
+			"format": "xls",
+			"url": "https://kobo.unhcr.org/assets/XXXXXXXXX.xls"
+		}, {
+			"format": "xml",
+			"url": "https://kobo.unhcr.org/assets/XXXXXXXXXX.xml"
+		}]
+	}]
+}

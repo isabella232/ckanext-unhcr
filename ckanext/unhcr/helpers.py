@@ -15,7 +15,6 @@ from ckanext.hierarchy import helpers as hierarchy_helpers
 from ckanext.scheming.helpers import (
     scheming_get_dataset_schema, scheming_field_by_name, scheming_get_organization_schema
 )
-from ckanext.unhcr import utils
 from ckanext.unhcr import __VERSION__
 from ckanext.unhcr.models import AccessRequest, USER_REQUEST_TYPE_NEW
 
@@ -242,14 +241,35 @@ def user_is_curator(userobj=None):
     return user_id in user_ids
 
 
-def user_is_container_admin(user=None):
-    if not user:
-        user = toolkit.c.user
+def user_orgs(permission, user_name=None):
+    if not user_name:
+        user_name = toolkit.c.user
     orgs = toolkit.get_action("organization_list_for_user")(
-        {"user": user},
-        {"id": user, "permission": "admin"}
+        {"user": user_name},
+        {"id": user_name, "permission": permission}
     )
+    return orgs
+
+
+def user_is_container_admin(user_name=None):
+    orgs = user_orgs(permission='admin', user_name=user_name)
     return len(orgs) > 0
+
+
+def user_is_editor(user_name=None):
+    orgs = user_orgs(permission='create_dataset', user_name=user_name)
+    return len(orgs) > 0
+
+
+def get_kobo_token():
+    user = toolkit.c.userobj
+    if user.plugin_extras is None:
+        return None
+    return user.plugin_extras.get('unhcr', {}).get('kobo_token')
+
+
+def get_kobo_url():
+    return toolkit.config.get('ckanext.unhcr.kobo_url', 'https://kobo.unhcr.org')
 
 
 # Linked datasets
@@ -304,7 +324,7 @@ def get_linked_datasets_for_display(value, context=None):
 
     # Get datasets
     datasets = []
-    ids = utils.normalize_list(value)
+    ids = normalize_list(value)
     for id in ids:
         dataset = toolkit.get_action('package_show')(context, {'id': id})
         href = toolkit.url_for('dataset.read', id=dataset['name'], qualified=True)
@@ -973,6 +993,7 @@ def get_data_container_choice_label(name, value):
         return value
     else:
         log.warning('Could not get field {} from data-container schema'.format(name))
+
 
 def normalize_list(value):
     # It takes into account that ''.split(',') == ['']

@@ -1,0 +1,63 @@
+{% extends "kobo/base.html" %}
+
+{%- block subtitle %}KoBo{% endblock -%}
+
+{% block primary_content %}
+
+<h1>My KoBo Surveys</h1>
+
+<p>The following surveys in KoBo are available for importing to RIDL. If you want to import one of them please select the target Data Container and click the Import button.</p>
+<table class="table table-header table-hover table-bordered">
+<thead>
+    <tr>
+    <th>Survey</th>
+    <th style="width: 95px;">KoBo owner</th>
+    <th>Import</th>
+    </tr>
+</thead>
+<tbody>
+{% for survey in surveys %}
+<tr>
+    <td>
+        <b>{{ survey.name }}</b>
+        <!-- Download links are only useful if the user remains logged in with KoBo
+            {% if survey.downloads %}Download
+            {% for download in survey.downloads %}
+            <a href="{{ download.url }}" role="button" class="btn btn-secondaty" style="margin:3px;">{{ download.format }}</a>
+            {% endfor %}
+            {% endif %} -->
+    </td>
+    <td>{{ survey.owner__username }}</td>
+    <td>
+        <form method="POST" action="{# Import endpoint #}">
+            <input type="hidden" value="{{ survey.uid }}" name="kobo_asset_id" />
+            <div class="control-group control-medium">
+                <label class="control-label" for="container-import">Container</label>
+                <div class="controls">
+                    <select name="container" id="container-import" required="required" style="width: 90%;">
+                        <option value=""></option>
+                        {% for org in h.user_orgs('create_dataset') %}
+                        <option value="{{ org.id }}">{{ org.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+            <!-- <button #625
+                type="submit"
+                class="btn btn-primary"
+                title="Import KoBo survey to RIDL"
+                style="margin:10px;"
+            >
+            Import
+            </button> -->
+            </div>
+            
+        </form>
+    
+    </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+{% endblock %}
