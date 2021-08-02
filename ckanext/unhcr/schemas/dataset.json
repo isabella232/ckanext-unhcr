@@ -860,7 +860,7 @@
         },
         {
             "field_name": "process_status",
-            "help_text": "Indicates the processing stage of the data. 'Raw' means that the data has not been cleaned since collection. 'In process' means that it is being cleaned. 'Final' means that the dataset is final and ready for use in analytical products",
+            "help_text": "Indicates the processing stage of the data.'Raw-Uncleaned' means that the data has not been cleaned since collection. 'Cleaned Only' means that it is being cleaned. 'Cleaned & Anonymized' means that the dataset is final and ready for use in analytical products",
             "label": "File Process Status",
             "preset": "select",
             "validators": "ignore_if_attachment scheming_required scheming_choices",
