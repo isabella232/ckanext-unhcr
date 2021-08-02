@@ -433,7 +433,7 @@
         },
         {
             "field_name": "sampling_procedure",
-            "help_text": "Unit of measurement / observation for the dataset. Multiple values are allowed.",
+            "help_text": "Multiple values are allowed.",
             "label": "Sampling Procedure",
             "preset": "multiple_select",
             "select_size": 10,
