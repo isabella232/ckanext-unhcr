@@ -37,6 +37,12 @@
     >
       <i class="fa fa-key"></i>Request Access
     </a>
+  {% else %}
+    {% if h.get_existing_access_request(c.userobj.id, group_dict.id, 'requested') %}
+      <div class="alert alert-info">
+        <b>Access requested</b>. Waiting for approval.
+      </div>
+    {% endif %}  
   {% endif %}
 {% endblock %}
 
