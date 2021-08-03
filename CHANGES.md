@@ -1,5 +1,15 @@
 # RIDL Changelog
 
+## v3.1.1b - 2021-08-03
+
+Bug fixes:
+- Help texts 
+  - [#646](https://github.com/okfn/ckanext-unhcr/issues/646) / [#639](https://github.com/okfn/ckanext-unhcr/pull/639)
+  - [#647](https://github.com/okfn/ckanext-unhcr/issues/647) / [#653](https://github.com/okfn/ckanext-unhcr/pull/653)
+  - [#648](https://github.com/okfn/ckanext-unhcr/issues/648) / [#654](https://github.com/okfn/ckanext-unhcr/pull/654)
+- Warning for access pending to approve [#649](https://github.com/okfn/ckanext-unhcr/issues/649) / [#655](https://github.com/okfn/ckanext-unhcr/pull/655)
+- Fix email footer [#650](https://github.com/okfn/ckanext-unhcr/issues/650) / [#656](https://github.com/okfn/ckanext-unhcr/pull/656)
+
 ## v3.1.1 - 2021-07-14
 
 Bug fixes:
