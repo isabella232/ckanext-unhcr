@@ -83,6 +83,7 @@ def restrict_external(func):
 
 _url_for = core_helpers.url_for
 
+
 def url_for(*args, **kw):
     url = _url_for(*args, **kw)
 
@@ -365,7 +366,6 @@ class UnhcrPlugin(
 
         return search_params
 
-
     # IPackageController, IResourceController
     # note: if we add more hooks that are in the interface for both
     # IPackageController and IResourceController (e.g: before_update)
@@ -402,7 +402,6 @@ class UnhcrPlugin(
             if self._resource_is_active(context, res_dict):
                 toolkit.enqueue_job(jobs.process_dataset_on_update, [res_dict['package_id']])
 
-
     def after_update(self, context, data_dict):
         if 'owner_org' in data_dict and 'package_id' not in data_dict:
             self._package_after_update(context, data_dict)
@@ -420,11 +419,9 @@ class UnhcrPlugin(
             if self._resource_is_active(context, res_dict):
                 toolkit.enqueue_job(jobs.process_dataset_on_update, [res_dict['package_id']])
 
-
     def after_delete(self, context, data_dict):
         if not context.get('job') and type(data_dict) == dict and data_dict.get('id'):
             toolkit.enqueue_job(jobs.process_dataset_on_delete, [data_dict['id']])
-
 
     def _package_is_active(self, context, pkg_dict):
         if pkg_dict.get('state') == 'active':
