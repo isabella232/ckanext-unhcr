@@ -35,6 +35,14 @@ def mail_user_by_id(user_id, subj, body, headers={}):
     return mail_user(user, subj, body, headers=headers)
 
 
+def get_base_context():
+    context = {
+        'site_title': toolkit.config.get('ckan.site_title'),
+        'site_url': toolkit.config.get('ckan.site_url'),
+    }
+    return context
+
+
 # Data Container
 
 def compose_container_email_subj(container, event):
@@ -42,20 +50,16 @@ def compose_container_email_subj(container, event):
 
 
 def compose_container_email_body(container, user, event):
-    context = {}
+    context = get_base_context()
     context['recipient'] = user.display_name
-    context['site_title'] = toolkit.config.get('ckan.site_title')
-    context['site_url'] = toolkit.config.get('ckan.site_url')
     context['container'] = container
     context['container_url'] = toolkit.url_for('data-container.read', id=container['name'], qualified=True)
     return render_jinja2('emails/container/%s.html' % event, context)
 
 
 def compose_request_container_email_body(container, recipient, requesting_user):
-    context = {}
+    context = get_base_context()
     context['recipient'] = recipient.display_name
-    context['site_title'] = toolkit.config.get('ckan.site_title')
-    context['site_url'] = toolkit.config.get('ckan.site_url')
     context['container'] = container
     context['container_url'] = toolkit.url_for('data-container.read', id=container['name'], qualified=True)
     context['requesting_user'] = requesting_user
@@ -70,10 +74,8 @@ def compose_curation_email_subj(dataset):
 
 
 def compose_curation_email_body(dataset, curation, recipient, event, message=None):
-    context = {}
+    context = get_base_context()
     context['recipient'] = recipient
-    context['site_title'] = toolkit.config.get('ckan.site_title')
-    context['site_url'] = toolkit.config.get('ckan.site_url')
     context['dataset'] = dataset
     context['dataset_url'] = toolkit.url_for(
         dataset['type'] + '.read',
@@ -92,10 +94,8 @@ def compose_membership_email_subj(container):
 
 
 def compose_membership_email_body(container, user_dict, event):
-    context = {}
+    context = get_base_context()
     context['recipient'] = user_dict.get('fullname') or user_dict.get('name')
-    context['site_title'] = toolkit.config.get('ckan.site_title')
-    context['site_url'] = toolkit.config.get('ckan.site_url')
     context['container'] = container
     # single
     if isinstance(container, dict):
@@ -172,16 +172,13 @@ def _get_deposits_awaiting_review(context, start_time):
 
 
 def compose_summary_email_body(user_dict):
-    context = {}
+    context = get_base_context()
 
     start_time = datetime.now() - timedelta(days=7)
     context['start_date'] = start_time.strftime('%A %B %e %Y')
     query_start_time = start_time.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     context['recipient'] = user_dict.get('fullname') or user_dict.get('name')
-    context['site_title'] = toolkit.config.get('ckan.site_title')
-    context['site_url'] = toolkit.config.get('ckan.site_url')
-
     context['datasets_url'] = toolkit.url_for(
         'search',
         q=(
@@ -231,8 +228,8 @@ def get_summary_email_recipients():
 
     deposit_group = helpers.get_data_deposit()
     curators = toolkit.get_action('member_list')(
-        { 'ignore_auth': True },
-        { 'id': deposit_group['id'] }
+        {'ignore_auth': True},
+        {'id': deposit_group['id']}
     )
     curator_ids = [c[0] for c in curators]
 
@@ -260,6 +257,7 @@ def _get_sysadmins():
         if user.sysadmin and user.name != default_user["name"]
     ]
 
+
 def get_container_request_access_email_recipients(container_dict):
     context = {"ignore_auth": True}
     default_user = toolkit.get_action("get_site_user")(context)
@@ -282,8 +280,10 @@ def get_container_request_access_email_recipients(container_dict):
 
     return recipients
 
+
 def get_dataset_request_access_email_recipients(package_dict):
     return get_container_request_access_email_recipients({"id": package_dict["owner_org"]})
+
 
 def get_user_account_request_access_email_recipients(containers):
     # This email is sent to admins of all containers in `containers` arg plus sysadmins
@@ -305,17 +305,19 @@ def compose_dataset_request_access_email_subj(package_dict):
         package_dict['name']
     )
 
+
 def compose_container_request_access_email_subj(container_dict):
     return '[UNHCR RIDL] - Request for access to container: "{}"'.format(
         container_dict['display_name']
     )
+
 
 def compose_user_request_access_email_subj():
     return '[UNHCR RIDL] - Request for new user account'
 
 
 def compose_request_access_email_body(object_type, recipient, obj, requesting_user, message):
-    context = {}
+    context = get_base_context()
     context['object_type'] = object_type
     context['recipient'] = recipient
     context['object'] = obj
@@ -335,7 +337,7 @@ def compose_request_rejected_email_subj(obj):
 
 
 def compose_request_rejected_email_body(object_type, recipient, obj, message):
-    context = {}
+    context = get_base_context()
     context['object_type'] = object_type
     context['recipient'] = recipient
     context['object'] = obj
@@ -350,7 +352,7 @@ def compose_account_approved_email_subj():
 
 
 def compose_account_approved_email_body(recipient):
-    context = {}
+    context = get_base_context()
     context['recipient'] = recipient
     context['login_url'] = toolkit.url_for('user.login', _external=True)
     context['h'] = toolkit.h
@@ -369,7 +371,7 @@ def compose_infected_file_email_subj():
 
 
 def compose_infected_file_email_body(recipient, resource_name, package_id, resource_id, clamav_report):
-    context = {}
+    context = get_base_context()
 
     context['recipient'] = recipient
     context['resource_name'] = resource_name
@@ -391,16 +393,20 @@ def _compose_collaborator_email_subj(dataset):
     return u'{0} - Notification about collaborator role for {1}'.format(
         toolkit.config.get('ckan.site_title'), dataset.title)
 
+
 def _compose_collaborator_email_body(user, dataset, role, event):
     dataset_link = toolkit.url_for('dataset.read', id=dataset.id, qualified=True)
-    return render_jinja2('collaborators/emails/{0}_collaborator.html'.format(event), {
+    context = get_base_context()
+    context.update({
         'user_name': user.fullname or user.name,
         'role': role,
-        'site_title': toolkit.config.get('ckan.site_title'),
-        'site_url': toolkit.config.get('ckan.site_url'),
         'dataset_title': dataset.title,
         'dataset_link': dataset_link
     })
+    return render_jinja2(
+        'collaborators/emails/{0}_collaborator.html'.format(event),
+        context)
+
 
 def mail_notification_to_collaborator(dataset_id, user_id, capacity, event):
     user = model.User.get(user_id)
