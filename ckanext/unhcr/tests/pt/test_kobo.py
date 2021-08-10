@@ -101,7 +101,8 @@ class TestKoBo(object):
         resp = app.get('/kobo/surveys', extra_environ=environ)
         assert resp.status_code == 200
         assert '<h1>My KoBo Surveys</h1>' in resp.body
-        assert 'Import KoBo survey to RIDL' in resp.body
+        # Test import URL
+        assert '/dataset/new?kobo_asset_id=' in resp.body
         assert 'TEST aaZSQ29VRHJmofjGSfDDv4' in resp.body
 
     def test_internal_user_setup_token(self, app):
@@ -156,3 +157,33 @@ class TestKoBo(object):
         userobj = model.User.get(self.internal_editor_user['id'])
         print(userobj.plugin_extras)
         assert 'kobo_token' not in userobj.plugin_extras['unhcr']
+
+    @mock.patch('ckan.lib.helpers.helper_functions.get_kobo_initial_dataset')
+    def test_create_pkg_frm_asset_error(self, initial, app):
+        """ Try to import from invalid asset_id"""
+
+        initial.return_value = {}, {'kobo_dataset': ['Some error']}
+        environ = {
+            'REMOTE_USER': self.internal_editor_user['name']
+        }
+        # set up the first token
+        resp = app.get('/dataset/new?kobo_asset_id=not-exists', extra_environ=environ)
+
+        assert resp.status_code == 200
+        assert "Some error" in resp.body
+
+    @mock.patch('ckan.lib.helpers.helper_functions.get_kobo_initial_dataset')
+    def test_create_pkg_frm_valid_asset(self, initial, app):
+        """ Try to import from invalid asset_id"""
+
+        initial.return_value = {'title': 'Kobo Survey Name XX'}, {}
+        environ = {
+            'REMOTE_USER': self.internal_editor_user['name']
+        }
+        # set up the first token
+        resp = app.get('/dataset/new?kobo_asset_id=aaZSQ29VRHJmofjGSfDDv4', extra_environ=environ)
+
+        assert resp.status_code == 200
+        assert "KoBo error: Error requesting data from Kobo 404" not in resp.body
+        # Assert we use the KoBo name as Package Title
+        assert "Kobo Survey Name XX" in resp.body

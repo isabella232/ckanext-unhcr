@@ -4,6 +4,7 @@ import ckan.plugins.toolkit as toolkit
 from ckanext.unhcr.utils import require_editor_user
 from ckanext.unhcr.kobo.api import KoBoAPI
 from ckanext.unhcr.kobo.exceptions import KoboApiError
+from ckanext.unhcr.kobo.kobo_dataset import KoboDataset
 
 
 unhcr_kobo_blueprint = Blueprint(
@@ -89,6 +90,9 @@ def kobo_surveys():
         message = 'Unexpected KoBo error getting surveys: {}'.format(e)
         toolkit.h.flash_error(message)
         return toolkit.redirect_to('unhcr_kobo.index')
+
+    for survey in surveys:
+        survey['ridl_package'] = KoboDataset(survey['uid']).get_package()
 
     extra_vars = {
         'surveys': surveys,

@@ -19,6 +19,7 @@ import ckan.logic as core_logic
 import ckan.lib.dictization.model_dictize as model_dictize
 from ckanext.unhcr import helpers, mailer, utils
 from ckanext.unhcr.kobo.api import KoBoAPI
+from ckanext.unhcr.kobo.kobo_dataset import KoboDataset
 from ckanext.unhcr.models import AccessRequest, USER_REQUEST_TYPE_NEW, USER_REQUEST_TYPE_RENEWAL
 from ckanext.unhcr.utils import is_saml2_user
 
@@ -62,6 +63,22 @@ def package_update(up_func, context, data_dict):
         body = mailer.compose_curation_email_body(
             dataset, curation, user_obj.display_name, 'deposit')
         mailer.mail_user_by_id(user_obj.id, subj, body)
+
+    return dataset
+
+
+@toolkit.chained_action
+def package_create(up_func, context, data_dict):
+    """ Create resources for KoBo assets """
+
+    # Create dataset
+    dataset = up_func(context, data_dict)
+
+    kobo_asset_id = data_dict.get('kobo_asset_id')
+    if kobo_asset_id:
+        # create basic resources
+        kd = KoboDataset(kobo_asset_id)
+        kd.initialize_package(context, dataset)
 
     return dataset
 

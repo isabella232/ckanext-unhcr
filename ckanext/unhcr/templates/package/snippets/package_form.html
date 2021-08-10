@@ -1,17 +1,37 @@
 {% import 'macros/form.html' as form %}
 {% set action = c.form_action or '' %}
 
-{# This provides a full page that renders a form for adding a dataset. It can
-then itself be extended to add/remove blocks of functionality. #}
+{# This file extends from core package-form to add/remove functionality. #}
+
+{# Check if we are importing assets from KoBo #}
+{% set kobo_asset_id = request.args.get('kobo_asset_id') %}
+{% if kobo_asset_id %}
+    {% set kobo_pkg, errors = h.get_kobo_initial_dataset(kobo_asset_id) %}
+    {% do data.update(kobo_pkg) %}
+{% endif %}
+
+{# If we come from form errors and importing from KoBo asset #}
+{% if data.kobo_asset_id %}
+{% set kobo_asset_id = data.kobo_asset_id %}
+{% endif %}
+
 <form id="dataset-edit" class="dataset-form form-horizontal" method="post" action="{{ h.current_path(action) }}" data-module="basic-form" novalidate>
   {% block stages %}
+  {% if kobo_asset_id %}
+    {{ h.snippet('package/snippets/import-kobo-stages.html', stages=stage) }}
+  {% else %}
     {{ h.snippet('package/snippets/stages.html', stages=stage) }}
+  {% endif %}
   {% endblock %}
 
   <input type="hidden" name="_ckan_phase" value="dataset_new_1" />
   {# pkg_name used in 3 stage edit #}
   <input type="hidden" name="pkg_name" value="{{ data.id }}" />
   {% block errors %}{{ form.errors(error_summary) }}{% endblock %}
+
+  {% if kobo_asset_id %}
+  <input type="hidden" value="{{ kobo_asset_id }}" name="kobo_asset_id" />
+  {% endif %}
 
   {% block basic_fields %}
     {% snippet 'package/snippets/package_basic_fields.html', data=data, errors=errors, licenses=c.licenses, groups_available=c.groups_available %}
@@ -43,7 +63,16 @@ then itself be extended to add/remove blocks of functionality. #}
         </a>
       {% else %}
         {% block save_button %}
-          <button class="btn btn-primary" type="submit" name="save">{% block save_button_text %}{{ _('Next: Add Data') }}{% endblock %}</button>
+          <button class="btn btn-primary" type="submit" name="save">
+            {% block save_button_text %}
+
+            {% if kobo_asset_id %}
+              {{ _('Next: Describe KoBo resources') }}
+            {% else %}
+              {{ _('Next: Add Data') }}
+            {% endif %}
+            
+            {% endblock %}</button>
         {% endblock %}
       {% endif %}
     </div>

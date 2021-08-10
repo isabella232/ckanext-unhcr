@@ -1,0 +1,26 @@
+{% set s1 = stages[0] or 'active' %}
+{% set s2 = stages[1] or 'uncomplete' %}
+{% if s1 != 'uncomplete' %}{% set class = 'stage-1' %}{% endif %}
+{% if s2 != 'uncomplete' %}{% set class = 'stage-2' %}{% endif %}
+
+<ol class="stages {{ class }}">
+  <li class="first {{ s1 }}">
+    {% if s1 != 'complete' %}
+      <span class="highlight">{{ _('Create dataset from KoBo') }}</span>
+    {% else %}
+      <button class="highlight" name="save" value="go-dataset" type="submit">{{ _('Create dataset from KoBo') }}</button>
+    {% endif %}
+  </li>
+  <li class="last {{ s2 }}">
+    {% if s2 != 'complete' %}
+      <span class="highlight">{{ _('Describe KoBo resources') }}</span>
+    {% else %}
+      {% if s1 == 'active' %}
+        {# stage 1 #}
+        <button class="highlight" name="save" value="go-resources" type="submit">{{ _('Describe KoBo resources') }}</button>
+      {% else %}
+        {% link_for _('Describe KoBo resources'), named_route='dataset.new', class_="highlight" %}
+      {% endif %}
+    {% endif %}
+  </li>
+</ol>

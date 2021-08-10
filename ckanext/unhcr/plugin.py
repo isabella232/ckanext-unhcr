@@ -235,6 +235,7 @@ class UnhcrPlugin(
             'is_plugin_loaded': helpers.is_plugin_loaded,
             'get_kobo_token': helpers.get_kobo_token,
             'get_kobo_url': helpers.get_kobo_url,
+            'get_kobo_initial_dataset': helpers.get_kobo_initial_dataset,
         }
 
     # IPackageController

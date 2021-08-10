@@ -48,6 +48,6 @@ class KoBoAPI:
     def test_token(self):
         try:
             self.get_surveys(all_pages=False)
-        except Exception:
+        except KoboApiError:
             return False
         return True

@@ -784,6 +784,14 @@
             "form_snippet": null,
             "display_snippet": null,
             "required": false
+        },
+        {
+            "field_name": "kobo_asset_id",
+            "label": "KoBo Asset ID",
+            "help_text": "If a dataset was imported from KoBo shows the Kobo Asset ID",
+            "form_snippet": null,
+            "display_snippet": null,
+            "required": false
         }
     ],
     "resource_fields": [

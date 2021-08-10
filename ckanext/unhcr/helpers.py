@@ -17,6 +17,8 @@ from ckanext.scheming.helpers import (
 )
 from ckanext.unhcr import __VERSION__
 from ckanext.unhcr.models import AccessRequest, USER_REQUEST_TYPE_NEW
+from ckanext.unhcr.kobo.exceptions import KoboApiError
+from ckanext.unhcr.kobo.kobo_dataset import KoboDataset
 
 
 log = logging.getLogger(__name__)
@@ -270,6 +272,29 @@ def get_kobo_token():
 
 def get_kobo_url():
     return toolkit.config.get('ckanext.unhcr.kobo_url', 'https://kobo.unhcr.org')
+
+
+def get_kobo_initial_dataset(kobo_asset_id):
+    """ Get package init data from KoBo asset (survey)
+        Return pkd_dict, errors """
+    kd = KoboDataset(kobo_asset_id)
+    initial_data = errors = {}
+
+    # package should not exists
+    pkg = kd.get_package()
+    if not pkg:
+        try:
+            initial_data = kd.get_initial_package(toolkit.c.userobj)
+        except KoboApiError as e:
+            errors = {
+                'kobo_asset': ['KoBo error: {}'.format(e)]
+            }
+    else:
+        errors = {
+            'kobo_asset': ['This KoBo surveys has already been imported']
+        }
+
+    return initial_data, errors
 
 
 # Linked datasets
