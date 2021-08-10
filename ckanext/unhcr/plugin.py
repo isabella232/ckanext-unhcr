@@ -486,6 +486,7 @@ class UnhcrPlugin(
             'access_request_update': actions.access_request_update,
             'access_request_create': actions.access_request_create,
             'package_update': actions.package_update,
+            'package_create': actions.package_create,
             'package_publish_microdata': actions.package_publish_microdata,
             'package_get_microdata_collections': actions.package_get_microdata_collections,
             'package_collaborator_create': actions.package_collaborator_create,

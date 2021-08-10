@@ -87,6 +87,21 @@ class TestHooks(object):
         dataset = action({'user': self.user['name']}, self.new_package_dict)
         mock_hook.assert_not_called()
 
+    @mock.patch('ckanext.unhcr.kobo.kobo_dataset.KoboDataset.initialize_package')
+    def test_after_package_create_hook_kobo(self, mock_hook):
+        """ New datasets using 'kobo_asset_id' should be initilized """
+        action = toolkit.get_action("package_create")
+        self.new_package_dict['kobo_asset_id'] = 'id01'
+        dataset = action({'user': self.user['name']}, self.new_package_dict)
+        mock_hook.assert_called_once()
+
+    @mock.patch('ckanext.unhcr.kobo.kobo_dataset.KoboDataset.initialize_package')
+    def test_after_package_create_no_hook_kobo(self, mock_hook):
+        """ New datasets NOT using 'kobo_asset_id' should NOT be initilized """
+        action = toolkit.get_action("package_create")
+        dataset = action({'user': self.user['name']}, self.new_package_dict)
+        mock_hook.assert_not_called()
+
     @mock.patch('ckan.plugins.toolkit.enqueue_job')
     def test_after_resource_update_hook_called(self, mock_hook):
         action = toolkit.get_action("resource_update")

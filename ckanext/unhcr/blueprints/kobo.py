@@ -92,7 +92,7 @@ def kobo_surveys():
         return toolkit.redirect_to('unhcr_kobo.index')
 
     for survey in surveys:
-        survey['ridl_package'] = KoboDataset(survey['uid']).get_package()
+        survey['ridl_package'] = KoboDataset(survey['uid']).get_package(raise_multiple_error=False)
 
     extra_vars = {
         'surveys': surveys,

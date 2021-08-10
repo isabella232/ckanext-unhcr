@@ -2,7 +2,13 @@
 	"count": 1,
 	"next": null,
 	"previous": null,
-	"results": [{
+	"results": [
+		{
+			"name": "fake deployed",
+			"uid": "x",
+			"has_deployment": true
+		},
+		{
 		"url": "https://kobo.unhcr.org/assets/XXXXXXXXXXX.json",
 		"date_modified": "2021-07-07T15:12:42.870166Z",
 		"date_created": "2021-07-07T15:11:55.937046Z",

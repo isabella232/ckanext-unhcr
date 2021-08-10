@@ -78,7 +78,8 @@ def package_create(up_func, context, data_dict):
     if kobo_asset_id:
         # create basic resources
         kd = KoboDataset(kobo_asset_id)
-        kd.initialize_package(context, dataset)
+        user_obj = model.User.by_name(context['user'])
+        kd.initialize_package(context, dataset, user_obj)
 
     return dataset
 

@@ -94,8 +94,8 @@ class TestKoBo(object):
         }
 
         asset_list = self.get_assets_list()
-        assert 'url' in asset_list[0]
-        assert 'TEST aaZSQ29VRHJmofjGSfDDv4' == asset_list[0]['name']
+        assert 'url' in asset_list[1]
+        assert 'TEST aaZSQ29VRHJmofjGSfDDv4' == asset_list[1]['name']
         kobo_surveys.return_value = asset_list
 
         resp = app.get('/kobo/surveys', extra_environ=environ)
@@ -103,6 +103,7 @@ class TestKoBo(object):
         assert '<h1>My KoBo Surveys</h1>' in resp.body
         # Test import URL
         assert '/dataset/new?kobo_asset_id=' in resp.body
+        assert 'This KoBo survey has not been deployed' in resp.body
         assert 'TEST aaZSQ29VRHJmofjGSfDDv4' in resp.body
 
     def test_internal_user_setup_token(self, app):
