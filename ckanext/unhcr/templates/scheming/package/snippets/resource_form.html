@@ -21,7 +21,7 @@
     {% for resource in pkg_dict.resources %}
     
       {# TODO use resource extras.special if available #}
-      {% set is_data = resource.name == 'Survey JSON data' %}
+      {% set is_data = resource.name in ['Survey json data', 'Survey csv data', 'Survey xls data'] %}
       {% set is_questionnaire = resource.name == 'Questionnaire XLS' %}
       {% if is_data %}
         {{ h.snippet('package/snippets/survey_data.html', resource=resource) }}

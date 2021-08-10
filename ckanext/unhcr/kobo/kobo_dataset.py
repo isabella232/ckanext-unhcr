@@ -1,9 +1,13 @@
 import os
+import tempfile
 from werkzeug.datastructures import FileStorage as FlaskFileStorage
 from ckan.lib.munge import munge_title_to_name
 from ckan.plugins import toolkit
 from ckanext.unhcr.kobo.api import KoBoAPI, KoBoSurvey
 from ckanext.unhcr.kobo.exceptions import KoBoDuplicatedDatasetError, KoboMissingAssetIdError
+
+
+DOWNLOAD_PENDING_MSG = 'The resource is pending download.'
 
 
 class KoboDataset:
@@ -123,8 +127,8 @@ class KoboDataset:
         # Create a resource for the questionnaire
         self.create_questionnaire_resource(context, pkg_dict, survey)
 
-        # Create data resource
-        self.create_data_resource(context, pkg_dict, survey)
+        # Create JSON, CSV and XLS data resources
+        self.create_data_resources(context, pkg_dict, survey)
         return
 
     def create_questionnaire_resource(self, context, pkg_dict, survey):
@@ -143,7 +147,8 @@ class KoboDataset:
             'visibility': 'public',  # |  restricted
             'file_type': 'questionnaire',  # | microdata | report | sampling_methodology | infographics | script | concept note | other
             # mark this resources as special
-            'extras': {'special': 'questionnaire'}
+            # extras
+            'special': 'questionnaire',
         }
 
         action = toolkit.get_action("resource_create")
@@ -151,36 +156,77 @@ class KoboDataset:
 
         return resource
 
-    def create_data_resource(self, context, pkg_dict, survey):
-        """ Create a resource for the survey data """
+    def create_data_resources(self, context, pkg_dict, survey):
+        """ Create multiple resources for the survey data """
+        from ckanext.unhcr.jobs import download_export
 
-        local_file = survey.download_data(destination_path=self.upload_path, dformat='json')
         date_range_start, date_range_end = survey.get_submission_times()
         if date_range_start is None:
             # we can use the inacurate creation and modification dates from the survey
             date_range_start = survey.asset.get('date_created')
             date_range_end = survey.asset.get('date_modified')
 
-        resource = {
-            'package_id': pkg_dict['id'],
-            'upload': FlaskFileStorage(filename=local_file, stream=open(local_file, 'rb')),
-            'name': 'Survey JSON data',
-            'description': '[Special resources] Automatic Data from KoBo survey',
-            'format': 'json',
-            'url_type': 'upload',
-            'type': 'data',
-            'version': '1',
-            'date_range_start': date_range_start,
-            'date_range_end': date_range_end,
-            'visibility': 'restricted',
-            'process_status': 'raw',
-            'identifiability': 'personally_identifiable',
-            'file_type': 'microdata',
-            # mark this resources as special
-            'extras': {'special': 'data'}
-        }
+        resources = []
+        # create empty resources to be downloaded later
+        f = tempfile.NamedTemporaryFile()
 
-        action = toolkit.get_action("resource_create")
-        resource = action(context, resource)
+        for data_resource_format in ['json', 'csv', 'xls']:
+            # JSON do not require an export
+            if data_resource_format != 'json':
+                # create the export for the expected format (this starts an async process at KoBo)
+                export = survey.create_export(dformat=data_resource_format)
+                export_id = export['uid']
+            else:
+                export_id = None
 
+            description = '[Special]. Automatic {} Data from KoBo survey. {}'.format(data_resource_format, DOWNLOAD_PENDING_MSG)
+            resource = {
+                'package_id': pkg_dict['id'],
+                'name': 'Survey {} data'.format(data_resource_format),
+                'description': description,
+                'url_type': 'upload',
+                'upload': FlaskFileStorage(filename=f.name, stream=open(f.name, 'rb')),
+                'format': data_resource_format,
+                'type': 'data',
+                'version': '1-{}'.format(data_resource_format),
+                'date_range_start': date_range_start,
+                'date_range_end': date_range_end,
+                'visibility': 'restricted',
+                'process_status': 'raw',
+                'identifiability': 'personally_identifiable',
+                'file_type': 'microdata',
+                # mark this resources as special and save data to download as a job later
+                # extras
+                'special': 'data',
+                'kobo_export_id': export_id,
+                'kobo_asset_id': self.kobo_asset_id,
+                'kobo_download_status': 'pending',
+                'kobo_download_attempts': 0,
+            }
+
+            action = toolkit.get_action("resource_create")
+            resource = action(context, resource)
+            resources.append(resource)
+
+            # Start a job to download the file
+            toolkit.enqueue_job(download_export, [resource['id']])
+
+        return resources
+
+    def update_resource(self, resource_dict, local_file, user_name):
+        """ Update the resource with real data """
+
+        context = {'user': user_name}
+        kobo_download_attempts = resource_dict['kobo_download_attempts']
+        resource = toolkit.get_action('resource_patch')(
+            context,
+            {
+                'id': resource_dict['id'],
+                'url_type': 'upload',
+                'upload': FlaskFileStorage(filename=local_file, stream=open(local_file, 'rb')),
+                'description': resource_dict['description'].replace(DOWNLOAD_PENDING_MSG, ''),
+                'kobo_download_status': 'complete',
+                'kobo_download_attempts': kobo_download_attempts + 1,
+            }
+        )
         return resource
