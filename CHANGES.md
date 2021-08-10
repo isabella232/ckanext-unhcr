@@ -1,5 +1,15 @@
 # RIDL Changelog
 
+## v3.1.2 - 2021-08-10
+
+New features
+- [#628](https://github.com/okfn/ckanext-unhcr/pull/628) Move visibility as resource field
+- [#604](https://github.com/okfn/ckanext-unhcr/pull/604) Expire external users after 180 days and handle renewal requests
+- [#637](https://github.com/okfn/ckanext-unhcr/pull/637) + [#657](https://github.com/okfn/ckanext-unhcr/pull/657) + [#662](https://github.com/okfn/ckanext-unhcr/pull/662) Allow users to integrate with KoBo and import surveys as datasets + resources. This includes the questionnaire and the actual data in JSON/CSV and XLS formats.
+Bug fixes:
+- [#642](https://github.com/okfn/ckanext-unhcr/pull/642) Improve styles for curation activities
+- [#661](https://github.com/okfn/ckanext-unhcr/pull/661) Show pending requests for data containers
+
 ## v3.1.1b - 2021-08-03
 
 Bug fixes:
