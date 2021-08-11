@@ -242,3 +242,6 @@ Now all email sent by `from ckan.lib.mailer import mail_user` should be sent to 
 Internal users are allowed to import data from [KoBoToolbox](https://www.kobotoolbox.org/#home).  
 To define where the KoBo instance lives you can configure the `ckanext.unhcr.kobo_url` setting 
 (default is `https://kobo.unhcr.org`).
+
+You can read a RIDL integration with KoBo tutorial [here](docs/kobo.md).  
+
