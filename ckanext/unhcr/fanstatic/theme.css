@@ -2205,39 +2205,28 @@ i {
   margin-bottom: 20px;
 }
 
-.special-resource {
-  margin: 8px;
-  padding: 15px;
-  border: 2px solid black;
-  max-width: 380px;
-  display: inline-block;
-  vertical-align: top;
-}
-
-.special-resource p {
-  margin-bottom: 2px;
-}
-
-.special-resource a {
-  margin: 15px 5px 3px;
-  float: right;
-}
-
-.special-resources-container {
+.kobo-resources-container {
   margin: 10px;
   background-color: rgba(239, 239, 228, 0.137);
 }
 
-.special-resources-publish {
+.kobo-resources-publish {
   margin: 10px;
   padding: 10px;
   background-color: rgba(239, 239, 228, 0.177);
   border: 1px solid rgba(39, 39, 28, 0.277);
 }
 
-.special-resources-publish a {
+.kobo-resources-publish a {
   padding: 5px 20px;
   margin: 5px 20px;
+}
+
+.kobo-resource-description {
+  list-style: none;
+  font-size: 13px;
+  margin-left: 0;
+  padding-left: 0;
 }
 
 /* General */

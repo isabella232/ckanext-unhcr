@@ -1,7 +1,9 @@
 import json
 import mock
 import pytest
+import tempfile
 from ckan import model
+from ckan.plugins import toolkit
 from ckanext.unhcr.tests import factories
 
 
@@ -175,7 +177,7 @@ class TestKoBo(object):
 
     @mock.patch('ckan.lib.helpers.helper_functions.get_kobo_initial_dataset')
     def test_create_pkg_frm_valid_asset(self, initial, app):
-        """ Try to import from invalid asset_id"""
+        """ Try to import from valid asset_id"""
 
         initial.return_value = {'title': 'Kobo Survey Name XX'}, {}
         environ = {
@@ -188,3 +190,57 @@ class TestKoBo(object):
         assert "KoBo error: Error requesting data from Kobo 404" not in resp.body
         # Assert we use the KoBo name as Package Title
         assert "Kobo Survey Name XX" in resp.body
+        assert "Next: Describe KoBo resources" in resp.body
+
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
+    @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.download_questionnaire')
+    @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.get_submission_times')
+    @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.create_export')
+    def test_post_new_pkg_from_kobo_asset(self, create_export, sub_times, downq, mock_hook, app):
+        """ Try to import KoBo resource """
+
+        create_export.return_value = {'uid': 'kobo_export_id'}
+        sub_times.return_value = ['2021-01-01', '2021-02-01']
+        questionnaire_file = tempfile.NamedTemporaryFile()
+        downq.return_value = questionnaire_file.name
+        mock_hook.return_value = None
+
+        environ = {
+            'REMOTE_USER': self.internal_editor_user['name']
+        }
+        data = {
+            '_ckan_phase': 'dataset_new_1',
+            'pkg_name': '',
+            'kobo_asset_id': 'test_some_kobo_id',
+            'title': 'Some Survey',
+            'name': 'some-survey',
+            'notes': 'Dataset imported from KoBo toolbox, bla, bla',
+            'tag_string': '',
+            'url': '',
+            'owner_org': self.data_container['name'],
+            'external_access_level': 'not_available',
+            'original_id': 'test_some_kobo_id',
+            'data_collector': 'ACF,UNHCR',
+            'keywords': 9,
+            'unit_of_measurement': 'meters',
+            'geog_coverage': '',
+            'data_collection_technique': 'nf',
+            'archived': 'False',
+            'save': '',
+        }
+        # set up the first token
+        url = toolkit.url_for('dataset.new')
+        resp = app.post(
+            url,
+            data=data,
+            extra_environ=environ,
+            follow_redirects=True
+        )
+
+        # download_kobo_export should be called for all data surveys (JSON, CSV and XLS)
+        mock_calls = [fn[0][0].__name__ for fn in mock_hook.call_args_list]
+        assert mock_calls.count('download_kobo_export') == 3
+
+        print(resp.status_code, resp.body)
+        assert resp.status_code == 200
+        assert "<h1>KoBo resources</h1>" in resp.body

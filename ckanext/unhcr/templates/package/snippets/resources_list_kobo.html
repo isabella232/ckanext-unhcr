@@ -1,0 +1,31 @@
+{#
+Renders a list of KoBo resources with icons and view links.
+
+resources - A list of resources (dicts) to render
+pkg - A package dict that the resources belong to.
+
+Example:
+
+  {% snippet "package/snippets/resources_list.html", pkg=pkg, kobo_type='data|questionnaire' %}
+
+#}
+{% set resources = pkg.resources|selectattr("kobo_type", "equalto", kobo_type)|list %}
+{% if resources %}
+  <section id="dataset-resources" class="resources">
+    {% if kobo_type == 'data' %}
+      <h2>Survey Data Files</h2>
+    {% elif kobo_type == 'questionnaire' %}
+      <h2>Survey Questionnaire</h2>
+    {% endif %}
+    {% block resource_list %}
+      <ul class="{% block resource_list_class %}resource-list{% endblock %}">
+        {% block resource_list_inner %}
+          {% set can_edit = h.check_access('package_update', {'id':pkg.id }) %}
+          {% for resource in resources %}
+            {% snippet 'package/snippets/resource_item_kobo.html', pkg=pkg, res=resource, can_edit=can_edit, kobo_type=kobo_type %}
+          {% endfor %}
+        {% endblock %}
+      </ul>
+    {% endblock %}
+  </section>
+{% endif %}

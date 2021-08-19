@@ -1,48 +1,49 @@
 {% ckan_extends %}
 
+{% set kobo_resource = pkg_dict and pkg_dict.kobo_asset_id %}
+{% set kobo_auto_resource = data and data.kobo_type %}
+{% set draft_kobo_resource = kobo_resource and pkg_dict.state == 'draft' %}
+{% set new_kobo_resource = kobo_resource and not data %}
+
 {% block stages %}
   {% if stage %}
-    {% if pkg_dict and pkg_dict.kobo_asset_id %}
+    {% if kobo_resource %}
       {{ h.snippet('package/snippets/import-kobo-stages.html', stages=stage, kobo_asset_id=data.kobo_asset_id) }}
     {% else %}
       {{ h.snippet('package/snippets/stages.html', stages=stage, pkg_name=pkg_name) }}
     {% endif %}
   {% endif %}
 
+  {% if draft_kobo_resource and new_kobo_resource %}
 
-  {% if pkg_dict and 
-        pkg_dict.kobo_asset_id and 
-        pkg_dict.state == 'draft' and 
-        not data %}
-    {# We are just after a new package is created. We are not editing a resource #}
+  <h1>KoBo resources</h1>
 
-  <div class="special-resources-container">
-    {# show all special resources #}
-    {% for resource in pkg_dict.resources %}
-    
-      {# TODO use resource extras.special if available #}
-      {% set is_data = resource.name in ['Survey json data', 'Survey csv data', 'Survey xls data'] %}
-      {% set is_questionnaire = resource.name == 'Questionnaire XLS' %}
-      {% if is_data %}
-        {{ h.snippet('package/snippets/survey_data.html', resource=resource) }}
-      {% elif is_questionnaire %}
-        {{ h.snippet('package/snippets/survey_questionnaire.html', resource=resource) }}
-      {% endif %}
-    {% endfor %}
+    {# We are just after a new KoBo package is created. We are not editing a resource #}
 
-    <div class="special-resources-publish">
+  <div class="kobo-resources-container">
+    <p>The following resources were automatically imported from Kobo.
+        Please review and edit their metadata as necessary</p>
+
+    {# Customized Kobo specific snippets #}
+    {% snippet "package/snippets/resources_list_kobo.html", pkg=pkg_dict, kobo_type='questionnaire' %}
+    {% snippet "package/snippets/resources_list_kobo.html", pkg=pkg_dict, kobo_type='data' %}
+
+    {# all other places are hidden from JS #}
+    {% if draft_kobo_resource and new_kobo_resource %}
+    <div class="kobo-resources-publish">
       <b>If the resources are ready you can</b>
       <a
         href="{% url_for 'unhcr_dataset.publish', dataset_id=pkg_dict.id %}"
-        class="btn btn-success">
+        class="btn btn-primary">
           {{ _('Publish Dataset') }}
       </a>
     </div>
-    
-  </div>
+    {% endif %}
 
-  <h2>Or you can add more resources</h2>
-  
+  <h1>Additional resources</h1>
+
+  <p>You can optionally add additional resources to the dataset. This can also be done later.</p>
+
 {% endif %}
 
 {% endblock %}
@@ -52,5 +53,20 @@
     <i class="fa fa-info-circle"></i>
     Max upload size: {{ h.get_max_resource_size() }}Mb
   </div>
+  <input type="hidden" value="{{ data.kobo_type }}" name="kobo_type" />
+
   {{ super() }}
+
 {% endblock %}
+
+{% block metadata_fields %}
+{% endblock %}
+{% block previous_button %}{% if not draft_kobo_resource %}{{ super() }}{% endif %}{% endblock %}
+{% block again_button %}
+  {% if draft_kobo_resource %}
+    <button class="btn btn-primary" name="save" value="again" type="submit">{{ _('Update KoBo Resource') }}</button>
+  {% else %}
+    {{ super() }}
+  {% endif %}
+{% endblock %}
+{% block save_button %}{% if not draft_kobo_resource %}{{ super() }}{% endif %}{% endblock %}

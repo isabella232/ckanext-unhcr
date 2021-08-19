@@ -1,18 +1,12 @@
 {% ckan_extends %}
 
-{% block resource_item_title %}
-
-  {% if res.visibility == 'restricted' %}
-
-  <span class="dataset-private label label-inverse">
-      <i class="fa fa-lock"></i>
-      {{ _('Private') }}
-    </span>
-
-  {% endif %}
+{% block resource_item_description %}
 
   {{ super() }}
 
+  <p>
+    
+  </p>
   {% endblock %}
 
 {% block resource_item_explore_links %}

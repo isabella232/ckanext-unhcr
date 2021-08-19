@@ -113,7 +113,7 @@ class KoboDataset:
 
         return starting_notes
 
-    def initialize_package(self, context, pkg_dict, user_obj):
+    def create_kobo_resources(self, context, pkg_dict, user_obj):
         """ After KoBo pkg created we need to create basic resources.
             Uses context from the package_create call and the created dataset """
 
@@ -140,15 +140,14 @@ class KoboDataset:
             'package_id': pkg_dict['id'],
             'upload': FlaskFileStorage(filename=local_file, stream=open(local_file, 'rb')),
             'name': 'Questionnaire XLS',
-            'description': '[Special resources] Automatic questionnaire from KoBo survey',
+            'description': 'Questionnaire imported from the KoBo survey',
             'format': 'xls',
             'url_type': 'upload',
-            'type': 'attachment',  # | data
-            'visibility': 'public',  # |  restricted
-            'file_type': 'questionnaire',  # | microdata | report | sampling_methodology | infographics | script | concept note | other
-            # mark this resources as special
-            # extras
-            'special': 'questionnaire',
+            'type': 'attachment',
+            'visibility': 'public',
+            'file_type': 'questionnaire',
+            # mark this resources as special kobo_type
+            'kobo_type': 'questionnaire',
         }
 
         action = toolkit.get_action("resource_create")
@@ -158,7 +157,7 @@ class KoboDataset:
 
     def create_data_resources(self, context, pkg_dict, survey):
         """ Create multiple resources for the survey data """
-        from ckanext.unhcr.jobs import download_export
+        from ckanext.unhcr.jobs import download_kobo_export
 
         date_range_start, date_range_end = survey.get_submission_times()
         if date_range_start is None:
@@ -179,7 +178,7 @@ class KoboDataset:
             else:
                 export_id = None
 
-            description = '[Special]. Automatic {} Data from KoBo survey. {}'.format(data_resource_format, DOWNLOAD_PENDING_MSG)
+            description = '{} data imported from the KoBo survey. {}'.format(data_resource_format.upper(), DOWNLOAD_PENDING_MSG)
             resource = {
                 'package_id': pkg_dict['id'],
                 'name': 'Survey {} data'.format(data_resource_format),
@@ -188,20 +187,22 @@ class KoboDataset:
                 'upload': FlaskFileStorage(filename=f.name, stream=open(f.name, 'rb')),
                 'format': data_resource_format,
                 'type': 'data',
-                'version': '1-{}'.format(data_resource_format),
+                'version': '1',
                 'date_range_start': date_range_start,
                 'date_range_end': date_range_end,
                 'visibility': 'restricted',
                 'process_status': 'raw',
                 'identifiability': 'personally_identifiable',
                 'file_type': 'microdata',
-                # mark this resources as special and save data to download as a job later
+                # mark this resources as special kobo_type and save data to download as a job later
                 # extras
-                'special': 'data',
-                'kobo_export_id': export_id,
-                'kobo_asset_id': self.kobo_asset_id,
-                'kobo_download_status': 'pending',
-                'kobo_download_attempts': 0,
+                'kobo_type': 'data',
+                'kobo_details': {
+                    'kobo_export_id': export_id,
+                    'kobo_asset_id': self.kobo_asset_id,
+                    'kobo_download_status': 'pending',
+                    'kobo_download_attempts': 0,
+                }
             }
 
             action = toolkit.get_action("resource_create")
@@ -209,7 +210,7 @@ class KoboDataset:
             resources.append(resource)
 
             # Start a job to download the file
-            toolkit.enqueue_job(download_export, [resource['id']])
+            toolkit.enqueue_job(download_kobo_export, [resource['id']])
 
         return resources
 
@@ -217,7 +218,16 @@ class KoboDataset:
         """ Update the resource with real data """
 
         context = {'user': user_name}
-        kobo_download_attempts = resource_dict['kobo_download_attempts']
+        if not resource_dict:
+            raise toolkit.ValidationError({'resource': ["empty resource to update"]})
+        kobo_details = resource_dict.get('kobo_details')
+        if not kobo_details:
+            raise toolkit.ValidationError({'kobo_details': ["kobo_details is missing from resource {}".format(resource_dict)]})
+        kobo_download_attempts = kobo_details.get('kobo_download_attempts', 0)
+
+        kobo_details['kobo_download_status'] = 'complete'
+        kobo_details['kobo_download_attempts'] = kobo_download_attempts + 1
+
         resource = toolkit.get_action('resource_patch')(
             context,
             {
@@ -225,8 +235,7 @@ class KoboDataset:
                 'url_type': 'upload',
                 'upload': FlaskFileStorage(filename=local_file, stream=open(local_file, 'rb')),
                 'description': resource_dict['description'].replace(DOWNLOAD_PENDING_MSG, ''),
-                'kobo_download_status': 'complete',
-                'kobo_download_attempts': kobo_download_attempts + 1,
+                'kobo_details': kobo_details,
             }
         )
         return resource

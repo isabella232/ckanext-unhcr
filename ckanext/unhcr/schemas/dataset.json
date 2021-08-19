@@ -931,6 +931,19 @@
                     "value": "anonymized_public"
                 }
             ]
+        },
+        {
+            "field_name": "kobo_type",
+            "required": false,
+            "form_snippet": null,
+            "display_snippet": null
+        },
+        {
+            "field_name": "kobo_details",
+            "preset": "json_object",
+            "required": false,
+            "form_snippet": null,
+            "display_snippet": null
         }
     ]
 }

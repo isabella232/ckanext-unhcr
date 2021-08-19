@@ -87,7 +87,7 @@ class TestHooks(object):
         dataset = action({'user': self.user['name']}, self.new_package_dict)
         mock_hook.assert_not_called()
 
-    @mock.patch('ckanext.unhcr.kobo.kobo_dataset.KoboDataset.initialize_package')
+    @mock.patch('ckanext.unhcr.kobo.kobo_dataset.KoboDataset.create_kobo_resources')
     def test_after_package_create_hook_kobo(self, mock_hook):
         """ New datasets using 'kobo_asset_id' should be initilized """
         action = toolkit.get_action("package_create")
@@ -95,7 +95,7 @@ class TestHooks(object):
         dataset = action({'user': self.user['name']}, self.new_package_dict)
         mock_hook.assert_called_once()
 
-    @mock.patch('ckanext.unhcr.kobo.kobo_dataset.KoboDataset.initialize_package')
+    @mock.patch('ckanext.unhcr.kobo.kobo_dataset.KoboDataset.create_kobo_resources')
     def test_after_package_create_no_hook_kobo(self, mock_hook):
         """ New datasets NOT using 'kobo_asset_id' should NOT be initilized """
         action = toolkit.get_action("package_create")

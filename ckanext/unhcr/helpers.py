@@ -1135,3 +1135,16 @@ def get_user_admins(user_id):
                 user_admins.append(admin)
 
     return user_admins
+
+
+def get_resource_value_label(field_name, resource, dataset_type='dataset'):
+    schema = scheming_get_dataset_schema(dataset_type)
+
+    for field in schema['resource_fields']:
+        if field['field_name'] == field_name:
+            return toolkit.render_snippet(
+                'scheming/snippets/display_field.html',
+                data=dict(
+                    field=field, data=resource, entity_type='dataset',
+                    object_type=dataset_type)
+            )

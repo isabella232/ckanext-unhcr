@@ -1,0 +1,30 @@
+{% extends 'package/snippets/resource_item.html' %}
+
+{% block resource_item_description %}
+  <p class="kobo-resource-description">
+    {% if res.description %}
+      {{ h.markdown_extract(h.get_translated(res, 'description'), extract_length=80) }}
+    {% endif %}
+  </p>
+  <ul class="kobo-resource-description">
+    <li>Visibility: <b>{{ h.get_resource_value_label('visibility', res) }}</b></li>
+    {% if kobo_type == 'data' %}
+      <li>Date range <b>{{res.date_range_start}} - {{res.date_range_end}}</b></li>
+      <li>Process status: <b>{{ h.get_resource_value_label('process_status', res) }}</b></li>
+      <li>Identifiability: <b>{{ h.get_resource_value_label('identifiability', res) }}</b></li>
+  {% endif %}
+  </ul>
+{% endblock %}
+
+{% block resource_item_explore %}
+
+{% if can_edit %}
+<div class="btn-group">
+    <a class="btn btn-primary" href="{{ h.url_for(pkg.type ~ '_resource.edit', id=pkg.name, resource_id=res.id) }}">
+      <i class="fa fa-pencil-square-o"></i>
+      {{ _('Edit') }}
+    </a>
+</div>
+  {% endif %}
+
+{% endblock %}

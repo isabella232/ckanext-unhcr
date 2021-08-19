@@ -6,13 +6,15 @@
 
 <h1>My KoBo Surveys</h1>
 
-<p>The following surveys in KoBo are available for importing to RIDL. If you want to import one of them please select the target Data Container and click the Import button.</p>
-<table class="table table-header table-hover table-bordered">
+<p>The following surveys in KoBo are available for importing to RIDL.</p>
+
+<table class="table table-header table-hover table-bordered table-responsive">
 <thead>
     <tr>
-    <th>Survey</th>
-    <th style="width: 95px;">KoBo owner</th>
-    <th>Import</th>
+    <th class="col-md-3">Survey</th>
+    <th class="col-md-1">KoBo owner</th>
+    <th class="col-md-1">Imported</th>
+    <th class="col-md-2">Actions</th>
     </tr>
 </thead>
 <tbody>
@@ -21,25 +23,24 @@
     <td><b>{{ survey.name }}</b></td>
     <td>{{ survey.owner__username }}</td>
     <td>
-    {# if the survey is already imported we maybe want to create a new version for the resource #}
-
     {% if survey.ridl_package %}
-
-    <p>
-        <a href="{% url_for 'dataset.resources', id=survey.ridl_package.name %}">This resource</a> 
-        has already been imported into RIDL.
-    </p>
+        <p>Yes</p>
     {% elif not survey.has_deployment %}
-
-    {# this source is not ready #}
-    <p>This KoBo survey has not been deployed</p>
-    
+        <p>This KoBo survey has not been deployed</p>
     {% else %}
-
-    <a role="button" class="btn btn-primary" href="{% url_for 'dataset.new', kobo_asset_id=survey.uid %}">Import</a>
-
+        <p>No</p>
     {% endif %}
+    </td>
 
+    <td>
+    {# if the survey is already imported we maybe want to create a new version for the resource #}
+    {% if survey.ridl_package %}
+        <a role="button" class="btn btn-default" href="{% url_for 'dataset.read', id=survey.ridl_package.name %}">View RIDL dataset</a>
+    {% elif not survey.has_deployment %}
+        -
+    {% else %}
+        <a role="button" class="btn btn-primary" href="{% url_for 'dataset.new', kobo_asset_id=survey.uid %}">Import</a>
+    {% endif %}
     </td>
 </tr>
 {% endfor %}

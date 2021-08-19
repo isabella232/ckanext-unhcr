@@ -166,20 +166,24 @@ def _get_link_package_ids_from_revisions(package_id):
 
 # KoBo
 
-def download_export(resource_id):
+def download_kobo_export(resource_id):
     """ Job for download pending data from a KoBo export.
         JSON data requires a paginated download """
     from ckanext.unhcr.kobo.api import KoBoAPI, KoBoSurvey
     from ckanext.unhcr.kobo.kobo_dataset import KoboDataset
 
-    resource = model.Resource.get(resource_id)
     context = {'ignore_auth': True}
     resource = toolkit.get_action('resource_show')(context, {'id': resource_id})
 
-    kobo_download_status = resource['kobo_download_status']
+    kobo_details = resource.get('kobo_details')
+    if not kobo_details:
+        log.error('Trying to download a resource without kobo_details: {}'.format(resource_id))
+        raise toolkit.ValidationError({'kobo_resource': ["Trying to download a resource without kobo_details {}".format(resource)]})
+
+    kobo_download_status = kobo_details['kobo_download_status']
     if kobo_download_status == 'complete':
         log.error('Trying to download a complete resource: {}'.format(resource_id))
-        return
+        raise toolkit.ValidationError({'kobo_resource': ['Trying to download a complete resource: {}'.format(resource_id)]})
 
     package = toolkit.get_action('package_show')(context, {'id': resource['package_id']})
     if not package:
@@ -191,7 +195,7 @@ def download_export(resource_id):
     kobo_url = toolkit.config.get('ckanext.unhcr.kobo_url', 'https://kobo.unhcr.org')
     kobo_api = KoBoAPI(kobo_token, kobo_url)
 
-    kobo_asset_id = resource['kobo_asset_id']
+    kobo_asset_id = kobo_details['kobo_asset_id']
     kd = KoboDataset(kobo_asset_id)
     survey = KoBoSurvey(kobo_asset_id, kobo_api)
     if resource['format'].lower() == 'json':
@@ -199,9 +203,9 @@ def download_export(resource_id):
         kd.update_resource(resource, local_file, user_obj.name)
     else:
         # CSV and XLS require download
-        export_id = resource['kobo_export_id']
+        export_id = kobo_details['kobo_export_id']
         if not export_id:
-            raise toolkit.ValidationError({'kobo_export_id': ["Missing kobo_export_id at resource {}".format(resource)]})
+            raise toolkit.ValidationError({'kobo_export_id': ["Missing kobo_export_id at resource {}, {}".format(resource, kobo_details)]})
         export = survey.get_export(export_id)
         if export['status'] == 'complete':
             data_url = export['result']
@@ -209,11 +213,11 @@ def download_export(resource_id):
             kd.update_resource(resource, local_file, user_obj.name)
         else:
             # wait and re-schedule
-            kobo_download_attempts = resource['kobo_download_attempts']
+            kobo_download_attempts = kobo_details['kobo_download_attempts']
             log.info('Re-schedule KoBo download: {}'.format(kobo_download_attempts))
             if kobo_download_attempts >= 5:
                 log.error('Failed to download KoBo data resource: {}'.format(resource))
                 return
             else:
                 time.sleep(30 * kobo_download_attempts)
-                toolkit.enqueue_job(download_export, [resource['id']])
+                toolkit.enqueue_job(download_kobo_export, [resource['id']])

@@ -219,6 +219,10 @@ class UnhcrPlugin(
             'get_default_container_for_user': helpers.get_default_container_for_user,
             # Microdata
             'get_microdata_collections': helpers.get_microdata_collections,
+            # KoBo
+            'get_kobo_token': helpers.get_kobo_token,
+            'get_kobo_url': helpers.get_kobo_url,
+            'get_kobo_initial_dataset': helpers.get_kobo_initial_dataset,
             # Misc
             'current_path': helpers.current_path,
             'normalize_list': helpers.normalize_list,
@@ -233,9 +237,7 @@ class UnhcrPlugin(
             'get_google_analytics_id': helpers.get_google_analytics_id,
             'nl_to_br': helpers.nl_to_br,
             'is_plugin_loaded': helpers.is_plugin_loaded,
-            'get_kobo_token': helpers.get_kobo_token,
-            'get_kobo_url': helpers.get_kobo_url,
-            'get_kobo_initial_dataset': helpers.get_kobo_initial_dataset,
+            'get_resource_value_label': helpers.get_resource_value_label,
         }
 
     # IPackageController
