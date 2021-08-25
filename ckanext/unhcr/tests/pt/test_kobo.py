@@ -14,6 +14,7 @@ class TestKoBo(object):
         # Users
         self.internal_user = factories.InternalUser()
         self.internal_editor_user = factories.InternalUser()
+        self.kobo_user = factories.InternalKoBoUser()
         self.internal_admin_user = factories.InternalUser()
         self.external_user = factories.ExternalUser()
 
@@ -21,6 +22,7 @@ class TestKoBo(object):
             users=[
                 {'name': self.internal_admin_user['name'], 'capacity': 'admin'},
                 {'name': self.internal_editor_user['name'], 'capacity': 'editor'},
+                {'name': self.kobo_user['name'], 'capacity': 'editor'},
             ]
         )
 
@@ -196,9 +198,11 @@ class TestKoBo(object):
     @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.download_questionnaire')
     @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.get_submission_times')
     @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.create_export')
-    def test_post_new_pkg_from_kobo_starts_jobs(self, create_export, sub_times, downq, mock_hook, app):
+    @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.get_total_submissions')
+    def test_post_new_pkg_from_kobo_starts_jobs(self, submissions, create_export, sub_times, downq, mock_hook, app):
         """ Try to import KoBo resource """
 
+        submissions.return_value = 1
         create_export.return_value = {'uid': 'kobo_export_id'}
         sub_times.return_value = ['2021-01-01', '2021-02-01']
         questionnaire_file = tempfile.NamedTemporaryFile()
@@ -206,7 +210,7 @@ class TestKoBo(object):
         mock_hook.return_value = None
 
         environ = {
-            'REMOTE_USER': self.internal_editor_user['name']
+            'REMOTE_USER': self.kobo_user['name']
         }
         data = {
             '_ckan_phase': 'dataset_new_1',
@@ -237,6 +241,10 @@ class TestKoBo(object):
             follow_redirects=True
         )
 
+        submissions.assert_called()
+        create_export.assert_called()
+        sub_times.assert_called()
+        downq.assert_called()
         # download_kobo_export should be called for all data surveys (JSON, CSV and XLS)
         mock_calls = [fn[0][0].__name__ for fn in mock_hook.call_args_list]
         assert mock_calls.count('download_kobo_export') == 3

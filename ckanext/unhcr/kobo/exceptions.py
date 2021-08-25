@@ -12,3 +12,7 @@ class KoboMissingAssetIdError(Exception):
 
 class KoBoSurveyError(Exception):
     pass
+
+
+class KoBoEmptySurveyError(Exception):
+    pass

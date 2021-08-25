@@ -20,13 +20,20 @@
 <tbody>
 {% for survey in surveys %}
 <tr>
-    <td><b>{{ survey.name }}</b></td>
+    <td>
+        <b>{{ survey.name }}</b>
+        {% if survey.has_deployment %}
+        <br><small>{{ survey.deployment__submission_count }} submissions</small>
+        {% endif %}
+    </td>
     <td>{{ survey.owner__username }}</td>
     <td>
     {% if survey.ridl_package %}
         <p>Yes</p>
     {% elif not survey.has_deployment %}
         <p>This KoBo survey has not been deployed</p>
+    {% elif survey.deployment__submission_count == 0 %}
+        <p>The survey is deployed but it does not have submissions yet.</p>
     {% else %}
         <p>No</p>
     {% endif %}
@@ -37,6 +44,8 @@
     {% if survey.ridl_package %}
         <a role="button" class="btn btn-default" href="{% url_for 'dataset.read', id=survey.ridl_package.name %}">View RIDL dataset</a>
     {% elif not survey.has_deployment %}
+        -
+    {% elif survey.deployment__submission_count == 0 %}
         -
     {% else %}
         <a role="button" class="btn btn-primary" href="{% url_for 'dataset.new', kobo_asset_id=survey.uid %}">Import</a>

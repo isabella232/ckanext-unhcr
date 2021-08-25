@@ -13,11 +13,13 @@ from ckanext.unhcr.tests import factories, mocks
 class TestResourceViews(object):
 
     def setup(self):
+
         # Users
         self.sysadmin = core_factories.Sysadmin(name='sysadmin', id='sysadmin')
         self.user1 = core_factories.User(name='user1', id='user1')
         self.user2 = core_factories.User(name='user2', id='user2')
         self.user3 = core_factories.User(name='user3', id='user3')
+        self.kobo_user = factories.InternalKoBoUser(name='kobo_user', id='kobo_user')
 
         # Containers
         self.container1 = factories.DataContainer(
@@ -248,7 +250,11 @@ class TestResourceViews(object):
         assert 'All data resources require an uploaded file' in resp.body
 
     @mock.patch('ckanext.unhcr.kobo.kobo_dataset.KoboDataset.create_kobo_resources')
-    def test_edit_kobo_resource_must_preserve_upload(self, create_kobo_resources, app):
+    @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.get_total_submissions')
+    def test_edit_kobo_resource_must_preserve_upload(self, submissions, create_kobo_resources, app):
+
+        # required to create KoBo dataset
+        submissions.return_value = 1
 
         self.kobo_dataset = factories.Dataset(
             name='kobo-dataset',

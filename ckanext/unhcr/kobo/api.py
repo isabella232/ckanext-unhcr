@@ -86,7 +86,8 @@ class KoBoSurvey:
 
     def load_asset(self):
         """ Load basic asset metadata """
-        self.asset = self.kobo_api.get_asset(self.asset_id)
+        if self.asset is None:
+            self.asset = self.kobo_api.get_asset(self.asset_id)
 
     def load_data(self):
         """ Load actual data from survey """
@@ -99,6 +100,11 @@ class KoBoSurvey:
 
         self.data = data
         return data
+
+    def get_total_submissions(self):
+        """ Count all submissions for a survey """
+        self.load_asset()
+        return self.asset['deployment__submission_count']
 
     def get_exports(self, export_id):
         """ Get all exports """

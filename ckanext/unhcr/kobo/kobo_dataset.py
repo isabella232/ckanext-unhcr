@@ -1,12 +1,15 @@
+import logging
 import os
 import tempfile
+from dateutil.parser import parse as parse_date
 from werkzeug.datastructures import FileStorage as FlaskFileStorage
 from ckan.lib.munge import munge_title_to_name
 from ckan.plugins import toolkit
 from ckanext.unhcr.kobo.api import KoBoAPI, KoBoSurvey
-from ckanext.unhcr.kobo.exceptions import KoBoDuplicatedDatasetError, KoboMissingAssetIdError
+from ckanext.unhcr.kobo.exceptions import KoBoDuplicatedDatasetError, KoboMissingAssetIdError, KoBoEmptySurveyError
 
 
+logger = logging.getLogger(__name__)
 DOWNLOAD_PENDING_MSG = 'The resource is pending download.'
 
 
@@ -118,13 +121,16 @@ class KoboDataset:
             Uses context from the package_create call and the created dataset """
 
         kobo_asset_id = pkg_dict.get('kobo_asset_id')
-
         if not kobo_asset_id:
             raise KoboMissingAssetIdError('Missing kobo_asset_id in package')
 
         # TODO this should be a job. Here we just need to initialize the resources
         kobo_api = self.get_kobo_api(user_obj)
         survey = KoBoSurvey(kobo_asset_id, kobo_api)
+
+        if survey.get_total_submissions() == 0:
+            raise KoBoEmptySurveyError('KoBo survey has no submissions')
+
         # Create a resource for the questionnaire
         self.create_questionnaire_resource(context, pkg_dict, survey)
 
@@ -161,9 +167,14 @@ class KoboDataset:
 
         date_range_start, date_range_end = survey.get_submission_times()
         if date_range_start is None:
+            survey.load_asset()  # required to get the dates
             # we can use the inacurate creation and modification dates from the survey
-            date_range_start = survey.asset.get('date_created')
-            date_range_end = survey.asset.get('date_modified')
+            # those are DateTimes and we need just Dates
+            date_created = parse_date(survey.asset.get('date_created'))
+            date_modified = parse_date(survey.asset.get('date_modified'))
+
+            date_range_start = date_created.strftime('%Y-%m-%d')
+            date_range_end = date_modified.strftime('%Y-%m-%d')
 
         resources = []
         # create empty resources to be downloaded later
@@ -200,6 +211,8 @@ class KoboDataset:
                     'kobo_asset_id': self.kobo_asset_id,
                     'kobo_download_status': 'pending',
                     'kobo_download_attempts': 0,
+                    # To detect new submissions
+                    'kobo_submission_count': survey.get_total_submissions(),
                 }
             }
 

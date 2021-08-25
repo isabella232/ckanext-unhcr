@@ -73,7 +73,24 @@ def _generate_plugin_extras(user):
     return plugin_extras
 
 
+def _generate_kobo_extras(user):
+
+    plugin_extras = _generate_plugin_extras(user)
+    plugin_extras.update({
+        'unhcr': {
+            'kobo_token': "test_kobo_token_{}".format(user.name)
+        }
+    })
+
+    return plugin_extras
+
+
 class InternalUser(factories.User):
 
     email = factory.LazyAttribute(_generate_internal_email)
     plugin_extras = factory.LazyAttribute(_generate_plugin_extras)
+
+
+class InternalKoBoUser(InternalUser):
+
+    plugin_extras = factory.LazyAttribute(_generate_kobo_extras)

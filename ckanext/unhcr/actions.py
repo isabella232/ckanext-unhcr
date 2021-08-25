@@ -18,7 +18,8 @@ from ckan.lib.search import index_for, commit
 import ckan.logic as core_logic
 import ckan.lib.dictization.model_dictize as model_dictize
 from ckanext.unhcr import helpers, mailer, utils
-from ckanext.unhcr.kobo.api import KoBoAPI
+from ckanext.unhcr.kobo.api import KoBoAPI, KoBoSurvey
+from ckanext.unhcr.kobo.exceptions import KoboMissingAssetIdError, KoBoEmptySurveyError
 from ckanext.unhcr.kobo.kobo_dataset import KoboDataset
 from ckanext.unhcr.models import AccessRequest, USER_REQUEST_TYPE_NEW, USER_REQUEST_TYPE_RENEWAL
 from ckanext.unhcr.utils import is_saml2_user
@@ -71,14 +72,22 @@ def package_update(up_func, context, data_dict):
 def package_create(up_func, context, data_dict):
     """ Create resources for KoBo assets """
 
+    # Check if the survey is ready to import
+    kobo_asset_id = data_dict.get('kobo_asset_id')
+    if kobo_asset_id:
+        user_obj = model.User.by_name(context['user'])
+        kd = KoboDataset(kobo_asset_id)
+        kobo_api = kd.get_kobo_api(user_obj)
+        survey = KoBoSurvey(kobo_asset_id, kobo_api)
+
+        if survey.get_total_submissions() == 0:
+            raise toolkit.ValidationError({'kobo-survey': ['The selected KoBo survey has no submissions']})
+
     # Create dataset
     dataset = up_func(context, data_dict)
 
-    kobo_asset_id = data_dict.get('kobo_asset_id')
     if kobo_asset_id:
         # create basic resources
-        kd = KoboDataset(kobo_asset_id)
-        user_obj = model.User.by_name(context['user'])
         kd.create_kobo_resources(context, dataset, user_obj)
 
     return dataset
@@ -785,7 +794,6 @@ def resource_update(up_func, context, data_dict):
             )
 
     resource = up_func(context, data_dict)
-
     if has_upload:
         toolkit.get_action('scan_submit')(context, {'id': resource['id']})
     return resource
