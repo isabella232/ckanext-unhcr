@@ -68,7 +68,37 @@
 
 {% endblock %}
 
-{% block secondary_content %}
+{% block primary_content %}
+
+{{ super() }}
+
+{% if res.kobo_type %}
+<section class="module">
+  
+  <div class="module-content">
+    <h2>{{ _('KoBo information') }}</h2>
+    <table class="table table-striped table-bordered table-condensed" data-module="table-toggle-more">
+      <tbody>
+        <tr>
+          <th scope="row">{{ _('KoBo asset ID') }}</th>
+          <td>{{ package.kobo_asset_id }}</td>
+        </tr>
+        <tr>
+          <th scope="row">{{ _('KoBo resource type') }}</th>
+          <td>{{ res.kobo_type }}</td>
+        </tr>
+        <tr>
+          <th scope="row">{{ _('KoBo export ID') }}</th>
+          <td>{% if res.kobo_details %}{{ res.kobo_details.kobo_export_id }}{% else %}n/a{% endif %}</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </div>
+  
+</section>
+{% endif %}
+
 {% endblock %}
 
 {% block footer %}

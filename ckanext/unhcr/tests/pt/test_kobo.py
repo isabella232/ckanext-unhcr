@@ -196,7 +196,7 @@ class TestKoBo(object):
     @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.download_questionnaire')
     @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.get_submission_times')
     @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.create_export')
-    def test_post_new_pkg_from_kobo_asset(self, create_export, sub_times, downq, mock_hook, app):
+    def test_post_new_pkg_from_kobo_starts_jobs(self, create_export, sub_times, downq, mock_hook, app):
         """ Try to import KoBo resource """
 
         create_export.return_value = {'uid': 'kobo_export_id'}
@@ -211,7 +211,7 @@ class TestKoBo(object):
         data = {
             '_ckan_phase': 'dataset_new_1',
             'pkg_name': '',
-            'kobo_asset_id': 'test_some_kobo_id',
+            'kobo_asset_id': 'some_kobo_id',
             'title': 'Some Survey',
             'name': 'some-survey',
             'notes': 'Dataset imported from KoBo toolbox, bla, bla',
@@ -219,7 +219,7 @@ class TestKoBo(object):
             'url': '',
             'owner_org': self.data_container['name'],
             'external_access_level': 'not_available',
-            'original_id': 'test_some_kobo_id',
+            'original_id': 'some_kobo_id',
             'data_collector': 'ACF,UNHCR',
             'keywords': 9,
             'unit_of_measurement': 'meters',
@@ -228,9 +228,9 @@ class TestKoBo(object):
             'archived': 'False',
             'save': '',
         }
-        # set up the first token
+
         url = toolkit.url_for('dataset.new')
-        resp = app.post(
+        app.post(
             url,
             data=data,
             extra_environ=environ,
@@ -240,7 +240,3 @@ class TestKoBo(object):
         # download_kobo_export should be called for all data surveys (JSON, CSV and XLS)
         mock_calls = [fn[0][0].__name__ for fn in mock_hook.call_args_list]
         assert mock_calls.count('download_kobo_export') == 3
-
-        print(resp.status_code, resp.body)
-        assert resp.status_code == 200
-        assert "<h1>KoBo resources</h1>" in resp.body

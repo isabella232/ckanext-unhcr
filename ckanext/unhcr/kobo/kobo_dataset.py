@@ -118,6 +118,7 @@ class KoboDataset:
             Uses context from the package_create call and the created dataset """
 
         kobo_asset_id = pkg_dict.get('kobo_asset_id')
+
         if not kobo_asset_id:
             raise KoboMissingAssetIdError('Missing kobo_asset_id in package')
 
@@ -146,7 +147,6 @@ class KoboDataset:
             'type': 'attachment',
             'visibility': 'public',
             'file_type': 'questionnaire',
-            # mark this resources as special kobo_type
             'kobo_type': 'questionnaire',
         }
 
@@ -194,8 +194,6 @@ class KoboDataset:
                 'process_status': 'raw',
                 'identifiability': 'personally_identifiable',
                 'file_type': 'microdata',
-                # mark this resources as special kobo_type and save data to download as a job later
-                # extras
                 'kobo_type': 'data',
                 'kobo_details': {
                     'kobo_export_id': export_id,

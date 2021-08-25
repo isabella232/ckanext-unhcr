@@ -766,8 +766,26 @@ def resource_update(up_func, context, data_dict):
     toolkit.check_access('resource_update', context, data_dict)
     if data_dict.get('identifiability') == 'personally_identifiable':
         data_dict['visibility'] = 'restricted'
+
     has_upload = data_dict.get('upload') is not None
+
+    # ensure kobo_details are not missing
+    old_resource = toolkit.get_action('resource_show')(context, {'id': data_dict['id']})
+    data_dict['kobo_type'] = old_resource.get('kobo_type')
+    data_dict['kobo_details'] = old_resource.get('kobo_details')
+
+    if data_dict.get('kobo_type'):
+        original_url = data_dict.pop('original_url', None)
+        upload_changed = original_url and data_dict.get('url') != original_url
+        # if the users try to change a "kobo data file" (extra) resource with a file,
+        # we should raise an error
+        if upload_changed:
+            raise toolkit.ValidationError(
+                {'data file': ['You cannot update a KoBo data file directly, please re-import the data instead']}
+            )
+
     resource = up_func(context, data_dict)
+
     if has_upload:
         toolkit.get_action('scan_submit')(context, {'id': resource['id']})
     return resource
@@ -779,6 +797,7 @@ def extract_keys_by_prefix(dct, prefix):
     return {
         k.replace(prefix, '', 1): v for k, v in dct.items() if k.startswith(prefix)
     }
+
 
 def dictize_access_request(req):
     package = extract_keys_by_prefix(req, 'package_')

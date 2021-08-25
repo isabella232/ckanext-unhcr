@@ -53,8 +53,12 @@
     <i class="fa fa-info-circle"></i>
     Max upload size: {{ h.get_max_resource_size() }}Mb
   </div>
-  <input type="hidden" value="{{ data.kobo_type }}" name="kobo_type" />
 
+  <input type="hidden" value="{{ data.kobo_type }}" name="kobo_type" id="kobo_type_field"/>
+
+  {# to detect changes on uploaded file #}
+  <input type="hidden" value="{{ data.url }}" name="original_url" />
+  
   {{ super() }}
 
 {% endblock %}
