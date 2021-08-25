@@ -1,5 +1,12 @@
 # RIDL Changelog
 
+## v3.1.2b - 2021-08-25 
+
+New features
+- [KoBo tutorial](https://github.com/okfn/ckanext-unhcr/blob/c34c4a50e4122a3e26558913d651369bc65b6e82/docs/kobo.md) created
+- [#666](https://github.com/okfn/ckanext-unhcr/pull/666) Prevent uploading files to automatically imported KoBo resources
+- [#671](https://github.com/okfn/ckanext-unhcr/pull/671) Use Kobo survey submission count to validate
+
 ## v3.1.2 - 2021-08-10
 
 New features
