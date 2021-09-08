@@ -391,7 +391,11 @@ class UnhcrPlugin(
     def _package_after_create(self, context, pkg_dict):
         if not context.get('job') and not context.get('defer_commit'):
             if self._package_is_active(context, pkg_dict):
-                toolkit.enqueue_job(jobs.process_dataset_on_create, [pkg_dict['id']])
+                toolkit.enqueue_job(
+                    jobs.process_dataset_on_create,
+                    [pkg_dict['id']],
+                    title="_package_after_create {}".format(pkg_dict['name'])
+                )
 
         if pkg_dict.get('type') == 'deposited-dataset':
             user_id = None
@@ -408,7 +412,11 @@ class UnhcrPlugin(
     def _resource_after_create(self, context, res_dict):
         if not context.get('job'):
             if self._resource_is_active(context, res_dict):
-                toolkit.enqueue_job(jobs.process_dataset_on_update, [res_dict['package_id']])
+                toolkit.enqueue_job(
+                    jobs.process_dataset_on_update,
+                    [res_dict['package_id']],
+                    title="_resource_after_create {}".format(res_dict['id'])
+                )
 
     def after_update(self, context, data_dict):
         if 'owner_org' in data_dict and 'package_id' not in data_dict:
@@ -420,16 +428,28 @@ class UnhcrPlugin(
     def _package_after_update(self, context, pkg_dict):
         if not context.get('job') and not context.get('defer_commit'):
             if self._package_is_active(context, pkg_dict):
-                toolkit.enqueue_job(jobs.process_dataset_on_update, [pkg_dict['id']])
+                toolkit.enqueue_job(
+                    jobs.process_dataset_on_update,
+                    [pkg_dict['id']],
+                    title="_package_after_update {}".format(pkg_dict['name'])
+                )
 
     def _resource_after_update(self, context, res_dict):
         if not context.get('job'):
             if self._resource_is_active(context, res_dict):
-                toolkit.enqueue_job(jobs.process_dataset_on_update, [res_dict['package_id']])
+                toolkit.enqueue_job(
+                    jobs.process_dataset_on_update,
+                    [res_dict['package_id']],
+                    title="_resource_after_update {}".format(res_dict['id'])
+                )
 
     def after_delete(self, context, data_dict):
         if not context.get('job') and type(data_dict) == dict and data_dict.get('id'):
-            toolkit.enqueue_job(jobs.process_dataset_on_delete, [data_dict['id']])
+            toolkit.enqueue_job(
+                jobs.process_dataset_on_delete,
+                [data_dict['id']],
+                title="_resource_after_update {}".format(data_dict['id'])
+            )
 
     def _package_is_active(self, context, pkg_dict):
         if pkg_dict.get('state') == 'active':

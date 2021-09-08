@@ -381,7 +381,7 @@ def notify_renewal_request(user_id, message, recipient_ids):
         recipient = model.User.get(recipient_id)
         context['recipient'] = recipient
         body = render_jinja2('emails/access_requests/access_renewal_request.html', context)
-        toolkit.enqueue_job(mail_user_by_id, [recipient_id, subj, body])
+        toolkit.enqueue_job(mail_user_by_id, [recipient_id, subj, body], title="notify_renewal_request")
 
     return recipient_ids
 

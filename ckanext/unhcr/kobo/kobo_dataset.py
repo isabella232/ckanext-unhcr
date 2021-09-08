@@ -1,3 +1,4 @@
+import datetime
 import logging
 import os
 import tempfile
@@ -56,9 +57,11 @@ class KoboDataset:
                 raise KoBoDuplicatedDatasetError(error)
             else:
                 # returns first
+                self.package_dict = packages['results'][0]
                 return packages['results'][0]
         elif total == 1:
             package = packages['results'][0]
+            self.package_dict = package
             return package
         else:
             return None
@@ -213,6 +216,7 @@ class KoboDataset:
                     'kobo_download_attempts': 0,
                     # To detect new submissions
                     'kobo_submission_count': survey.get_total_submissions(),
+                    'kobo_last_updated': str(datetime.datetime.utcnow())
                 }
             }
 
@@ -221,14 +225,35 @@ class KoboDataset:
             resources.append(resource)
 
             # Start a job to download the file
-            toolkit.enqueue_job(download_kobo_export, [resource['id']])
+            toolkit.enqueue_job(download_kobo_export, [resource['id']], title='Download KoBo survey {} data'.format(data_resource_format))
 
         return resources
 
-    def update_resource(self, resource_dict, local_file, user_name):
+    def update_kobo_details(self, resource_dict, user_name, new_kobo_details):
+        """ Update just details to a KoBo resource """
+
+        context = {'user': user_name, 'job': True}
+        if not resource_dict:
+            raise toolkit.ValidationError({'resource': ["empty resource to update"]})
+        kobo_details = resource_dict.get('kobo_details')
+        if not kobo_details:
+            raise toolkit.ValidationError({'kobo_details': ["kobo_details is missing from resource {}".format(resource_dict)]})
+
+        kobo_details.update(new_kobo_details)
+
+        resource = toolkit.get_action('resource_patch')(
+            context,
+            {
+                'id': resource_dict['id'],
+                'kobo_details': kobo_details,
+            }
+        )
+        return resource
+
+    def update_resource(self, resource_dict, local_file, user_name, submission_count):
         """ Update the resource with real data """
 
-        context = {'user': user_name}
+        context = {'user': user_name, 'job': True}
         if not resource_dict:
             raise toolkit.ValidationError({'resource': ["empty resource to update"]})
         kobo_details = resource_dict.get('kobo_details')
@@ -238,6 +263,8 @@ class KoboDataset:
 
         kobo_details['kobo_download_status'] = 'complete'
         kobo_details['kobo_download_attempts'] = kobo_download_attempts + 1
+        kobo_details['kobo_submission_count'] = submission_count
+        kobo_details['kobo_last_updated'] = str(datetime.datetime.utcnow())
 
         resource = toolkit.get_action('resource_patch')(
             context,
@@ -250,3 +277,120 @@ class KoboDataset:
             }
         )
         return resource
+
+    def get_submission_count(self):
+        """ Get the amount of submissions in the current local package """
+
+        kobo_package = self.package_dict or self.get_package()
+        if kobo_package is None:
+            raise KoboMissingAssetIdError('Cannot check for updates. No KoBo package found for asset {}'.format(self.kobo_asset_id))
+
+        # analyze all resources, check for the smallest one
+        # we expect all resources to have the same number of submissions
+        min_submission_count = 0
+        for resource in kobo_package['resources']:
+            # only data resources have submission count
+            if resource['kobo_type'] != 'data':
+                continue
+            kobo_details = resource.get('kobo_details')
+            if not kobo_details:
+                continue
+            submission_count = kobo_details.get('kobo_submission_count')
+            if not submission_count or submission_count == 0:
+                logger.warning('No submission count found for resource {}'.format(resource['id']))
+                continue
+            if min_submission_count == 0 or submission_count < min_submission_count:
+                min_submission_count = submission_count
+
+        return min_submission_count
+
+    def check_new_submissions(self, user_obj):
+        """ Check for updates in the survey (new submissions).
+            Return the amount of new submissions """
+
+        min_submission_count = self.get_submission_count()
+
+        kobo_api = self.get_kobo_api(user_obj)
+        survey = KoBoSurvey(self.kobo_asset_id, kobo_api)
+
+        new_submission_count = survey.get_total_submissions()
+        if new_submission_count == 0:
+            return 0
+
+        # check if the submission count has changed
+        return new_submission_count - min_submission_count
+
+    def update_questionnaire(self, resource_id, survey, user_obj):
+        """ Update questionnaire for a KoBo dataset """
+        logger.info('Updating questionnaire for resource {}'.format(resource_id))
+        local_file = survey.download_questionnaire(destination_path=self.upload_path)
+
+        patch_resource = {
+            'id': resource_id,
+            'upload': FlaskFileStorage(filename=local_file, stream=open(local_file, 'rb')),
+            'url_type': 'upload',
+        }
+
+        resource = toolkit.get_action('resource_patch')(
+            {'user': user_obj.name, 'job': True},
+            patch_resource,
+        )
+
+        return resource
+
+    def update_all_resources(self, user_obj):
+        """ update all resources (and questionnaire) in the package with new submissions """
+        from ckanext.unhcr.jobs import download_kobo_export
+
+        kobo_package = self.get_package() if self.package_dict is None else self.package_dict
+        if kobo_package is None:
+            raise KoboMissingAssetIdError('Cannot check for updates. No KoBo package found for asset {}'.format(self.kobo_asset_id))
+
+        logger.info('Updating all resources for package {}'.format(kobo_package['name']))
+        kobo_api = self.get_kobo_api(user_obj)
+        survey = KoBoSurvey(self.kobo_asset_id, kobo_api)
+        date_range_start, date_range_end = survey.get_submission_times()
+
+        # update each resource
+        for resource in kobo_package['resources']:
+            if resource['kobo_type'] == 'questionnaire':
+                self.update_questionnaire(resource['id'], survey, user_obj)
+            if resource['kobo_type'] != 'data':
+                continue
+            kobo_details = resource.get('kobo_details')
+            if not kobo_details:
+                continue
+            # this is a kobo resource
+            logger.info('Updating {} resources {} for package {}'.format(
+                resource['format'],
+                resource['id'],
+                kobo_package['name'])
+            )
+            dformat = resource['format'].lower()
+            if dformat != 'json':
+                # create the export for the expected format (this starts an async process at KoBo)
+                export = survey.create_export(dformat=dformat)
+                export_id = export['uid']
+            else:
+                export_id = ''
+
+            # prepare the update
+            kobo_details = resource['kobo_details']
+            patch_resource = {
+                'id': resource['id'],
+                'date_range_start': date_range_start,
+                'date_range_end': date_range_end,
+                'kobo_details': kobo_details
+            }
+            patch_resource['kobo_details']['kobo_export_id'] = export_id
+            patch_resource['kobo_details']['kobo_download_status'] = 'pending'
+            patch_resource['kobo_details']['kobo_download_attempts'] = 0
+            patch_resource['kobo_details']['kobo_last_updated'] = str(datetime.datetime.utcnow())
+
+            toolkit.get_action('resource_patch')(
+                {'user': user_obj.name, 'job': True},
+                patch_resource,
+            )
+
+            # send this job to queue
+            toolkit.enqueue_job(download_kobo_export, [resource['id']], title='Preparing to update {} resource'.format(dformat))

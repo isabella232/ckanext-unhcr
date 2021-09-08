@@ -2229,6 +2229,19 @@ i {
   padding-left: 0;
 }
 
+.update-kobo-resources-container {
+  padding: 7px 0;
+}
+
+.running-kobo-update{
+  padding: inherit;
+  margin-top: 10px;
+}
+
+#full_kobo_update_container {
+  overflow-y: auto;
+}
+
 /* General */
 
 .curation-sidebar .btn {

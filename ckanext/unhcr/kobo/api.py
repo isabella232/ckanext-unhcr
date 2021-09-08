@@ -121,6 +121,7 @@ class KoBoSurvey:
         if dformat.lower() not in ['xls', 'xml']:
             raise KoBoSurveyError('Invalid format: {}'.format(dformat))
 
+        logger.info('Downloading questionnaire for asset {}'.format(self.asset_id))
         file_name = '{}.{}'.format(self.asset_id, dformat)
         url = 'assets/{}'.format(file_name)
         response = self.kobo_api._get(url, return_json=False)

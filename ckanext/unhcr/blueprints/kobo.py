@@ -1,9 +1,9 @@
-from flask import Blueprint
-from ckan import model
+from flask import Blueprint, make_response
 import ckan.plugins.toolkit as toolkit
 from ckanext.unhcr.utils import require_editor_user
-from ckanext.unhcr.kobo.api import KoBoAPI
-from ckanext.unhcr.kobo.exceptions import KoboApiError
+from ckanext.unhcr.jobs import update_pkg_kobo_resources
+from ckanext.unhcr.kobo.api import KoBoAPI, KoBoSurvey
+from ckanext.unhcr.kobo.exceptions import KoboApiError, KoboMissingAssetIdError
 from ckanext.unhcr.kobo.kobo_dataset import KoboDataset
 
 
@@ -12,6 +12,20 @@ unhcr_kobo_blueprint = Blueprint(
     __name__,
     url_prefix=u'/kobo'
 )
+
+
+def _make_json_response(msg=None, status_int=200, extra_headers={}, error_msg=None, extra_data={}):
+
+    ok = error_msg is None
+    data = {"ok": ok}
+    if error_msg:
+        data["error"] = error_msg
+    else:
+        data["message"] = msg
+    headers = {"Content-Type": "application/json"}
+    headers.update(extra_headers)
+    data.update(extra_data)
+    return make_response(data, status_int, headers)
 
 
 @require_editor_user
@@ -92,12 +106,62 @@ def kobo_surveys():
         return toolkit.redirect_to('unhcr_kobo.index')
 
     for survey in surveys:
-        survey['ridl_package'] = KoboDataset(survey['uid']).get_package(raise_multiple_error=False)
+        kd = KoboDataset(survey['uid'])
+        pkg = kd.get_package(raise_multiple_error=False)
+        survey['ridl_package'] = pkg
+        if pkg:
+            # check if there are new submissions
+            old_submission_count = kd.get_submission_count()
+            new_submission_count = survey['deployment__submission_count']
+            survey['new_submissions'] = new_submission_count - old_submission_count
+            download_statuses = [res.get('kobo_details', {}).get('kobo_download_status') for res in pkg['resources']]
+            survey['update_is_running'] = 'pending' in download_statuses
 
     extra_vars = {
         'surveys': surveys,
     }
     return toolkit.render('kobo/surveys.html', extra_vars)
+
+
+@require_editor_user
+def enqueue_survey_update():
+    """ Check for updates and if new submissions were found, starts a job to update.
+        Return an API dict response """
+    user_obj = toolkit.c.userobj
+
+    kobo_asset_id = toolkit.request.form.get('kobo_asset_id')
+    if not kobo_asset_id:
+        message = 'Missing KoBo asset ID.'
+        return _make_json_response(status_int=404, error_msg=message)
+
+    kd = KoboDataset(kobo_asset_id)
+    try:
+        old_submission_count = kd.get_submission_count()
+    except KoboMissingAssetIdError:
+        message = 'Dataset not found for this KoBo asset ID.'
+        return _make_json_response(status_int=404, error_msg=message)
+
+    # check if an update is pending
+    download_statuses = [res.get('kobo_details', {}).get('kobo_download_status') for res in kd.package_dict['resources']]
+    if 'pending' in download_statuses:
+        message = 'There is a pending update for this survey.'
+        return _make_json_response(status_int=400, error_msg=message)
+
+    # check if there are new submissions
+    kobo_api = kd.get_kobo_api(user_obj)
+    survey = KoBoSurvey(kobo_asset_id, kobo_api)
+
+    new_submission_count = survey.get_total_submissions()
+    new_submissions = new_submission_count - old_submission_count
+
+    extra_data = {'new_submissions': new_submissions}
+    if new_submissions == 0:
+        message = "There are no new submissions"
+    else:
+        job = toolkit.enqueue_job(update_pkg_kobo_resources, [kobo_asset_id, user_obj.id], title='Enqueue survey update')
+        message = "Job started {}".format(job.id),
+
+    return _make_json_response(msg=message, extra_data=extra_data)
 
 
 unhcr_kobo_blueprint.add_url_rule(
@@ -125,5 +189,12 @@ unhcr_kobo_blueprint.add_url_rule(
     rule=u'/surveys',
     view_func=kobo_surveys,
     methods=['GET'],
+    strict_slashes=False,
+)
+
+unhcr_kobo_blueprint.add_url_rule(
+    rule=u'/enqueue-survey-update',
+    view_func=enqueue_survey_update,
+    methods=['POST'],
     strict_slashes=False,
 )

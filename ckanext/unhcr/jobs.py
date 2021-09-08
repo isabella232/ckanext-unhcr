@@ -1,3 +1,4 @@
+import datetime
 import logging
 import time
 
@@ -166,6 +167,14 @@ def _get_link_package_ids_from_revisions(package_id):
 
 # KoBo
 
+def update_pkg_kobo_resources(kobo_asset_id, user_id):
+    """ update all resources with new submissions for a KoBo dataset """
+    from ckanext.unhcr.kobo.kobo_dataset import KoboDataset
+    kd = KoboDataset(kobo_asset_id)
+    user_obj = model.User.get(user_id)
+    kd.update_all_resources(user_obj)
+
+
 def download_kobo_export(resource_id):
     """ Job for download pending data from a KoBo export.
         JSON data requires a paginated download """
@@ -198,9 +207,12 @@ def download_kobo_export(resource_id):
     kobo_asset_id = kobo_details['kobo_asset_id']
     kd = KoboDataset(kobo_asset_id)
     survey = KoBoSurvey(kobo_asset_id, kobo_api)
+
+    # Update the submission count
+    new_submission_count = survey.get_total_submissions()
     if resource['format'].lower() == 'json':
         local_file = survey.download_json_data(destination_path=kd.upload_path)
-        kd.update_resource(resource, local_file, user_obj.name)
+        kd.update_resource(resource, local_file, user_obj.name, new_submission_count)
     else:
         # CSV and XLS require download
         export_id = kobo_details['kobo_export_id']
@@ -210,14 +222,23 @@ def download_kobo_export(resource_id):
         if export['status'] == 'complete':
             data_url = export['result']
             local_file = survey.download_data(destination_path=kd.upload_path, dformat=resource['format'], url=data_url)
-            kd.update_resource(resource, local_file, user_obj.name)
+            kd.update_resource(resource, local_file, user_obj.name, new_submission_count)
         else:
             # wait and re-schedule
-            kobo_download_attempts = kobo_details['kobo_download_attempts']
-            log.info('Re-schedule KoBo download: {}'.format(kobo_download_attempts))
-            if kobo_download_attempts >= 5:
+            kobo_download_attempts = kobo_details['kobo_download_attempts'] + 1
+            if kobo_download_attempts > 5:
                 log.error('Failed to download KoBo data resource: {}'.format(resource))
+                kd.update_kobo_details(
+                    resource,
+                    user_obj.name,
+                    {
+                        "kobo_download_status": "error",
+                        "kobo_last_error_response": str(export),
+                        "kobo_last_updated": str(datetime.datetime.utcnow()),
+                    }
+                )
                 return
             else:
+                kd.update_kobo_details(resource, user_obj.name, {"kobo_download_attempts": kobo_download_attempts})
                 time.sleep(30 * kobo_download_attempts)
-                toolkit.enqueue_job(download_kobo_export, [resource['id']])
+                toolkit.enqueue_job(download_kobo_export, [resource['id']], title='Re-scheduling KoBo download: {}'.format(kobo_download_attempts))
