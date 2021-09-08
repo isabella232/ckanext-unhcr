@@ -180,7 +180,7 @@ class KoboDataset:
             date_range_end = date_modified.strftime('%Y-%m-%d')
 
         resources = []
-        # create empty resources to be downloaded later
+        # create empty resources to be updated later
         f = tempfile.NamedTemporaryFile()
 
         for data_resource_format in ['json', 'csv', 'xls']:
@@ -221,6 +221,7 @@ class KoboDataset:
             }
 
             action = toolkit.get_action("resource_create")
+            context.update({'skip_clamav_scan': True})
             resource = action(context, resource)
             resources.append(resource)
 

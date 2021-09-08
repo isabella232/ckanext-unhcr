@@ -765,7 +765,11 @@ def resource_create(up_func, context, data_dict):
         data_dict['visibility'] = 'restricted'
     has_upload = data_dict.get('upload') is not None
     resource = up_func(context, data_dict)
-    if has_upload:
+
+    # Skip temporary KoBo resources (they just have empty files)
+    skip_clamav_scan = context.pop('skip_clamav_scan', False)
+
+    if has_upload and not skip_clamav_scan:
         toolkit.get_action('scan_submit')(context, {'id': resource['id']})
     return resource
 
