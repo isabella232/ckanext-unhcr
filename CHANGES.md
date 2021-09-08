@@ -1,5 +1,12 @@
 # RIDL Changelog
 
+## v3.1.3 - 2021-09-08
+New features
+ - [#687](https://github.com/okfn/ckanext-unhcr/pull/687) Improve information about requests for new/renewal external user
+ - [#681](https://github.com/okfn/ckanext-unhcr/pull/681) Show new submissions to update KoBo datasets
+ - [#672](https://github.com/okfn/ckanext-unhcr/pull/672) Allow skipping ClamAV for fake KoBo resources
+ - [#683](https://github.com/okfn/ckanext-unhcr/pull/683) Allow sorting and searching at KoBo survey list
+
 ## v3.1.2b - 2021-08-25 
 
 New features
