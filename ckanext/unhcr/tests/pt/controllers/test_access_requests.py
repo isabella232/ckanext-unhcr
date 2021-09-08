@@ -15,7 +15,10 @@ class TestAccessRequests(object):
         self.sysadmin = core_factories.Sysadmin()
         self.requesting_user = core_factories.User()
         self.standard_user = core_factories.User()
-        self.pending_user = factories.ExternalUser(state=model.State.PENDING)
+        self.pending_user = factories.ExternalUser(
+            state=model.State.PENDING,
+            focal_point='test-point'
+            )
 
         self.container1_admin = core_factories.User()
         self.container1 = factories.DataContainer(
@@ -219,3 +222,11 @@ class TestAccessRequests(object):
             '/access-requests/approve/{}'.format(self.user_request_container2.id)
             not in resp.body
         )
+
+    def test_user_access_requests_list(self, app):
+        resp = self.make_list_request(app, user=self.sysadmin['name'], status=200)
+
+        assert 'Data container(s):' in resp.body
+        assert '<b>{}</b>'.format(self.container1['title']) in resp.body
+        assert 'Email: <b>{}</b>'.format(self.pending_user['email']) in resp.body
+        assert 'Focal point: <b>{}</b>'.format(self.pending_user['focal_point']) in resp.body

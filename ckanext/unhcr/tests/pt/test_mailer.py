@@ -272,7 +272,13 @@ class TestAccessRequestMailer(object):
         assert '<p>I can haz access?<br> kthxbye</p>' in regularised_body
 
     def test_user_request_access_body(self):
-        user1 = core_factories.User(name='user1', id='user1')
+        user1 = factories.ExternalUser(
+            name='user1',
+            id='user1',
+            email='john@example.com',
+            focal_point='Maria',
+            default_containers=['Brazil', 'Argentina']
+        )
 
         user_message = 'I can haz access?\nkthxbye'
         email_body = mailer.compose_request_access_email_body(
@@ -287,6 +293,10 @@ class TestAccessRequestMailer(object):
 
         assert expected in regularised_body
         assert '<p>I can haz access?<br> kthxbye</p>' in regularised_body
+
+        assert 'Data containers: Brazil, Argentina' in regularised_body
+        assert 'User\'s email address: john@example.com' in regularised_body
+        assert 'Focal point: Maria' in regularised_body
 
     def test_recipients_with_org_admins(self):
         editor = core_factories.User()

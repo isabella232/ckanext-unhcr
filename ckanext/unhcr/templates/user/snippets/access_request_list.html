@@ -23,6 +23,21 @@
           <small>({{ h.render_datetime(req.timestamp, '%Y-%m-%d') }})</small>
         </h3>
         <p>{{ h.nl_to_br(req.message) }}</p>
+        {% if req.object_type == 'user' %}
+        <p>
+          <ul>
+          <li>Data container(s): 
+            <ul>
+              {% for container in extras_user_access_request[req.id].default_containers %}
+                <li><b>{{ container.title }}</b></li>
+              {% endfor %}
+            </ul>
+          </li>
+          <li>Email: <b>{{ req.user.email }}</b></li>
+          <li>Focal point: <b>{{ extras_user_access_request[req.id].focal_point }}</b></li>
+          </ul>
+        </p>
+        {% endif %}
       </div>
       <p>
         <form

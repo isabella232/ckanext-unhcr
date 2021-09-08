@@ -33,6 +33,18 @@
     {{ h.nl_to_br(message) }}
   {% endcall %}
 
+  {% if object_type == 'user' %}
+    {% call email.paragraph() %}
+      More info:
+      <ul>
+        <li>Data containers: {{ ', '.join(object.default_containers) }}</li>
+        <li>User's email address: {{ object.email }}</li>
+        <li>Focal point: {{ object.focal_point }}</li>
+      </ul>
+    {% endcall %}
+  {% endif %}
+  
+
   {% call email.paragraph() %}
     To approve or reject the request, visit the following page (logged in with your administrator account):
   {% endcall %}

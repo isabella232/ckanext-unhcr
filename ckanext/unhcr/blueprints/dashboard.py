@@ -63,11 +63,32 @@ def requests():
         context,
         {'id': toolkit.c.userobj.id, 'user_obj': toolkit.c.userobj, 'offset': 0}
     )
+
     template_vars['new_container_requests'] = new_container_requests
     template_vars['container_access_requests'] = container_access_requests
     template_vars['dataset_access_requests'] = dataset_access_requests
     template_vars['user_account_requests'] = user_account_requests
     template_vars['user_renewal_requests'] = user_renewal_requests
+
+    extras_user_access_request = {}
+    for uar in user_account_requests + user_renewal_requests:
+
+        containers = [
+            model.Group.get(container_id)
+            for container_id in uar['data']['default_containers']
+        ]
+        cleaned_containers = [container for container in containers if container.name != 'data-deposit']
+
+        # access_request_list_for_user removes plugin_extras where focal-point lives
+        user_obj = model.User.get(uar['user_id'])
+        focal_point = user_obj.plugin_extras.get('unhcr', {}).get('focal_point')
+        extras = {
+            'default_containers': cleaned_containers,
+            'focal_point': focal_point
+        }
+        extras_user_access_request[uar['id']] = extras
+
+    template_vars['extras_user_access_request'] = extras_user_access_request
 
     return toolkit.render('user/dashboard_requests.html', template_vars)
 

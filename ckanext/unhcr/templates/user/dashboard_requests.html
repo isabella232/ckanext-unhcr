@@ -85,7 +85,8 @@
     {% snippet
       'user/snippets/access_request_list.html',
       requests=user_account_requests,
-      table_type='User'
+      table_type='User',
+      extras_user_access_request=extras_user_access_request
     %}
   {% else %}
     <p class="empty">
