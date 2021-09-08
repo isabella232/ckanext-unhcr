@@ -8,7 +8,7 @@
 
 <p>The following surveys in KoBo are available for importing to RIDL.</p>
 
-<table class="table table-header table-hover table-bordered table-responsive">
+<table id="survey-list-table" class="table table-header table-hover table-bordered table-responsive">
 <thead>
     <tr>
     <th class="col-md-3">Survey</th>
@@ -50,11 +50,12 @@
             <p>An update job is running to import {{ survey.new_submissions }} new submissions</p>
         {% else %}
             <p>There are {{ survey.new_submissions }} new submissions</p>
-            <a role="button"
+            <button
                 class="btn btn-primary kobo-pkg-update-resources"
                 data-kobo-asset-id="{{ survey.uid }}"
                 data-kobo-update-endpoint="{% url_for 'unhcr_kobo.enqueue_survey_update' %}"
-                ><i class="fa fa-refresh"></i>Update KoBo data</a>
+                ><i class="fa fa-refresh"></i> Update KoBo data
+            </button>
         </div>
         {% endif %}
         {% else %}

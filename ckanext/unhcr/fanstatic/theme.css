@@ -2242,6 +2242,24 @@ i {
   overflow-y: auto;
 }
 
+#survey-list-table th {
+  border-bottom-width: 1px;
+}
+
+.fancySearchRow > th {
+  border-bottom-width: 2px !important;
+}
+
+.fancySearchRow > th > input {
+  width: 10%;
+  border: 0;
+  padding: 5px;
+  margin-bottom: 5px;
+  margin-top: 2px;
+  margin-left: 2px;
+  margin-right: 2px;
+}
+
 /* General */
 
 .curation-sidebar .btn {
