@@ -1,5 +1,9 @@
 # RIDL Changelog
 
+## v3.1.4 - 2021-09-XX
+
+TODO, fill
+
 ## v3.1.3 - 2021-09-08
 New features
  - [#687](https://github.com/okfn/ckanext-unhcr/pull/687) Improve information about requests for new/renewal external user
