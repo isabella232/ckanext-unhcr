@@ -338,7 +338,7 @@ def compose_request_access_email_body(object_type, recipient, obj, requesting_us
             model.Group.get(container_id)
             for container_id in obj['default_containers']
         ]
-        container_titles = [container.title for container in containers if container.name != 'data-deposit']
+        container_titles = [container.title for container in containers if container and container.name != 'data-deposit']
         obj['container_titles'] = container_titles
 
     return render_jinja2('emails/access_requests/access_request.html', context)
