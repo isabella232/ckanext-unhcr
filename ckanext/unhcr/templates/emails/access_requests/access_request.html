@@ -37,7 +37,7 @@
     {% call email.paragraph() %}
       More info:
       <ul>
-        <li>Data containers: {{ ', '.join(object.default_containers) }}</li>
+        <li>Data container(s): {{ ', '.join(object.container_titles) }}</li>
         <li>User's email address: {{ object.email }}</li>
         <li>Focal point: {{ object.focal_point }}</li>
       </ul>
