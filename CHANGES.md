@@ -1,9 +1,14 @@
 # RIDL Changelog
 
-## v3.1.4 - 2021-09-XX
+## v3.1.4 - 2021-09-10
 
 New features
  - [#691](https://github.com/okfn/ckanext-unhcr/pull/691) KoBo -> KoBoToolbox user interface refactor
+
+Bug fixes
+ - [#693](https://github.com/okfn/ckanext-unhcr/pull/693) Fix publish button for KoBo resources
+ - [#692](https://github.com/okfn/ckanext-unhcr/pull/692) Fix container titles for user access request emails
+
 
 ## v3.1.3 - 2021-09-08
 New features
