@@ -37,10 +37,8 @@ i {
 }
 
 .kobo-resources-publish {
-  margin: 10px;
-  padding: 10px;
-  background-color: rgba(239, 239, 228, 0.177);
-  border: 1px solid rgba(39, 39, 28, 0.277);
+  margin: 40px 0px;
+  padding: 10px 0px;
 }
 
 .kobo-resources-publish a {

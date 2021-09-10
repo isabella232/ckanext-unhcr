@@ -28,18 +28,6 @@
     {% snippet "package/snippets/resources_list_kobo.html", pkg=pkg_dict, kobo_type='questionnaire' %}
     {% snippet "package/snippets/resources_list_kobo.html", pkg=pkg_dict, kobo_type='data' %}
 
-    {# all other places are hidden from JS #}
-    {% if draft_kobo_resource and new_kobo_resource %}
-    <div class="kobo-resources-publish">
-      <b>If the resources are ready you can</b>
-      <a
-        href="{% url_for 'unhcr_dataset.publish', dataset_id=pkg_dict.id %}"
-        class="btn btn-primary">
-          {{ _('Publish Dataset') }}
-      </a>
-    </div>
-    {% endif %}
-
   <h1>Additional resources</h1>
 
   <p>You can optionally add additional resources to the dataset. This can also be done later.</p>
@@ -68,9 +56,15 @@
 {% block previous_button %}{% if not draft_kobo_resource %}{{ super() }}{% endif %}{% endblock %}
 {% block again_button %}
   {% if draft_kobo_resource %}
-    <button class="btn btn-primary" name="save" value="again" type="submit">{{ _('Update KoBoToolbox Resource') }}</button>
+    {% if new_kobo_resource%}
+      <div class="kobo-resources-publish">
+        The dataset is currently in a Draft state
+        <a href="{% url_for 'unhcr_dataset.publish', dataset_id=pkg_dict.id %}" class="btn btn-primary"> {{ _('Make Dataset Public') }}</a>
+      </div>
+    {% else %}
+      <button class="btn btn-primary" name="save" value="again" type="submit">{{ _('Update KoBoToolbox Resource') }}</button>
+    {% endif %}    
   {% else %}
     {{ super() }}
   {% endif %}
 {% endblock %}
-{% block save_button %}{% if not draft_kobo_resource %}{{ super() }}{% endif %}{% endblock %}
