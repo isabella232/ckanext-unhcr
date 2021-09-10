@@ -2,7 +2,8 @@
 
 ## v3.1.4 - 2021-09-XX
 
-TODO, fill
+New features
+ - [#691](https://github.com/okfn/ckanext-unhcr/pull/691) KoBo -> KoBoToolbox user interface refactor
 
 ## v3.1.3 - 2021-09-08
 New features

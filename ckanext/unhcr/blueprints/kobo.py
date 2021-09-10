@@ -46,7 +46,7 @@ def update_token():
 
     token = toolkit.request.form.get('kobo_token')
     if not token:
-        message = 'Missing KoBo token.'
+        message = 'Missing KoBoToolbox token.'
         toolkit.h.flash_error(message)
         return toolkit.redirect_to('unhcr_kobo.index')
     plugin_extras = {} if user_obj.plugin_extras is None else user_obj.plugin_extras
@@ -60,9 +60,9 @@ def update_token():
             )
         except toolkit.ValidationError as e:
             if e.error_dict and 'kobo_token' in e.error_dict:
-                message = 'Invalid KoBo token. Please try again.'
+                message = 'Invalid KoBoToolbox token. Please try again.'
             else:
-                message = 'Unknown KoBo token error: {}.'.format(e)
+                message = 'Unknown KoBoToolbox token error: {}.'.format(e)
             toolkit.h.flash_error(message)
             return toolkit.redirect_to('unhcr_kobo.index')
 
@@ -101,7 +101,7 @@ def kobo_surveys():
     try:
         surveys = kobo.get_surveys()
     except KoboApiError as e:
-        message = 'Unexpected KoBo error getting surveys: {}'.format(e)
+        message = 'Unexpected KoBoToolbox error getting surveys: {}'.format(e)
         toolkit.h.flash_error(message)
         return toolkit.redirect_to('unhcr_kobo.index')
 
@@ -131,14 +131,14 @@ def enqueue_survey_update():
 
     kobo_asset_id = toolkit.request.form.get('kobo_asset_id')
     if not kobo_asset_id:
-        message = 'Missing KoBo asset ID.'
+        message = 'Missing KoBoToolbox asset ID.'
         return _make_json_response(status_int=404, error_msg=message)
 
     kd = KoboDataset(kobo_asset_id)
     try:
         old_submission_count = kd.get_submission_count()
     except KoboMissingAssetIdError:
-        message = 'Dataset not found for this KoBo asset ID.'
+        message = 'Dataset not found for this KoBoToolbox asset ID.'
         return _make_json_response(status_int=404, error_msg=message)
 
     # check if an update is pending

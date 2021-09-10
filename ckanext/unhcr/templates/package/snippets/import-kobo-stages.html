@@ -6,20 +6,20 @@
 <ol class="stages {{ class }}">
   <li class="first {{ s1 }}">
     {% if s1 != 'complete' %}
-      <span class="highlight">{{ _('Create dataset from KoBo') }}</span>
+      <span class="highlight">{{ _('Create dataset from KoBoToolbox') }}</span>
     {% else %}
-      <button class="highlight" name="save" value="go-dataset" type="submit">{{ _('Create dataset from KoBo') }}</button>
+      <button class="highlight" name="save" value="go-dataset" type="submit">{{ _('Create dataset from KoBoToolbox') }}</button>
     {% endif %}
   </li>
   <li class="last {{ s2 }}">
     {% if s2 != 'complete' %}
-      <span class="highlight">{{ _('Describe KoBo resources') }}</span>
+      <span class="highlight">{{ _('Describe KoBoToolbox resources') }}</span>
     {% else %}
       {% if s1 == 'active' %}
         {# stage 1 #}
-        <button class="highlight" name="save" value="go-resources" type="submit">{{ _('Describe KoBo resources') }}</button>
+        <button class="highlight" name="save" value="go-resources" type="submit">{{ _('Describe KoBoToolbox resources') }}</button>
       {% else %}
-        {% link_for _('Describe KoBo resources'), named_route='dataset.new', class_="highlight" %}
+        {% link_for _('Describe KoBoToolbox resources'), named_route='dataset.new', class_="highlight" %}
       {% endif %}
     {% endif %}
   </li>

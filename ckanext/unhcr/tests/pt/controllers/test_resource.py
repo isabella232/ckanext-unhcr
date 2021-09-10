@@ -303,4 +303,4 @@ class TestResourceViews(object):
         resp = app.post(url, data=data, extra_environ=env, status=200)
 
         assert 'The form contains invalid entries:' in resp.body
-        assert 'You cannot update a KoBo data file directly, please re-import the data instead' in resp.body
+        assert 'You cannot update a KoBoToolbox data file directly, please re-import the data instead' in resp.body

@@ -227,7 +227,7 @@ def download_kobo_export(resource_id):
             # wait and re-schedule
             kobo_download_attempts = kobo_details['kobo_download_attempts'] + 1
             if kobo_download_attempts > 5:
-                log.error('Failed to download KoBo data resource: {}'.format(resource))
+                log.error('Failed to download KoBoToolbox data resource: {}'.format(resource))
                 kd.update_kobo_details(
                     resource,
                     user_obj.name,
@@ -241,4 +241,4 @@ def download_kobo_export(resource_id):
             else:
                 kd.update_kobo_details(resource, user_obj.name, {"kobo_download_attempts": kobo_download_attempts})
                 time.sleep(30 * kobo_download_attempts)
-                toolkit.enqueue_job(download_kobo_export, [resource['id']], title='Re-scheduling KoBo download: {}'.format(kobo_download_attempts))
+                toolkit.enqueue_job(download_kobo_export, [resource['id']], title='Re-scheduling KoBoToolbox download: {}'.format(kobo_download_attempts))

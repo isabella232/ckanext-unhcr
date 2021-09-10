@@ -1,18 +1,18 @@
 {% extends "kobo/base.html" %}
 
-{%- block subtitle %}KoBo{% endblock -%}
+{%- block subtitle %}KoBoToolbox{% endblock -%}
 
 {% block primary_content %}
 
-<h1>My KoBo Surveys</h1>
+<h1>My KoBoToolbox Surveys</h1>
 
-<p>The following surveys in KoBo are available for importing to RIDL.</p>
+<p>The following surveys in KoBoToolbox are available for importing to RIDL.</p>
 
 <table id="survey-list-table" class="table table-header table-hover table-bordered table-responsive">
 <thead>
     <tr>
     <th class="col-md-3">Survey</th>
-    <th class="col-md-1">KoBo owner</th>
+    <th class="col-md-1">Owner</th>
     <th class="col-md-1">Imported</th>
     <th class="col-md-2">Actions</th>
     </tr>
@@ -31,7 +31,7 @@
     {% if survey.ridl_package %}
         <p>Yes</p>
     {% elif not survey.has_deployment %}
-        <p>This KoBo survey has not been deployed</p>
+        <p>This KoBoToolbox survey has not been deployed</p>
     {% elif survey.deployment__submission_count == 0 %}
         <p>The survey is deployed but it does not have submissions yet.</p>
     {% else %}
@@ -54,7 +54,7 @@
                 class="btn btn-primary kobo-pkg-update-resources"
                 data-kobo-asset-id="{{ survey.uid }}"
                 data-kobo-update-endpoint="{% url_for 'unhcr_kobo.enqueue_survey_update' %}"
-                ><i class="fa fa-refresh"></i> Update KoBo data
+                ><i class="fa fa-refresh"></i> Update KoBoToolbox data
             </button>
         </div>
         {% endif %}

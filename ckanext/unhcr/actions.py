@@ -81,7 +81,7 @@ def package_create(up_func, context, data_dict):
         survey = KoBoSurvey(kobo_asset_id, kobo_api)
 
         if survey.get_total_submissions() == 0:
-            raise toolkit.ValidationError({'kobo-survey': ['The selected KoBo survey has no submissions']})
+            raise toolkit.ValidationError({'kobo-survey': ['The selected KoBoToolbox survey has no submissions']})
 
     # Create dataset
     dataset = up_func(context, data_dict)
@@ -794,7 +794,7 @@ def resource_update(up_func, context, data_dict):
         # we should raise an error
         if upload_changed:
             raise toolkit.ValidationError(
-                {'data file': ['You cannot update a KoBo data file directly, please re-import the data instead']}
+                {'data file': ['You cannot update a KoBoToolbox data file directly, please re-import the data instead']}
             )
 
     resource = up_func(context, data_dict)
@@ -1395,7 +1395,7 @@ def user_update(up_func, context, data_dict):
                         kobo = KoBoAPI(new_kobo_token, kobo_url)
                         if not kobo.test_token():
                             raise toolkit.ValidationError({'kobo_token': [
-                                "KoBo token is not valid"
+                                "KoBoToolbox token is not valid"
                             ]})
                     up_dict['plugin_extras']['unhcr']['kobo_token'] = new_kobo_token
 

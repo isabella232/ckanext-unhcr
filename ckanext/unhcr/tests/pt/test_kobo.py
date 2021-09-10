@@ -42,7 +42,7 @@ class TestKoBo(object):
         }
 
         resp = app.get('/dashboard/', extra_environ=environ)
-        assert 'KoBo Toolbox' not in resp.body
+        assert 'KoBoToolbox' not in resp.body
 
     def test_internal_editor_user_dashboad_kobo_link_ok(self, app):
         environ = {
@@ -50,7 +50,7 @@ class TestKoBo(object):
         }
 
         resp = app.get('/dashboard/', extra_environ=environ)
-        assert 'KoBo Toolbox' in resp.body
+        assert 'KoBoToolbox' in resp.body
 
     def test_internal_admin_user_dashboad_kobo_link_ok(self, app):
         environ = {
@@ -58,7 +58,7 @@ class TestKoBo(object):
         }
 
         resp = app.get('/dashboard/', extra_environ=environ)
-        assert 'KoBo Toolbox' in resp.body
+        assert 'KoBoToolbox' in resp.body
 
     def test_external_user_dashboad_no_kobo_link(self, app):
         environ = {
@@ -66,7 +66,7 @@ class TestKoBo(object):
         }
 
         resp = app.get('/dashboard/', extra_environ=environ)
-        assert 'KoBo Toolbox' not in resp.body
+        assert 'KoBoToolbox' not in resp.body
 
     def test_external_user_no_kobo(self, app):
         environ = {
@@ -105,10 +105,10 @@ class TestKoBo(object):
 
         resp = app.get('/kobo/surveys', extra_environ=environ)
         assert resp.status_code == 200
-        assert '<h1>My KoBo Surveys</h1>' in resp.body
+        assert '<h1>My KoBoToolbox Surveys</h1>' in resp.body
         # Test import URL
         assert '/dataset/new?kobo_asset_id=' in resp.body
-        assert 'This KoBo survey has not been deployed' in resp.body
+        assert 'This KoBoToolbox survey has not been deployed' in resp.body
         assert 'TEST aaZSQ29VRHJmofjGSfDDv4' in resp.body
 
     def test_internal_user_setup_token(self, app):
@@ -122,8 +122,8 @@ class TestKoBo(object):
             extra_environ=environ
         )
         assert resp.status_code == 200
-        assert "Missing KoBo token" not in resp.body
-        assert "Invalid KoBo token" not in resp.body
+        assert "Missing KoBoToolbox token" not in resp.body
+        assert "Invalid KoBoToolbox token" not in resp.body
         userobj = model.User.get(self.internal_editor_user['id'])
         assert userobj.plugin_extras['unhcr']['kobo_token'] == 'test_abc123'
 
@@ -182,7 +182,7 @@ class TestKoBo(object):
     def test_create_pkg_frm_valid_asset(self, initial, app):
         """ Try to import from valid asset_id"""
 
-        initial.return_value = {'title': 'Kobo Survey Name XX'}, {}
+        initial.return_value = {'title': 'KoBoToolbox Survey Name XX'}, {}
         environ = {
             'REMOTE_USER': self.internal_editor_user['name']
         }
@@ -190,10 +190,10 @@ class TestKoBo(object):
         resp = app.get('/dataset/new?kobo_asset_id=aaZSQ29VRHJmofjGSfDDv4', extra_environ=environ)
 
         assert resp.status_code == 200
-        assert "KoBo error: Error requesting data from Kobo 404" not in resp.body
+        assert "KoBoToolbox error: Error requesting data from KoBoToolbox 404" not in resp.body
         # Assert we use the KoBo name as Package Title
-        assert "Kobo Survey Name XX" in resp.body
-        assert "Next: Describe KoBo resources" in resp.body
+        assert "KoBoToolbox Survey Name XX" in resp.body
+        assert "Next: Describe KoBoToolbox resources" in resp.body
 
     @mock.patch('ckan.plugins.toolkit.enqueue_job')
     @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.download_questionnaire')
@@ -219,7 +219,7 @@ class TestKoBo(object):
             'kobo_asset_id': 'some_kobo_id',
             'title': 'Some Survey',
             'name': 'some-survey',
-            'notes': 'Dataset imported from KoBo toolbox, bla, bla',
+            'notes': 'Dataset imported from KoBoToolbox, bla, bla',
             'tag_string': '',
             'url': '',
             'owner_org': self.data_container['name'],
@@ -315,7 +315,7 @@ class TestKoBoJobs(object):
         }
         resp = app.get('/dataset/{}'.format(self.kobo_dataset['name']), extra_environ=environ)
         assert resp.status_code == 200
-        assert "Update KoBo data" in resp.body
+        assert "Update KoBoToolbox data" in resp.body
 
     def test_kobo_dataset_page_avoid_update(self, app):
         """
@@ -326,7 +326,7 @@ class TestKoBoJobs(object):
         }
         resp = app.get('/dataset/{}'.format(self.kobo_dataset['name']), extra_environ=environ)
         assert resp.status_code == 200
-        assert "Update KoBo data" not in resp.body
+        assert "Update KoBoToolbox data" not in resp.body
 
     @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.get_export')
     @mock.patch('ckanext.unhcr.kobo.kobo_dataset.KoboDataset.update_kobo_details')

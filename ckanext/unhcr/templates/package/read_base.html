@@ -30,7 +30,7 @@
         data-kobo-update-endpoint="{% url_for 'unhcr_kobo.enqueue_survey_update' %}"
     >
     <i class="fa fa-refresh"></i>
-    Update KoBo data</button>
+    Update KoBoToolbox data</button>
   {% endif %}
   {% if h.organizations_available('create_dataset') and not is_activity_archive %}
     {% link_for _('Copy'), named_route='unhcr_%s.copy' % dataset_type, dataset_id=pkg.id, class_='btn', icon='copy' %}

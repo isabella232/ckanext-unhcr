@@ -287,11 +287,11 @@ def get_kobo_initial_dataset(kobo_asset_id):
             initial_data = kd.get_initial_package(toolkit.c.userobj)
         except KoboApiError as e:
             errors = {
-                'kobo_asset': ['KoBo error: {}'.format(e)]
+                'kobo_asset': ['KoBoToolbox error: {}'.format(e)]
             }
     else:
         errors = {
-            'kobo_asset': ['This KoBo surveys has already been imported']
+            'kobo_asset': ['This KoBoToolbox surveys has already been imported']
         }
 
     return initial_data, errors

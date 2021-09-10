@@ -22,19 +22,19 @@ class KoBoAPI:
     def _get(self, resource_url, return_json=True):
         """ Get any api/v2 resource in JSON format (or base response) """
         url = resource_url if resource_url.startswith('http') else self.base_url + resource_url
-        logger.info('Getting KoBo resource: {}'.format(resource_url))
+        logger.info('Getting KoBoToolbox resource: {}'.format(resource_url))
         try:
             response = requests.get(url, headers={'Authorization': 'Token ' + self.token})
             response.raise_for_status()
         except (ConnectionError, HTTPError, Timeout) as e:
-            logger.error('Error getting KoBo resource {}: {}'.format(resource_url, e))
-            raise KoboApiError('Error requesting data from Kobo {}'.format(e))
+            logger.error('Error getting KoBoToolbox resource {}: {}'.format(resource_url, e))
+            raise KoboApiError('Error requesting data from KoBoToolbox {}'.format(e))
 
         if return_json:
             try:
                 data = response.json()
             except ValueError:  # includes simplejson.decoder.JSONDecodeError
-                logger.error('Error parsing KoBo response: \n{}'.format(response.text))
+                logger.error('Error parsing KoBoToolbox response: \n{}'.format(response.text))
                 raise
             return data
         else:
@@ -47,8 +47,8 @@ class KoBoAPI:
             response = requests.post(url, data=data, headers={'Authorization': 'Token ' + self.token})
             response.raise_for_status()
         except (ConnectionError, HTTPError, Timeout) as e:
-            logger.error('Error posting KoBo {}: {}'.format(resource_url, e))
-            raise KoboApiError('Error posting data to Kobo {}: data: {} :: {}'.format(e, data, response.text))
+            logger.error('Error posting KoBoToolbox {}: {}'.format(resource_url, e))
+            raise KoboApiError('Error posting data to KoBoToolbox {}: data: {} :: {}'.format(e, data, response.text))
 
         return response
 
@@ -229,5 +229,5 @@ class KoBoSurvey:
         }
         """
         data = response.json()
-        logger.info('KoBo Export created {}'.format(data))
+        logger.info('KoBoToolbox Export created {}'.format(data))
         return data

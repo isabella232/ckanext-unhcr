@@ -1,9 +1,9 @@
 # KoBo on RIDL
 
 If you a are a user with permission on (at least) one Data Container you
-will be able to create new datasets importing your surveys from KoBo.  
+will be able to create new datasets importing your surveys from KoBoToolbox.  
 
-To connect your RIDL account with your KoBo Toolbox account you can go to your dashboard ...  
+To connect your RIDL account with your KoBoToolbox account you can go to your dashboard ...  
 
 ![kobo at dashboard](imgs/kobo-at-dashboard.png)
 
@@ -12,12 +12,12 @@ To connect your RIDL account with your KoBo Toolbox account you can go to your d
 ![kobo at user page](imgs/kobo-at-user.png)
 
 You will need your KoBo _token_. You can get it
-following [this KoBo tutorial](https://support.kobotoolbox.org/api.html).  
+following [this KoBoToolbox tutorial](https://support.kobotoolbox.org/api.html).  
 
 ![kobo set up token](imgs/kobo-set-up-token.png)
 
 Once you set up your KoBo token you will see a list of all
-the KoBo surveys that you have access to.  
+the KoBoToolbox surveys that you have access to.  
 
 ![kobo surveys](imgs/kobo-surveys.png)
 
@@ -27,7 +27,7 @@ The _Import_ button will show you which surveys are ready to import.
 
 Once you start the import process you will see the regular _new dataset_ form
 but some field will be preloaded. The _Original ID_ field will be filled with
-the KoBo ID for this survey.  
+the KoBoToolbox ID for this survey.  
 
 ![kobo import form](imgs/kobo-import-form.png)
 
@@ -48,4 +48,4 @@ the data files.
 
 ![kobo finished](imgs/kobo-finished.png)
 
-That's it. You now have your KoBo datasets ready to go just like any other dataset in RIDL.  
+That's it. You now have your KoBoToolbox datasets ready to go just like any other dataset in RIDL.  

@@ -49,7 +49,7 @@ class KoboDataset:
         # We only expect one dataset
         if total > 1:
             duplicates = [pkg['name'] for pkg in packages['results']]
-            error = 'Duplicated dataset with KoBo ID {}: {}'.format(
+            error = 'Duplicated dataset with KoBoToolbox ID {}: {}'.format(
                 self.kobo_asset_id,
                 duplicates
             )
@@ -102,8 +102,8 @@ class KoboDataset:
 
     def _build_asset_notes(self, asset):
         """ Build starting notes from asset info """
-        starting_notes = 'Dataset imported from KoBo toolbox'
-        starting_notes += '\nKoBo owner: {}'.format(asset['owner__username'])
+        starting_notes = 'Dataset imported from KoBoToolbox'
+        starting_notes += '\nKoBoToolbox owner: {}'.format(asset['owner__username'])
 
         sector = asset['settings'].get('sector')
         if sector:
@@ -132,7 +132,7 @@ class KoboDataset:
         survey = KoBoSurvey(kobo_asset_id, kobo_api)
 
         if survey.get_total_submissions() == 0:
-            raise KoBoEmptySurveyError('KoBo survey has no submissions')
+            raise KoBoEmptySurveyError('KoBoToolbox survey has no submissions')
 
         # Create a resource for the questionnaire
         self.create_questionnaire_resource(context, pkg_dict, survey)
@@ -192,7 +192,7 @@ class KoboDataset:
             else:
                 export_id = None
 
-            description = '{} data imported from the KoBo survey. {}'.format(data_resource_format.upper(), DOWNLOAD_PENDING_MSG)
+            description = '{} data imported from the KoBoToolbox survey. {}'.format(data_resource_format.upper(), DOWNLOAD_PENDING_MSG)
             resource = {
                 'package_id': pkg_dict['id'],
                 'name': 'Survey {} data'.format(data_resource_format),
@@ -226,7 +226,7 @@ class KoboDataset:
             resources.append(resource)
 
             # Start a job to download the file
-            toolkit.enqueue_job(download_kobo_export, [resource['id']], title='Download KoBo survey {} data'.format(data_resource_format))
+            toolkit.enqueue_job(download_kobo_export, [resource['id']], title='Download KoBoToolbox survey {} data'.format(data_resource_format))
 
         return resources
 
@@ -284,7 +284,7 @@ class KoboDataset:
 
         kobo_package = self.package_dict or self.get_package()
         if kobo_package is None:
-            raise KoboMissingAssetIdError('Cannot check for updates. No KoBo package found for asset {}'.format(self.kobo_asset_id))
+            raise KoboMissingAssetIdError('Cannot check for updates. No KoBoToolbox package found for asset {}'.format(self.kobo_asset_id))
 
         # analyze all resources, check for the smallest one
         # we expect all resources to have the same number of submissions
@@ -345,7 +345,7 @@ class KoboDataset:
 
         kobo_package = self.get_package() if self.package_dict is None else self.package_dict
         if kobo_package is None:
-            raise KoboMissingAssetIdError('Cannot check for updates. No KoBo package found for asset {}'.format(self.kobo_asset_id))
+            raise KoboMissingAssetIdError('Cannot check for updates. No KoBoToolbox package found for asset {}'.format(self.kobo_asset_id))
 
         logger.info('Updating all resources for package {}'.format(kobo_package['name']))
         kobo_api = self.get_kobo_api(user_obj)
