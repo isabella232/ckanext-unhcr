@@ -622,7 +622,9 @@ def get_deposited_dataset_user_curation_actions(status):
         "reject", "request_changes", "assign", "request_review", "approve"
     :rtype: list
     '''
-    if not status['active']:
+
+    # Actions are for active datasets and draft ones while the depositor is still creating the dataset
+    if not status['active'] and status['state'] != 'draft':
         return []
 
     actions = []
