@@ -345,7 +345,7 @@ $( document ).ready(function() {
               $this.removeAttr("disabled");
               if (! data.forced) {
                 if (data.new_submissions == 0) {
-                  msg = 'There are no new submissions. You still can <b>force</b> the update to get latest changes in submissions';
+                  msg = 'There are no new submissions. You can still <b>force</b> the update to get the latest changes in the submissions';
                   $this.find('.update-kobo-button-text').html('Force update KoBoToolbox data');
                   $this.data('force', "true");
                   $this.css('background-color', '#d85a5a');
