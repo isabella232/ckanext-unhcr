@@ -1535,7 +1535,7 @@ ol.unstyled {
 
 .site-footer .attribution {
   position: absolute;
-  bottom: 15px;
+  bottom: 4px;
   left: 25px;
   z-index: 1;
   background-color: rgba(0,0,0,0.2);
