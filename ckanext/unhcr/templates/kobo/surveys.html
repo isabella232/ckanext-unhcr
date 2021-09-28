@@ -53,13 +53,21 @@
             <button
                 class="btn btn-primary kobo-pkg-update-resources"
                 data-kobo-asset-id="{{ survey.uid }}"
+                data-force="false"
                 data-kobo-update-endpoint="{% url_for 'unhcr_kobo.enqueue_survey_update' %}"
-                ><i class="fa fa-refresh"></i> Update KoBoToolbox data
+                ><i class="fa fa-refresh"></i> <span class="update-kobo-button-text">Update KoBo data</span>
             </button>
         </div>
         {% endif %}
         {% else %}
         <p>No new submissions</p>
+        <button
+                class="btn btn-primary kobo-pkg-update-resources"
+                data-kobo-asset-id="{{ survey.uid }}"
+                data-force="true"
+                data-kobo-update-endpoint="{% url_for 'unhcr_kobo.enqueue_survey_update' %}"
+                ><i class="fa fa-refresh"></i> <span class="update-kobo-button-text">Force update KoBo data</span>
+            </button>
         {% endif %}
     {% elif not survey.has_deployment %}
         -

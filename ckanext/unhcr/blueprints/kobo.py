@@ -130,6 +130,8 @@ def enqueue_survey_update():
     user_obj = toolkit.c.userobj
 
     kobo_asset_id = toolkit.request.form.get('kobo_asset_id')
+    force = toolkit.asbool(toolkit.request.form.get('force', False))
+
     if not kobo_asset_id:
         message = 'Missing KoBoToolbox asset ID.'
         return _make_json_response(status_int=404, error_msg=message)
@@ -147,17 +149,23 @@ def enqueue_survey_update():
         message = 'There is a pending update for this survey.'
         return _make_json_response(status_int=400, error_msg=message)
 
-    # check if there are new submissions
-    kobo_api = kd.get_kobo_api(user_obj)
-    survey = KoBoSurvey(kobo_asset_id, kobo_api)
-
-    new_submission_count = survey.get_total_submissions()
-    new_submissions = new_submission_count - old_submission_count
-
-    extra_data = {'new_submissions': new_submissions}
-    if new_submissions == 0:
-        message = "There are no new submissions"
+    if force:
+        extra_data = {'forced': True}
+        run_job = True
     else:
+        # check if there are new submissions
+        kobo_api = kd.get_kobo_api(user_obj)
+        survey = KoBoSurvey(kobo_asset_id, kobo_api)
+
+        new_submission_count = survey.get_total_submissions()
+        new_submissions = new_submission_count - old_submission_count
+
+        extra_data = {'new_submissions': new_submissions, 'forced': False}
+        run_job = new_submissions > 0
+        if new_submissions == 0:
+            message = "There are no new submissions"
+
+    if run_job:
         job = toolkit.enqueue_job(update_pkg_kobo_resources, [kobo_asset_id, user_obj.id], title='Enqueue survey update')
         message = "Job started {}".format(job.id),
 

@@ -9,8 +9,7 @@ $( document ).ready(function() {
                <span id="real-flash-msg"></span>';
   $(".flash-messages").html(base_html);
   
-  $('#kobo-pkg-update-resources').click(
-    function(evt) {
+  $(document).on("click", ".kobo-pkg-update-resources", function(){
       $("#loading").show();
       $(".flash-messages").addClass('alert alert-success');
       $("#real-flash-msg").html('Checking for updates');
@@ -19,23 +18,32 @@ $( document ).ready(function() {
       $this.attr("disabled", true);
       let kobo_asset_id = $this.data('kobo-asset-id');
       let url = $this.data('kobo-update-endpoint');
+      let force = $this.data('force');
       $.ajax(
           {
             url: url,
             type: 'POST',
-            data: {"kobo_asset_id": kobo_asset_id},
+            data: {"kobo_asset_id": kobo_asset_id, "force": force},
             success: function (data) {
-              if (data.new_submissions == 0) {
-                $("#loading").hide();
-                $("#real-flash-msg").html('There are no new submissions');
-                $this.removeAttr("disabled");
+              $this.removeAttr("disabled");
+              if (! data.forced) {
+                if (data.new_submissions == 0) {
+                  msg = 'There are no new submissions. You can still <b>force</b> the update to get the latest changes in the submissions';
+                  $this.find('.update-kobo-button-text').html('Force update KoBoToolbox data');
+                  $this.data('force', "true");
+                  $this.css('background-color', '#d85a5a');
+                  $this.css('color', 'white');
+                } else {
+                  msg = 'There are ' + data.new_submissions + ' new submissions.';
+                  msg += '<br/>Update survey job started successfully. The resources will be updated in a few minutes.';
+                  $this.hide();
+                }
               } else {
-                msg = 'There are ' + data.new_submissions + ' new submissions.'
-                msg += '<br/>Update survey job started successfully. The resources will be updated in a few minutes.'
-                $("#loading").hide();
-                $("#real-flash-msg").html(msg);
-                
+                msg = 'Forced update survey job started successfully. The resources will be updated in a few minutes.';
+                $this.hide();
               }
+              $("#loading").hide();
+              $("#real-flash-msg").html(msg);
             },
             error: function (xhr) {
               $(".flash-messages").addClass('alert-danger');
