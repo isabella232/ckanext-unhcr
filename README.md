@@ -67,6 +67,9 @@ ckanext.unhcr.external_accounts_expiry_delta=180
 
 # days before notifying about the expiration of the users account
 ckanext.unhcr.external_accounts_notify_delta=30
+
+# Max size (MB) for a file to be analyzed with ClamAV
+ckan.clamav_max_resource_size=10
 ```
 
 

@@ -621,6 +621,21 @@ def scan_submit(context, data_dict):
     except toolkit.ObjectNotFound:
         return False
 
+    file_size = resource_dict.get('size', 0)
+    if file_size is None:
+        file_size = 0
+    clamav_max_resource_size = int(toolkit.config.get('ckan.clamav_max_resource_size', 10)) * 1024 * 1024
+    if file_size > clamav_max_resource_size:
+        url = resource_dict.get('url')
+        log.info(
+            'Skipping file from being ClamAV analyzed (file too big, {} > {}): {}'.format(
+                file_size,
+                clamav_max_resource_size,
+                url
+            )
+        )
+        return True
+
     task = {
         'entity_id': resource_id,
         'entity_type': 'resource',
