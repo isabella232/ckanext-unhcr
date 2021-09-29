@@ -3,7 +3,7 @@ import ckan.plugins.toolkit as toolkit
 from ckanext.unhcr.utils import require_editor_user
 from ckanext.unhcr.jobs import update_pkg_kobo_resources
 from ckanext.unhcr.kobo.api import KoBoAPI, KoBoSurvey
-from ckanext.unhcr.kobo.exceptions import KoboApiError, KoboMissingAssetIdError
+from ckanext.unhcr.kobo.exceptions import KoboApiError, KoboMissingAssetIdError, KoBoUserTokenMissingError
 from ckanext.unhcr.kobo.kobo_dataset import KoboDataset
 
 
@@ -154,7 +154,13 @@ def enqueue_survey_update():
         run_job = True
     else:
         # check if there are new submissions
-        kobo_api = kd.get_kobo_api(user_obj)
+        try:
+            kobo_api = kd.get_kobo_api(user_obj)
+        except KoBoUserTokenMissingError:
+            profile_url = toolkit.url_for('unhcr_kobo.index')
+            profile_link = '<a href="{}">user profile page</a>'.format(profile_url)
+            message = 'Missing API token. Please provide a valid KoBo Toolbox API token on your {}'.format(profile_link)
+            return _make_json_response(status_int=403, error_msg=message)
         survey = KoBoSurvey(kobo_asset_id, kobo_api)
 
         new_submission_count = survey.get_total_submissions()

@@ -315,7 +315,7 @@ class TestKoBoJobs(object):
         }
         resp = app.get('/dataset/{}'.format(self.kobo_dataset['name']), extra_environ=environ)
         assert resp.status_code == 200
-        assert "Update KoBoToolbox data" in resp.body
+        assert "Update KoBo data" in resp.body
 
     def test_kobo_dataset_page_avoid_update(self, app):
         """

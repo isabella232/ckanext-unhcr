@@ -263,7 +263,7 @@ class TestResourceViews(object):
             data_collection_technique = 'f2f',
             sampling_procedure = 'nonprobability',
             operational_purpose_of_data = 'cartography',
-            user=self.user1,
+            user=self.kobo_user,
             kobo_asset_id='test_1234',
         )
 

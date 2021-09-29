@@ -16,3 +16,7 @@ class KoBoSurveyError(Exception):
 
 class KoBoEmptySurveyError(Exception):
     pass
+
+
+class KoBoUserTokenMissingError(Exception):
+    pass

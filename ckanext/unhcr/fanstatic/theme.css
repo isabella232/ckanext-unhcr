@@ -1521,6 +1521,10 @@ ol.unstyled {
   }
 }
 
+#real-flash-msg a {
+  color: #0072BC;
+}
+
 .site-footer {
   background-color: #000;
   color: rgba(255,255,255, 0.8);

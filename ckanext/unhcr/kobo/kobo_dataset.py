@@ -7,7 +7,12 @@ from werkzeug.datastructures import FileStorage as FlaskFileStorage
 from ckan.lib.munge import munge_title_to_name
 from ckan.plugins import toolkit
 from ckanext.unhcr.kobo.api import KoBoAPI, KoBoSurvey
-from ckanext.unhcr.kobo.exceptions import KoBoDuplicatedDatasetError, KoboMissingAssetIdError, KoBoEmptySurveyError
+from ckanext.unhcr.kobo.exceptions import (
+    KoBoDuplicatedDatasetError,
+    KoboMissingAssetIdError,
+    KoBoEmptySurveyError,
+    KoBoUserTokenMissingError
+)
 
 
 logger = logging.getLogger(__name__)
@@ -71,6 +76,8 @@ class KoboDataset:
         if not self.kobo_api:
             plugin_extras = {} if user_obj.plugin_extras is None else user_obj.plugin_extras
             kobo_token = plugin_extras.get('unhcr', {}).get('kobo_token')
+            if not kobo_token:
+                raise KoBoUserTokenMissingError()
             kobo_url = toolkit.config.get('ckanext.unhcr.kobo_url', 'https://kobo.unhcr.org')
             self.kobo_api = KoBoAPI(kobo_token, kobo_url)
 

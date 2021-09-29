@@ -56,3 +56,7 @@
     top: 0px;
   }
 }
+
+#real-flash-msg a {
+  color: #0072BC;
+}
