@@ -1,5 +1,6 @@
 $( document ).ready(function() {
 
+  if ($('#membership-username').length > 0) {
   // Activate select2 widget
   $('#membership-username')
     .on('change', function(ev) {
@@ -26,6 +27,7 @@ $( document ).ready(function() {
     .select2({
       placeholder: 'Click or start typing a role name',
     });
+  }
 
   function toggleAddMembershipButton() {
     if ($('#membership-contnames').val() && $('#membership-role').val()) {

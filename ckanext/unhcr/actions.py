@@ -1447,3 +1447,36 @@ def _validate_plugin_extras(extras):
     for field in CUSTOM_FIELDS:
         out_dict[field['name']] = extras.get(field['name'], field['default'])
     return out_dict
+
+
+@toolkit.chained_action
+def datastore_create(up_func, context, data_dict):
+    """ fix bad fields names (usually from KoBo)
+        Datastore do not allow _ before field names and
+        kobo uses the _id field for any record
+        """
+
+    if data_dict.get('fields'):
+        prefix = 'kobo'
+        new_fields = []
+        for field in data_dict.get('fields'):
+            if field['id'].startswith('_'):
+                new_field_name = '{}{}'.format(prefix, field['id'])
+                log.warn('Datastore field name starts with _: %s, replaced as %s', field['id'], new_field_name)
+                field['id'] = new_field_name
+            new_fields.append(field)
+        data_dict['fields'] = new_fields
+
+        if data_dict.get('records'):
+            new_records = []
+            for record in data_dict.get('records'):
+                new_record = {}
+                for field, value in record.items():
+                    if field.startswith('_'):
+                        new_record['{}{}'.format(prefix, field)] = value
+                    else:
+                        new_record[field] = record[field]
+                new_records.append(new_record)
+            data_dict['records'] = new_records
+
+    return up_func(context, data_dict)
