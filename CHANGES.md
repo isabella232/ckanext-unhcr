@@ -1,5 +1,19 @@
 # RIDL Changelog
 
+## v3.1.4b - 2021-10-01
+
+New features
+ - Allow forcing update from Kobo [#700](https://github.com/okfn/ckanext-unhcr/pull/700)
+ - Add HQ email and update user guide URL [#695](https://github.com/okfn/ckanext-unhcr/pull/695)
+ - Skip big files from ClamAV [#688](https://github.com/okfn/ckanext-unhcr/pull/688)
+ - Remove no longer required CKAN core patch to move to **CKAN 2.9.4**
+
+Bug fixes
+ - Fix permission for depositors to deposit [#699](https://github.com/okfn/ckanext-unhcr/pull/699)
+ - Fix preview for KoBo resources [#701](https://github.com/okfn/ckanext-unhcr/pull/701)
+ - Detect and show kobo token missing error [#704](https://github.com/okfn/ckanext-unhcr/pull/704)
+
+
 ## v3.1.4 - 2021-09-10
 
 New features
