@@ -558,13 +558,13 @@ def datasets_validation_report(context, data_dict):
 def _fail_task(context, task, error):
     task['error'] = json.dumps(error)
     task['state'] = 'error'
-    task['last_updated'] = str(datetime.datetime.utcnow())
+    task['last_updated'] = datetime.datetime.utcnow().isoformat()
     return toolkit.get_action('task_status_update')(context, task)
 
 
 def _task_is_stale(task):
     assume_task_stale_after = datetime.timedelta(seconds=3600)
-    updated = datetime.datetime.strptime(task['last_updated'], '%Y-%m-%dT%H:%M:%S.%f')
+    updated = parse_date(task['last_updated'])
     time_since_last_updated = datetime.datetime.utcnow() - updated
     return time_since_last_updated > assume_task_stale_after
 
@@ -640,7 +640,7 @@ def scan_submit(context, data_dict):
         'entity_id': resource_id,
         'entity_type': 'resource',
         'task_type': 'clamav',
-        'last_updated': str(datetime.datetime.utcnow()),
+        'last_updated': datetime.datetime.utcnow().isoformat(),
         'state': 'submitting',
         'key': 'clamav',
         'value': '{}',
@@ -710,7 +710,7 @@ def scan_submit(context, data_dict):
 
     task['value'] = r.text
     task['state'] = 'pending'
-    task['last_updated'] = str(datetime.datetime.utcnow()),
+    task['last_updated'] = datetime.datetime.utcnow().isoformat(),
     toolkit.get_action('task_status_update')(context, task)
 
     return True
@@ -729,7 +729,7 @@ def scan_hook(context, data_dict):
     })
 
     task['state'] = status
-    task['last_updated'] = str(datetime.datetime.utcnow())
+    task['last_updated'] = datetime.datetime.utcnow().isoformat()
     task['value'] = json.dumps(data_dict)
     task['error'] = json.dumps(data_dict.get('error'))
 

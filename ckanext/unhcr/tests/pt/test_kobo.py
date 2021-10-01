@@ -1,3 +1,4 @@
+import datetime
 import json
 import mock
 import pytest
@@ -124,6 +125,7 @@ class TestKoBo(object):
         assert resp.status_code == 200
         assert "Missing KoBoToolbox token" not in resp.body
         assert "Invalid KoBoToolbox token" not in resp.body
+        assert "Unknown KoBoToolbox token" not in resp.body
         userobj = model.User.get(self.internal_editor_user['id'])
         assert userobj.plugin_extras['unhcr']['kobo_token'] == 'test_abc123'
 
@@ -293,6 +295,7 @@ class TestKoBoJobs(object):
                 'kobo_download_status': 'pending',
                 'kobo_download_attempts': 1,
                 'kobo_submission_count': 3,
+                'kobo_last_updated': datetime.datetime.utcnow().isoformat(),
             }
         )
         self.kobo_resource = factories.Resource(

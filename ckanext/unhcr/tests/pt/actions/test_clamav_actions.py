@@ -7,6 +7,7 @@ import pytest
 import re
 import responses
 import tempfile
+from dateutil.parser import parse as parse_date
 from werkzeug.datastructures import FileStorage as FlaskFileStorage
 from ckan.plugins import toolkit
 from ckantoolkit.tests import factories as core_factories
@@ -43,7 +44,7 @@ class TestClamAVActions(object):
                 'entity_id': self.resource['id'],
                 'entity_type': 'resource',
                 'task_type': 'clamav',
-                'last_updated': str(datetime.datetime.utcnow()),
+                'last_updated': datetime.datetime.utcnow().isoformat(),
                 'state': 'pending',
                 'key': 'clamav',
                 'value': '{}',
@@ -281,23 +282,20 @@ class TestClamAVActions(object):
 
         self.insert_pending_task()
 
+        last_modified = parse_date(self.resource['last_modified'])
+        task_created = last_modified - datetime.timedelta(minutes=1)
         toolkit.get_action("scan_hook")(
             {'user': self.sysadmin['name']},
             {
                 "status": "complete",
                 "data": {
                     "status_code": 0,
-                        "status_text": "SUCCESSFUL SCAN, FILE CLEAN",
-                        "description": "/tmp/tmp37q_kv9u: OK...",
+                    "status_text": "SUCCESSFUL SCAN, FILE CLEAN",
+                    "description": "/tmp/tmp37q_kv9u: OK...",
                 },
                 "metadata": {
                     "resource_id": self.resource['id'],
-                    'task_created': str(
-                        datetime.datetime.strptime(
-                            self.resource['last_modified'],
-                            '%Y-%m-%dT%H:%M:%S.%f'
-                        ) - datetime.timedelta(minutes=1)
-                    ),
+                    'task_created': task_created.isoformat(),
                 }
             }
         )

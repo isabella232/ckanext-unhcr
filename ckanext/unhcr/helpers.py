@@ -1,6 +1,8 @@
+import datetime
 import logging
 import os
 import re
+from dateutil.parser import parse as parse_date
 from urllib.parse import quote
 from jinja2 import Markup, escape
 from ckan import model
@@ -295,6 +297,23 @@ def get_kobo_initial_dataset(kobo_asset_id):
         }
 
     return initial_data, errors
+
+
+def get_kobo_import_process_real_status(resource_id):
+    """ Check if KoBo process is stalled (more than 1 hour in pending status)
+        Return True if process is stalled, False otherwise """
+    resource = toolkit.get_action('resource_show')({}, {'id': resource_id})
+    kobo_details = resource.get('kobo_details', {})
+    if kobo_details.get('kobo_download_status') != 'pending':
+        return kobo_details.get('kobo_download_status')
+    updated = kobo_details.get('kobo_last_updated')
+    if not updated:
+        return 'unknown'
+    date_updated = parse_date(updated)
+    if datetime.datetime.now() - date_updated > datetime.timedelta(hours=1):
+        return 'stalled'
+    else:
+        return 'pending'
 
 
 # Linked datasets

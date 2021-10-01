@@ -1,3 +1,4 @@
+import copy
 from flask import Blueprint, make_response
 import ckan.plugins.toolkit as toolkit
 from ckanext.unhcr.utils import require_editor_user
@@ -49,14 +50,24 @@ def update_token():
         message = 'Missing KoBoToolbox token.'
         toolkit.h.flash_error(message)
         return toolkit.redirect_to('unhcr_kobo.index')
-    plugin_extras = {} if user_obj.plugin_extras is None else user_obj.plugin_extras
+    plugin_extras = {} if user_obj.plugin_extras is None else copy.deepcopy(user_obj.plugin_extras)
     old_token = plugin_extras.get('unhcr', {}).get('kobo_token')
 
     if token != old_token:
+
+        current_user_dict = toolkit.get_action('user_show')(
+            {'ignore_auth': True},
+            {'id': user_obj.id, 'include_plugin_extras': True}
+        )
+
+        if not plugin_extras.get('unhcr'):
+            plugin_extras['unhcr'] = {}
+        plugin_extras['unhcr']['kobo_token'] = token
+        current_user_dict['plugin_extras'] = plugin_extras
         try:
             toolkit.get_action('user_update')(
                 {'user': user_obj.name, 'validate_token': not token.startswith('test_')},
-                {'id': user_obj.id, 'plugin_extras': {'unhcr':  {'kobo_token': token}}}
+                current_user_dict
             )
         except toolkit.ValidationError as e:
             if e.error_dict and 'kobo_token' in e.error_dict:
@@ -143,9 +154,8 @@ def enqueue_survey_update():
         message = 'Dataset not found for this KoBoToolbox asset ID.'
         return _make_json_response(status_int=404, error_msg=message)
 
-    # check if an update is pending
-    download_statuses = [res.get('kobo_details', {}).get('kobo_download_status') for res in kd.package_dict['resources']]
-    if 'pending' in download_statuses:
+    # check if an update is "pending" (but not stalled)
+    if kd.get_import_status() == 'pending':
         message = 'There is a pending update for this survey.'
         return _make_json_response(status_int=400, error_msg=message)
 

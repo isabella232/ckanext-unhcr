@@ -238,6 +238,7 @@ class UnhcrPlugin(
             'nl_to_br': helpers.nl_to_br,
             'is_plugin_loaded': helpers.is_plugin_loaded,
             'get_resource_value_label': helpers.get_resource_value_label,
+            'get_kobo_import_process_real_status': helpers.get_kobo_import_process_real_status,
         }
 
     # IPackageController

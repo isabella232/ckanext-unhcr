@@ -35,11 +35,13 @@ class KoboDataset:
             if e.errno != 17:
                 raise
 
-    def get_package(self, raise_multiple_error=True):
+    def get_package(self, raise_multiple_error=True, raise_none_error=False):
         """ Check if the kobo_asset_id already exist and return it
             Raises an error if multiple packages exists
             Returns: package: if exists (or None)
             """
+        if self.package_dict:
+            return self.package_dict
 
         search_dict = {
             'q': '*:*',
@@ -69,7 +71,44 @@ class KoboDataset:
             self.package_dict = package
             return package
         else:
+            if raise_none_error:
+                raise KoboMissingAssetIdError('No KoBoToolbox package found for asset {}'.format(self.kobo_asset_id))
             return None
+
+    def get_import_status(self):
+        """ Return the kobo import status at a dataset level
+            "error" at least one resource have error
+            "stalled" if we have pending resources from a long time
+            "pending" at least one resource pending (not stalled) without error
+            "complete" all resources are complete """
+
+        kobo_package = self.get_package(raise_none_error=True)
+        statuses = []
+        for res in kobo_package['resources']:
+            if res.get('kobo_type') != 'data':
+                continue
+            kobo_details = res.get('kobo_details')
+            if not kobo_details:
+                continue
+
+            status = res['kobo_details']['kobo_download_status']
+            if status == 'error':
+                return 'error'
+            if status == 'pending':
+                # check if stalled
+                updated = res['kobo_details']['kobo_last_updated']
+                date_updated = parse_date(updated)
+                if datetime.datetime.now() - date_updated > datetime.timedelta(hours=1):
+                    statuses.append('stalled')
+                else:
+                    statuses.append('pending')
+
+        if 'stalled' in statuses:
+            return 'stalled'
+        elif 'pending' in statuses:
+            return 'pending'
+
+        return 'complete'
 
     def get_kobo_api(self, user_obj):
         """ Return the KoboAPI object for a CKAN user """
@@ -164,6 +203,12 @@ class KoboDataset:
             'visibility': 'public',
             'file_type': 'questionnaire',
             'kobo_type': 'questionnaire',
+            'kobo_details': {
+                'kobo_asset_id': self.kobo_asset_id,
+                'kobo_download_status': 'pending',
+                'kobo_download_attempts': 0,
+                'kobo_last_updated': datetime.datetime.utcnow().isoformat()
+            }
         }
 
         action = toolkit.get_action("resource_create")
@@ -223,7 +268,7 @@ class KoboDataset:
                     'kobo_download_attempts': 0,
                     # To detect new submissions
                     'kobo_submission_count': survey.get_total_submissions(),
-                    'kobo_last_updated': str(datetime.datetime.utcnow())
+                    'kobo_last_updated': datetime.datetime.utcnow().isoformat()
                 }
             }
 
@@ -248,6 +293,7 @@ class KoboDataset:
             raise toolkit.ValidationError({'kobo_details': ["kobo_details is missing from resource {}".format(resource_dict)]})
 
         kobo_details.update(new_kobo_details)
+        kobo_details['kobo_last_updated'] = datetime.datetime.utcnow().isoformat()
 
         resource = toolkit.get_action('resource_patch')(
             context,
@@ -258,9 +304,9 @@ class KoboDataset:
         )
         return resource
 
-    def update_resource(self, resource_dict, local_file, user_name, submission_count):
+    def update_resource(self, resource_dict, local_file, user_name, submission_count=None):
         """ Update the resource with real data """
-
+        logger.info('Updating resource {} from file {}'.format(resource_dict['id'], local_file))
         context = {'user': user_name, 'job': True}
         if not resource_dict:
             raise toolkit.ValidationError({'resource': ["empty resource to update"]})
@@ -271,8 +317,9 @@ class KoboDataset:
 
         kobo_details['kobo_download_status'] = 'complete'
         kobo_details['kobo_download_attempts'] = kobo_download_attempts + 1
-        kobo_details['kobo_submission_count'] = submission_count
-        kobo_details['kobo_last_updated'] = str(datetime.datetime.utcnow())
+        if submission_count:
+            kobo_details['kobo_submission_count'] = submission_count
+        kobo_details['kobo_last_updated'] = datetime.datetime.utcnow().isoformat()
 
         resource = toolkit.get_action('resource_patch')(
             context,
@@ -284,14 +331,13 @@ class KoboDataset:
                 'kobo_details': kobo_details,
             }
         )
+        logger.info('Resource {} updated {}'.format(resource_dict['id'], kobo_details['kobo_last_updated']))
         return resource
 
     def get_submission_count(self):
         """ Get the amount of submissions in the current local package """
 
-        kobo_package = self.package_dict or self.get_package()
-        if kobo_package is None:
-            raise KoboMissingAssetIdError('Cannot check for updates. No KoBoToolbox package found for asset {}'.format(self.kobo_asset_id))
+        kobo_package = self.get_package(raise_none_error=True)
 
         # analyze all resources, check for the smallest one
         # we expect all resources to have the same number of submissions
@@ -328,31 +374,11 @@ class KoboDataset:
         # check if the submission count has changed
         return new_submission_count - min_submission_count
 
-    def update_questionnaire(self, resource_id, survey, user_obj):
-        """ Update questionnaire for a KoBo dataset """
-        logger.info('Updating questionnaire for resource {}'.format(resource_id))
-        local_file = survey.download_questionnaire(destination_path=self.upload_path)
-
-        patch_resource = {
-            'id': resource_id,
-            'upload': FlaskFileStorage(filename=local_file, stream=open(local_file, 'rb')),
-            'url_type': 'upload',
-        }
-
-        resource = toolkit.get_action('resource_patch')(
-            {'user': user_obj.name, 'job': True},
-            patch_resource,
-        )
-
-        return resource
-
     def update_all_resources(self, user_obj):
         """ update all resources (and questionnaire) in the package with new submissions """
         from ckanext.unhcr.jobs import download_kobo_export
 
-        kobo_package = self.get_package() if self.package_dict is None else self.package_dict
-        if kobo_package is None:
-            raise KoboMissingAssetIdError('Cannot check for updates. No KoBoToolbox package found for asset {}'.format(self.kobo_asset_id))
+        kobo_package = self.get_package(raise_none_error=True)
 
         logger.info('Updating all resources for package {}'.format(kobo_package['name']))
         kobo_api = self.get_kobo_api(user_obj)
@@ -362,7 +388,8 @@ class KoboDataset:
         # update each resource
         for resource in kobo_package['resources']:
             if resource['kobo_type'] == 'questionnaire':
-                self.update_questionnaire(resource['id'], survey, user_obj)
+                toolkit.enqueue_job(download_kobo_export, [resource['id']], title='Preparing to update questionnaire resource')
+                continue
             if resource['kobo_type'] != 'data':
                 continue
             kobo_details = resource.get('kobo_details')
@@ -393,7 +420,7 @@ class KoboDataset:
             patch_resource['kobo_details']['kobo_export_id'] = export_id
             patch_resource['kobo_details']['kobo_download_status'] = 'pending'
             patch_resource['kobo_details']['kobo_download_attempts'] = 0
-            patch_resource['kobo_details']['kobo_last_updated'] = str(datetime.datetime.utcnow())
+            patch_resource['kobo_details']['kobo_last_updated'] = datetime.datetime.utcnow().isoformat()
 
             toolkit.get_action('resource_patch')(
                 {'user': user_obj.name, 'job': True},

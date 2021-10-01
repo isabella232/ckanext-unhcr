@@ -87,7 +87,7 @@
           <th scope="row">{{ _('KoBoToolbox resource type') }}</th>
           <td>{{ res.kobo_type }}</td>
         </tr>
-        {% if res.kobo_details %}
+        {% if res.kobo_type == 'data' %}
         <tr>
           <th scope="row">{{ _('KoBoToolbox export ID') }}</th>
           <td>{{ res.kobo_details.kobo_export_id }}</td>
@@ -96,11 +96,11 @@
           <th scope="row">{{ _('Submission count') }}</th>
           <td>{{ res.kobo_details.kobo_submission_count }}</td>
         </tr>
+        {% endif %}
         <tr>
           <th scope="row">{{ _('Last resource update') }}</th>
           <td>{{ res.kobo_details.kobo_last_updated }} UTC</td>
         </tr>
-        {% endif %}
         
       </tbody>
     </table>

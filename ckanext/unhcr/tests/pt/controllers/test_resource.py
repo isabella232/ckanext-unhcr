@@ -145,7 +145,7 @@ class TestResourceViews(object):
                 'entity_id': self.resource1['id'],
                 'entity_type': 'resource',
                 'task_type': 'clamav',
-                'last_updated': str(datetime.datetime.utcnow()),
+                'last_updated': datetime.datetime.utcnow().isoformat(),
                 'state': 'complete',
                 'key': 'clamav',
                 'value': '{"data": {"status_code": 1}}',
