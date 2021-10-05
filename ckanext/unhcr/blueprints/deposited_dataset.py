@@ -53,7 +53,7 @@ def approve(package_type, dataset_id):
         )
     except toolkit.ValidationError as error:
         message = 'Deposited dataset "%s" is invalid\n(validation error summary: %s)'
-        return toolkit.abort(403, message % (id, error.error_summary))
+        return toolkit.abort(403, message % (dataset_id, error.error_summary))
 
     # Update activity stream
     message = toolkit.request.form.get('message')
