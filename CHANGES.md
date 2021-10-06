@@ -1,12 +1,15 @@
 # RIDL Changelog
 
-## v3.1.4b - 2021-10-01
+## v3.1.4b - 2021-10-06
 
 New features
+ - **Started using CKAN 2.9.4**
  - Allow forcing update from Kobo [#700](https://github.com/okfn/ckanext-unhcr/pull/700)
  - Add HQ email and update user guide URL [#695](https://github.com/okfn/ckanext-unhcr/pull/695)
  - Skip big files from ClamAV [#688](https://github.com/okfn/ckanext-unhcr/pull/688)
- - Remove no longer required CKAN core patch to move to **CKAN 2.9.4**
+ - Remove no longer required CKAN core patch to move to CKAN 2.9.4
+ - Start expiring users in UAT [docker#43](https://github.com/okfn/docker-ckan-unhcr-aws/pull/43)
+ - Start allowing bigger resource files [docker#64](https://github.com/okfn/docker-ckan-unhcr-aws/pull/64)
 
 Bug fixes
  - Fix permission for depositors to deposit [#699](https://github.com/okfn/ckanext-unhcr/pull/699)
