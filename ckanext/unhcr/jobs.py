@@ -1,5 +1,5 @@
 from ckanext.unhcr.kobo.exceptions import KoboApiError
-import datetime
+from functools import wraps
 import logging
 import time
 
@@ -188,23 +188,27 @@ def _kobo_job_error(kd, resource, user_obj, error):
     )
 
 
-def download_kobo_export(resource_id):
-    """ Job for download pending data from a KoBo export.
-        JSON data requires a paginated download """
+def kobo_job_exception_handler(func):
+    """ Capture all possible error in this Job """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except Exception as e:
+            resource_id = args[0]
+            kd, _, resource, user_obj = _prepare_kobo_download(resource_id)
+            error = 'Error downloading KoBo resource: {}'.format(e)
+            _kobo_job_error(kd, resource, user_obj, error)
+    return wrapper
+
+
+def _prepare_kobo_download(resource_id):
     from ckanext.unhcr.kobo.api import KoBoAPI, KoBoSurvey
     from ckanext.unhcr.kobo.kobo_dataset import KoboDataset
 
     context = {'ignore_auth': True}
     resource = toolkit.get_action('resource_show')(context, {'id': resource_id})
-
     kobo_details = resource.get('kobo_details')
-    if not kobo_details:
-        raise toolkit.ValidationError({'kobo_resource': ["Trying to download a resource without kobo_details {}".format(resource)]})
-
-    kobo_download_status = kobo_details['kobo_download_status']
-    if kobo_download_status == 'complete':
-        raise toolkit.ValidationError({'kobo_resource': ['Trying to download a complete resource: {}'.format(resource_id)]})
-
     package = toolkit.get_action('package_show')(context, {'id': resource['package_id']})
     if not package:
         raise toolkit.ValidationError({'package': ["Missing package for {}".format(resource['package_id'])]})
@@ -218,6 +222,16 @@ def download_kobo_export(resource_id):
     kobo_asset_id = kobo_details['kobo_asset_id']
     kd = KoboDataset(kobo_asset_id)
     survey = KoBoSurvey(kobo_asset_id, kobo_api)
+    return kd, survey, resource, user_obj
+
+
+@kobo_job_exception_handler
+def download_kobo_export(resource_id):
+    """ Job for download pending data from a KoBo export.
+        JSON data requires a paginated download """
+
+    kd, survey, resource, user_obj = _prepare_kobo_download(resource_id)
+    kobo_details = resource.get('kobo_details')
 
     if resource['kobo_type'] == 'questionnaire':
         try:
@@ -243,7 +257,13 @@ def download_kobo_export(resource_id):
     # CSV and XLS require export and download
     export_id = kobo_details['kobo_export_id']
     if not export_id:
-        raise toolkit.ValidationError({'kobo_export_id': ["Missing kobo_export_id at resource {}, {}".format(resource, kobo_details)]})
+        raise toolkit.ValidationError(
+            {
+                'kobo_export_id': [
+                    "Missing kobo_export_id at resource {}, {}".format(resource, kobo_details)
+                ]
+            }
+        )
     export = survey.get_export(export_id)
     if export['status'] == 'complete':
         data_url = export['result']
@@ -255,6 +275,7 @@ def download_kobo_export(resource_id):
             return
 
         kd.update_resource(resource, local_file, user_obj.name, new_submission_count)
+
     elif export['status'] in ['processing', 'created']:
         # wait and re-schedule
         kobo_download_attempts = kobo_details['kobo_download_attempts'] + 1
@@ -265,7 +286,11 @@ def download_kobo_export(resource_id):
         else:
             kd.update_kobo_details(resource, user_obj.name, {"kobo_download_attempts": kobo_download_attempts})
             time.sleep(30 * kobo_download_attempts)
-            toolkit.enqueue_job(download_kobo_export, [resource['id']], title='Re-scheduling KoBoToolbox download: {}'.format(kobo_download_attempts))
+            toolkit.enqueue_job(
+                download_kobo_export,
+                [resource['id']],
+                title='Re-scheduling KoBoToolbox download: {}'.format(kobo_download_attempts)
+            )
     else:  # status = 'error' or unknown
         error = 'KoBo export error for resource {}. ' \
                 'Last export status from KoBo: {}'.format(resource['id'], export)
