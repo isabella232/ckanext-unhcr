@@ -344,7 +344,7 @@ class KoboDataset:
         min_submission_count = 0
         for resource in kobo_package['resources']:
             # only data resources have submission count
-            if resource['kobo_type'] != 'data':
+            if resource.get('kobo_type') != 'data':
                 continue
             kobo_details = resource.get('kobo_details')
             if not kobo_details:
@@ -387,10 +387,10 @@ class KoboDataset:
 
         # update each resource
         for resource in kobo_package['resources']:
-            if resource['kobo_type'] == 'questionnaire':
+            if resource.get('kobo_type') == 'questionnaire':
                 toolkit.enqueue_job(download_kobo_export, [resource['id']], title='Preparing to update questionnaire resource')
                 continue
-            if resource['kobo_type'] != 'data':
+            if resource.get('kobo_type') != 'data':
                 continue
             kobo_details = resource.get('kobo_details')
             if not kobo_details:
