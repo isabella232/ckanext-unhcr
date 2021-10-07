@@ -97,10 +97,12 @@
           <td>{{ res.kobo_details.kobo_submission_count }}</td>
         </tr>
         {% endif %}
+        {% if res.kobo_details %}
         <tr>
           <th scope="row">{{ _('Last resource update') }}</th>
           <td>{{ res.kobo_details.kobo_last_updated }} UTC</td>
         </tr>
+        {% endif %}
         
       </tbody>
     </table>

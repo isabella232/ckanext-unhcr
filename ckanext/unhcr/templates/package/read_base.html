@@ -53,6 +53,10 @@
   {% block user_guide %}
     {% snippet "snippets/user_guide.html", is_deposit=pkg.type == 'deposited-dataset' %}
   {% endblock %}
+
+  {% block contact %}
+    {% snippet "snippets/contact.html" %}
+  {% endblock %}
 </aside>
 {% endblock %}
 
