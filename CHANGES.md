@@ -1,7 +1,9 @@
 # RIDL Changelog
 
-## v3.1.4c - 2021-10-X
-TODO
+## v3.1.4c - 2021-10-07
+Bug fixes
+ - Fix old resources dict error [#720](https://github.com/okfn/ckanext-unhcr/pull/720)
+ - Small fixes after release [#717](https://github.com/okfn/ckanext-unhcr/pull/700)
 
 ## v3.1.4b - 2021-10-06
 
