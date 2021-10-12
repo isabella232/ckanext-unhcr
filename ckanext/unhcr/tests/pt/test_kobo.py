@@ -198,18 +198,15 @@ class TestKoBo(object):
         assert "Next: Describe KoBoToolbox resources" in resp.body
 
     @mock.patch('ckan.plugins.toolkit.enqueue_job')
-    @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.download_questionnaire')
     @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.get_submission_times')
     @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.create_export')
     @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.get_total_submissions')
-    def test_post_new_pkg_from_kobo_starts_jobs(self, submissions, create_export, sub_times, downq, mock_hook, app):
+    def test_post_new_pkg_from_kobo_starts_jobs(self, submissions, create_export, sub_times,mock_hook, app):
         """ Try to import KoBo resource """
 
         submissions.return_value = 1
         create_export.return_value = {'uid': 'kobo_export_id'}
         sub_times.return_value = ['2021-01-01', '2021-02-01']
-        questionnaire_file = tempfile.NamedTemporaryFile()
-        downq.return_value = questionnaire_file.name
         mock_hook.return_value = None
 
         environ = {
@@ -247,10 +244,9 @@ class TestKoBo(object):
         submissions.assert_called()
         create_export.assert_called()
         sub_times.assert_called()
-        downq.assert_called()
         # download_kobo_export should be called for all data surveys (JSON, CSV and XLS)
         mock_calls = [fn[0][0].__name__ for fn in mock_hook.call_args_list]
-        assert mock_calls.count('download_kobo_export') == 3
+        assert mock_calls.count('download_kobo_export') == 4
 
 
 @pytest.mark.usefixtures('clean_db', 'unhcr_migrate', 'with_request_context')

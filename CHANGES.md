@@ -1,5 +1,11 @@
 # RIDL Changelog
 
+
+## v3.1.4d - 2021-10-12
+New features
+ - Move questionnaire download as job [#721](https://github.com/okfn/ckanext-unhcr/pull/721)
+
+
 ## v3.1.4c - 2021-10-07
 Bug fixes
  - Fix old resources dict error [#720](https://github.com/okfn/ckanext-unhcr/pull/720)

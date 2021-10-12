@@ -85,7 +85,7 @@ class KoboDataset:
         kobo_package = self.get_package(raise_none_error=True)
         statuses = []
         for res in kobo_package['resources']:
-            if res.get('kobo_type') != 'data':
+            if res.get('kobo_type') not in ['data', 'questionnaire']:
                 continue
             kobo_details = res.get('kobo_details')
             if not kobo_details:
@@ -189,12 +189,14 @@ class KoboDataset:
 
     def create_questionnaire_resource(self, context, pkg_dict, survey):
         """ Create a resource for the questionnaire """
+        from ckanext.unhcr.jobs import download_kobo_export
 
-        local_file = survey.download_questionnaire(destination_path=self.upload_path)
+        # create empty resources to be updated later
+        f = tempfile.NamedTemporaryFile()
 
         resource = {
             'package_id': pkg_dict['id'],
-            'upload': FlaskFileStorage(filename=local_file, stream=open(local_file, 'rb')),
+            'upload': FlaskFileStorage(filename=f.name, stream=open(f.name, 'rb')),
             'name': 'Questionnaire XLS',
             'description': 'Questionnaire imported from the KoBo survey',
             'format': 'xls',
@@ -213,6 +215,9 @@ class KoboDataset:
 
         action = toolkit.get_action("resource_create")
         resource = action(context, resource)
+
+        # Start a job to download the questionnaire
+        toolkit.enqueue_job(download_kobo_export, [resource['id']], title='Download KoBoToolbox questionnaire')
 
         return resource
 
