@@ -2,6 +2,8 @@
 
 ## v3.1.5 - 2021-10-15 - STABLE PRODUCTION RELEASE
 Tag version for production
+Bug fixes:
+ - Show _Visibility_ field metadata in resources read template.
 
 ## v3.1.4d - 2021-10-12
 New features
