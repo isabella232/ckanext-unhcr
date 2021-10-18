@@ -837,7 +837,6 @@
             "label": "Internal Access Level",
             "validators": "not_missing visibility_validator_resource",
             "preset": "select",
-            "display_snippet": null,
             "required": true,
             "choices": [
                 {
