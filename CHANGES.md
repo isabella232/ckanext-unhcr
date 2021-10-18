@@ -4,6 +4,7 @@
 Tag version for production
 Bug fixes:
  - Show _Visibility_ field metadata in resources read template.
+ - Fix visibility error for _Attachment_ resource files.
 
 ## v3.1.4d - 2021-10-12
 New features

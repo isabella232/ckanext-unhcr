@@ -776,7 +776,9 @@ def scan_hook(context, data_dict):
 @toolkit.chained_action
 def resource_create(up_func, context, data_dict):
     toolkit.check_access('resource_create', context, data_dict)
-    if data_dict.get('identifiability') == 'personally_identifiable':
+    # Data files uses the idenfiability field and should hide personal data
+    # Attachment files do not use identifiability field and should not be hidden
+    if data_dict.get('identifiability') == 'personally_identifiable' and data_dict.get('type') == 'data':
         data_dict['visibility'] = 'restricted'
     has_upload = data_dict.get('upload') is not None
     resource = up_func(context, data_dict)
@@ -792,7 +794,9 @@ def resource_create(up_func, context, data_dict):
 @toolkit.chained_action
 def resource_update(up_func, context, data_dict):
     toolkit.check_access('resource_update', context, data_dict)
-    if data_dict.get('identifiability') == 'personally_identifiable':
+    # Data files uses the idenfiability field and should hide personal data
+    # Attachment files do not use identifiability field and should not be hidden
+    if data_dict.get('identifiability') == 'personally_identifiable' and data_dict.get('type') == 'data':
         data_dict['visibility'] = 'restricted'
 
     has_upload = data_dict.get('upload') is not None

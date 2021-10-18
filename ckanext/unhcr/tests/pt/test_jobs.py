@@ -164,7 +164,29 @@ class TestReviseJobs(object):
             url_type='upload',
         )
 
-    def test_package_update_job_resource(self):
+        self.resource_visible = factories.Resource(
+            package_id=self.dataset['id'],
+            description='some description 2',
+            visibility='public',
+            identifiability='anonymized_public',
+            upload=mocks.FakeFileStorage(),
+            url="http://fakeurl/test2.txt",
+            url_type='upload',
+        )
+
+        # Attachment type files do not use "identifiability"
+        self.resource_ambiguous = factories.Resource(
+            package_id=self.dataset['id'],
+            description='some description 3',
+            visibility='public',
+            identifiability='personally_identifiable',
+            upload=mocks.FakeFileStorage(),
+            url="http://fakeurl/test3.txt",
+            url_type='upload',
+            type='attachment',
+            file_type='other',
+        )
+    def test_package_update_job_resource_restricted(self):
         process_dataset_on_update(self.dataset['id'])
         # visibility for dataset should be updated to restricted and other field should remain intact
 
@@ -178,9 +200,34 @@ class TestReviseJobs(object):
         # other fields should remain intact
         assert resource['description'] == 'some description'
 
+    def test_package_update_job_resource_visible(self):
+        process_dataset_on_update(self.dataset['id'])
+
+        resource = helpers.call_action(
+            'resource_show',
+            context={'user': self.internal_user['name']},
+            id=self.resource_visible['id'],
+        )
+        # personally_identifiable resources should restrict visibility
+        assert resource['visibility'] == 'public'
+        # other fields should remain intact
+        assert resource['description'] == 'some description 2'
+
+    def test_package_update_job_resource_ambiguous(self):
+        process_dataset_on_update(self.dataset['id'])
+
+        resource = helpers.call_action(
+            'resource_show',
+            context={'user': self.internal_user['name']},
+            id=self.resource_ambiguous['id'],
+        )
+        # personally_identifiable resources should restrict visibility
+        assert resource['visibility'] == 'public'
+        # other fields should remain intact
+        assert resource['description'] == 'some description 3'
+
     def test_package_update_job_package(self):
         process_dataset_on_update(self.dataset['id'])
-        # visibility for dataset should be updated to restricted and other field should remain intact
 
         pkg = helpers.call_action(
             'package_show',
