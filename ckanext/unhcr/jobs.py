@@ -251,7 +251,7 @@ def download_kobo_export(resource_id):
             _kobo_job_error(kd, resource, user_obj, 'Error downloading json kobo data {}'.format(e))
             return
 
-        kd.update_resource(resource, local_file, user_obj.name)
+        kd.update_resource(resource, local_file, user_obj.name, new_submission_count)
         return
 
     # CSV and XLS require export and download
