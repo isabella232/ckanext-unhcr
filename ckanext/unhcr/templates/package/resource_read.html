@@ -24,8 +24,18 @@
 
     <li>{% link_for _('Manage'), named_route=pkg.type ~ '_resource.edit', id=pkg.name, resource_id=res.id, class_='btn', icon='wrench' %}</li>
   {% endif %}
+
+  {% set can_download_resource = h.check_access('resource_download', {'id':res.id }) %}
+  {% if not can_download_resource %}
+    <li>
+      <span class="dataset-private label label-inverse">
+        <i class="fa fa-lock"></i> {{ _('Private') }}
+      </span>
+    </li>
+  {% endif %}
+
   {% if res.url and h.is_url(res.url) %}
-    {% if h.can_download(pkg) and not is_activity_archive %}
+    {% if can_download_resource and not is_activity_archive %}
       <li>
         <a class="btn btn-primary resource-url-analytics resource-type-{{ res.resource_type }}" href="{{ res.url }}">
           {% if res.resource_type in ('listing', 'service') %}
