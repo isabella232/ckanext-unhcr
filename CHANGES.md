@@ -1,10 +1,12 @@
 # RIDL Changelog
 
-## v3.1.5 - 2021-10-15 - STABLE PRODUCTION RELEASE
+## v3.1.5 - 2021-10-19 - STABLE PRODUCTION RELEASE
 Tag version for production
 Bug fixes:
  - Show _Visibility_ field metadata in resources read template.
  - Fix visibility error for _Attachment_ resource files.
+ - Fix submission counter for KoBo updates [Hotfix](https://github.com/okfn/ckanext-unhcr/commit/13fdbce28fe1f2bb8b835e9aafcb256ddec3ea3f)
+ - Add _private_ label for resources [#727](https://github.com/okfn/ckanext-unhcr/pull/727)
 
 ## v3.1.4d - 2021-10-12
 New features
