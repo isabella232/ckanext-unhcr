@@ -54,14 +54,14 @@
 {% endblock %}
 
 {% block resource_read_url %}
-  {% if h.can_download(pkg) %}
+  {% if can_download_resource %}
     {{ super() }}
   {% endif %}
 {% endblock %}
 
 {% block data_preview %}
 
-  {% if h.can_download(pkg) %}
+  {% if can_download_resource %}
     {{ super() }}
   {% else %}
 
