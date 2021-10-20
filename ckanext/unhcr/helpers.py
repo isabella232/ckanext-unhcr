@@ -1051,12 +1051,19 @@ def normalize_list(value):
 
 
 def can_download(package_dict):
+    """ True if the user can download ALL resources
+        If one resource is not accessible, return False """
     try:
         context = {'user': toolkit.c.user}
-        resource_dict = package_dict.get('resources', [])[0]
-        toolkit.check_access('resource_download', context, resource_dict)
+        resources = package_dict.get('resources', [])
+        if len(resources) == 0:
+            return False
+        for resource_dict in resources:
+            # Copy context because will be filled wioth 'resource' and 'get_resource_object' 
+            # inside 'resource_download' will use this resource all times
+            ret = toolkit.check_access('resource_download', context.copy(), resource_dict)
         return True
-    except (toolkit.NotAuthorized, toolkit.ObjectNotFound, IndexError):
+    except (toolkit.NotAuthorized, toolkit.ObjectNotFound):
         return False
 
 
