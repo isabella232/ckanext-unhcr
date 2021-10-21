@@ -56,3 +56,51 @@
     vertical-align: baseline;
   }
 }
+
+.kobo-resource-item {
+  font-size: 10px;
+  padding: 4px;
+  margin: 4px;
+  border-radius: 4px;
+  color: #090846
+}
+
+.kobo-resource-status {
+  padding: 4px 10px;
+  font-weight: bold;
+  border-radius: 4px;
+  margin-right: 5px;
+}
+
+.kobo-resource-pending {
+  background-color: #63683c44;
+}
+
+.kobo-resource-complete {
+  background-color: #95dfa144;
+}
+
+.kobo-resource-stalled {
+  background-color: #db6e2544;
+}
+
+.kobo-resource-error {
+  background-color: #df756744;
+}
+
+.kobo-resource-item-action {
+  margin-left: 10px;
+}
+
+.kobo-item-info {
+  display: none;
+  line-height: 15px;
+  padding: 12px 25px;
+  margin: 2px 0;
+  width: 400px;
+  font-size: 13px;
+}
+
+.kobo-item-info ul {
+  padding-left: 0;
+}

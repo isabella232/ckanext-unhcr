@@ -1,10 +1,12 @@
+import datetime
 import mock
 import pytest
+from dateutil.parser import parse as parse_date
 from ckan import model
 from ckan.plugins import toolkit
 from ckan.tests import helpers as core_helpers
 from ckantoolkit.tests import factories as core_factories
-from ckanext.unhcr.models import AccessRequest
+from ckanext.unhcr.models import AccessRequest, USER_REQUEST_TYPE_RENEWAL
 from ckanext.unhcr.tests import factories
 
 
@@ -16,8 +18,12 @@ class TestAccessRequestUpdate(object):
         self.pending_user = factories.ExternalUser(state=model.State.PENDING)
 
         self.container1_admin = core_factories.User()
+        self.container1_curator = core_factories.User()
         self.container1 = factories.DataContainer(
-            users=[{"name": self.container1_admin["name"], "capacity": "admin"}]
+            users=[
+                {"name": self.container1_admin["name"], "capacity": "admin"},
+                {"name": self.container1_curator["name"], "capacity": "editor"}
+            ]
         )
         self.dataset1 = factories.Dataset(
             owner_org=self.container1["id"], visibility="restricted"
@@ -249,6 +255,21 @@ class TestAccessRequestUpdate(object):
                 mock_mailer.call_args[0][2]
             )
 
+    def test_access_request_update_approve_user_container_curator(self):
+        """ Curators can't approve new users """
+        action = toolkit.get_action("access_request_update")
+        with pytest.raises(toolkit.NotAuthorized):
+            action(
+                {"model": model, "user": self.container1_curator["name"]},
+                {'id': self.user_request.id, 'status': 'approved'}
+            )
+
+        user = toolkit.get_action("user_show")(
+            {"ignore_auth": True}, {"id": self.pending_user["id"]}
+        )
+        assert model.State.PENDING == user['state']
+        assert None is self.user_request.actioned_by
+
     def test_access_request_update_reject_user_standard_user(self):
         action = toolkit.get_action("access_request_update")
         with pytest.raises(toolkit.NotAuthorized):
@@ -306,23 +327,31 @@ class TestAccessRequestListForUser(object):
         self.requesting_user = core_factories.User()
         self.container_member = core_factories.User()
         self.multi_container_admin = core_factories.User()
+        self.multi_container_curator = core_factories.User()
+
+        self.container1_curator = core_factories.User()
         self.container1_admin = core_factories.User()
         self.container1 = factories.DataContainer(
             users=[
                 {"name": self.multi_container_admin["name"], "capacity": "admin"},
                 {"name": self.container1_admin["name"], "capacity": "admin"},
-                {"name": self.container_member["name"], "capacity": "member"}
+                {"name": self.container_member["name"], "capacity": "member"},
+                {"name": self.container1_curator["name"], "capacity": "editor"},
+                {"name": self.multi_container_curator["name"], "capacity": "editor"},
             ]
         )
         self.dataset1 = factories.Dataset(
             owner_org=self.container1["id"], visibility="restricted"
         )
 
+        self.container2_curator = core_factories.User()
         self.container2_admin = core_factories.User()
         self.container2 = factories.DataContainer(
             users=[
                 {"name": self.multi_container_admin["name"], "capacity": "admin"},
-                {"name": self.container2_admin["name"], "capacity": "admin"}
+                {"name": self.container2_admin["name"], "capacity": "admin"},
+                {"name": self.container2_curator["name"], "capacity": "editor"},
+                {"name": self.multi_container_curator["name"], "capacity": "editor"},
             ]
         )
         self.dataset2 = factories.Dataset(
@@ -418,6 +447,23 @@ class TestAccessRequestListForUser(object):
         )
         assert 4 == len(access_requests)
 
+    def test_access_request_list_for_container_curators(self):
+        # container curators can't see access requests for their container(s)
+        with pytest.raises(toolkit.NotAuthorized):
+            toolkit.get_action("access_request_list_for_user")(
+                {"model": model, "user": self.container1_curator["name"]}, {}
+            )
+
+        with pytest.raises(toolkit.NotAuthorized):
+            toolkit.get_action("access_request_list_for_user")(
+                {"model": model, "user": self.container2_curator["name"]}, {}
+            )
+
+        with pytest.raises(toolkit.NotAuthorized):
+            toolkit.get_action("access_request_list_for_user")(
+                {"model": model, "user": self.multi_container_curator["name"]}, {}
+            )
+
     def test_access_request_list_for_user_standard_users(self):
         # standard_user is a member of a container, but not an admin
         # they shouldn't be able to see any requests
@@ -452,4 +498,136 @@ class TestAccessRequestListForUser(object):
             action(
                 {"model": model, "user": self.sysadmin["name"]},
                 {'status': 'invalid-status'}
+            )
+
+
+@pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
+class TestRenewalAccessRequest(object):
+
+    def setup(self):
+        self.container_admin = core_factories.User()
+        self.container_curator = core_factories.User()
+        self.regular_user = core_factories.User()
+        self.container = factories.DataContainer(
+            users=[
+                {"name": self.container_admin["name"], "capacity": "admin"},
+                {"name": self.container_curator["name"], "capacity": "editor"}
+            ]
+        )
+
+        self.about_to_expire_date = datetime.date.today() + datetime.timedelta(days=5)
+        self.about_to_expire_user = factories.ExternalUser(
+            expiry_date=self.about_to_expire_date,
+            default_containers=[self.container['id']]
+        )
+        access_request_data_dict = {
+            'object_id': self.about_to_expire_user['id'],
+            'object_type': 'user',
+            'message': 'asdf',
+            'role': 'member',  # TODO this is only required to fit the schema
+            'data': {
+                'user_request_type': USER_REQUEST_TYPE_RENEWAL,
+                'users_who_can_approve': [
+                    self.container_admin['id'],
+                    self.container_curator['id']
+                ]
+            }
+        }
+
+        # Create the renewal request
+        self.request = toolkit.get_action(u'access_request_create')(
+            {'user': self.about_to_expire_user['id'], 'ignore_auth': True},
+            access_request_data_dict
+        )
+
+    def test_admin_renewal_success(self):
+
+        # Approve the request
+        toolkit.get_action('access_request_update')(
+            {"model": model, "user": self.container_admin["name"]},
+            {'id': self.request['id'], 'status': 'approved'}
+        )
+
+        # Validate changed user
+        user = toolkit.get_action("user_show")(
+            {"ignore_auth": True}, {"id": self.about_to_expire_user['id']}
+        )
+
+        # User should be active and expire in "external_accounts_expiry_delta" days
+        assert user['state'] == model.State.ACTIVE
+        new_expired_date = parse_date(user['expiry_date']).date()
+        days = toolkit.config.get('ckanext.unhcr.external_accounts_expiry_delta', 180)
+        assert new_expired_date == datetime.date.today() + datetime.timedelta(days)
+
+    def test_curator_renewal_success(self):
+
+        # Approve the request
+        toolkit.get_action('access_request_update')(
+            {"model": model, "user": self.container_curator["name"]},
+            {'id': self.request['id'], 'status': 'approved'}
+        )
+
+        # Validate changed user
+        user = toolkit.get_action("user_show")(
+            {"ignore_auth": True}, {"id": self.about_to_expire_user['id']}
+        )
+
+        # User should be active and expire in "external_accounts_expiry_delta" days
+        assert user['state'] == model.State.ACTIVE
+        new_expired_date = parse_date(user['expiry_date']).date()
+        days = toolkit.config.get('ckanext.unhcr.external_accounts_expiry_delta', 180)
+        assert new_expired_date == datetime.date.today() + datetime.timedelta(days)
+
+    def test_regular_user_renewal_approve_fail(self):
+
+        # Try to approve the request
+        with pytest.raises(toolkit.NotAuthorized):
+            toolkit.get_action('access_request_update')(
+                {"model": model, "user": self.regular_user["name"]},
+                {'id': self.request['id'], 'status': 'approved'}
+            )
+
+    def test_admin_reject_success(self):
+
+        # Reject the request
+        toolkit.get_action('access_request_update')(
+            {"model": model, "user": self.container_admin["name"]},
+            {'id': self.request['id'], 'status': 'rejected'}
+        )
+
+        # Validate changed user
+        user = toolkit.get_action("user_show")(
+            {"ignore_auth": True}, {"id": self.about_to_expire_user['id']}
+        )
+
+        # User should be deleted and expire in same date
+        assert user['state'] == model.State.DELETED
+        new_expired_date = parse_date(user['expiry_date']).date()
+        assert new_expired_date == self.about_to_expire_date
+
+    def test_curator_reject_success(self):
+
+        # Reject the request
+        toolkit.get_action('access_request_update')(
+            {"model": model, "user": self.container_curator["name"]},
+            {'id': self.request['id'], 'status': 'rejected'}
+        )
+
+        # Validate changed user
+        user = toolkit.get_action("user_show")(
+            {"ignore_auth": True}, {"id": self.about_to_expire_user['id']}
+        )
+
+        # User should be deleted and expire in same date
+        assert user['state'] == model.State.DELETED
+        new_expired_date = parse_date(user['expiry_date']).date()
+        assert new_expired_date == self.about_to_expire_date
+
+    def test_regular_user_renewal_reject_fail(self):
+
+        # Try to approve the request
+        with pytest.raises(toolkit.NotAuthorized):
+            toolkit.get_action('access_request_update')(
+                {"model": model, "user": self.regular_user["name"]},
+                {'id': self.request['id'], 'status': 'rejected'}
             )

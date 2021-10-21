@@ -2,7 +2,19 @@
 {% set dataset_link = url_for('dataset.read', id=activity.data.package.name) %}
 
 <li class="item {{ activity.activity_type|replace(' ', '-')|lower }}">
-  <i class="fa icon fa-gavel"></i>
+  {% if activity.data.curation_activity == 'dataset_approved' %}
+    <i class="fa icon fa-check"></i>
+  {% elif activity.data.curation_activity ==  'dataset_deposited' %}
+    <i class="fa icon fa-upload"></i>
+  {% elif activity.data.curation_activity ==  'dataset_submitted' %}
+    <i class="fa icon fa-upload"></i>
+  {% elif activity.data.curation_activity ==  'dataset_withdrawn' %}
+    <i class="fa icon fa-times"></i>
+  {% elif activity.data.curation_activity ==  'dataset_rejected' %}
+    <i class="fa icon fa-times"></i>
+  {% else %}
+    <i class="fa icon fa-gavel"></i>
+  {% endif %}
   <p>
     {{
       h.curation_activity_message(activity).format(

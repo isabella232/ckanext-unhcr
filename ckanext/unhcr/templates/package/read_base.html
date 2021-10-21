@@ -1,11 +1,5 @@
 {% ckan_extends %}
 
-{% set can_request_access = (
-  pkg_dict.resources|length > 0 and
-  not h.can_download(pkg_dict) and
-  not h.get_existing_access_request(c.userobj.id, pkg_dict.id, 'requested')
-) %}
-
 {% if pkg.type == 'deposited-dataset' %}
   {% set curation = h.get_deposited_dataset_user_curation_status(pkg_dict, c.userobj.id) %}
 {% endif %}
@@ -28,22 +22,22 @@
 {% endblock %}
 
 {% block content_action %}
-  {% if can_request_access %}
-    <a
-      href="#collaboration-dataset-request-access"
-      role="button"
-      class="btn"
-      data-toggle="modal"
-      title="Request access to {{ pkg.title }}"
-      data-target="#collaboration-dataset-request-access"
+  {% if pkg.kobo_asset_id and h.check_access('package_update', {'id':pkg.id }) %}
+    <button 
+        class="btn btn-default kobo-pkg-update-resources"
+        data-kobo-asset-id="{{ pkg.kobo_asset_id }}"
+        data-force="false"
+        data-kobo-update-endpoint="{% url_for 'unhcr_kobo.enqueue_survey_update' %}"
     >
-      <i class="fa fa-key"></i>Request Access
-    </a>
+    <i class="fa fa-refresh"></i>
+    <span class="update-kobo-button-text">Update KoBo data</span>
+  </button>
   {% endif %}
   {% if h.organizations_available('create_dataset') and not is_activity_archive %}
     {% link_for _('Copy'), named_route='unhcr_%s.copy' % dataset_type, dataset_id=pkg.id, class_='btn', icon='copy' %}
   {% endif %}
   {{ super() }}
+
 {% endblock %}
 
 {% block secondary %}
@@ -59,6 +53,10 @@
   {% block user_guide %}
     {% snippet "snippets/user_guide.html", is_deposit=pkg.type == 'deposited-dataset' %}
   {% endblock %}
+
+  {% block contact %}
+    {% snippet "snippets/contact.html" %}
+  {% endblock %}
 </aside>
 {% endblock %}
 
@@ -67,10 +65,10 @@
 
 {% block footer %}
   {{ super() }}
-  {% if can_request_access %}
+  {% if h.can_request_access(c.userobj, pkg_dict) %}
     {% snippet "package/snippets/collaboration_modals.html", pkg=pkg %}
   {% endif %}
   {% if pkg.type == 'deposited-dataset' %}
     {% snippet "package/snippets/curation_modals.html", pkg=pkg, curation=curation %}
   {% endif %}
-{% endblock %}
+  {% endblock %}

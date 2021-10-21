@@ -5,6 +5,7 @@ import click
 from ckan.plugins import toolkit
 import ckan.model as model
 
+from ckanext.unhcr.commands import expired_users_list, request_renewal
 from ckanext.unhcr.arcgis import import_geographies as arcgis_import_geographies
 from ckanext.unhcr.models import create_tables, TimeSeriesMetric
 from ckanext.unhcr.mailer import (
@@ -97,3 +98,62 @@ def send_summary_emails(verbose):
             mail_user_by_id(recipient['id'], subject, email['body'])
 
     print('Sent weekly summary emails.')
+
+
+@unhcr.command(
+    u'expire-users',
+    short_help=u'Expire users'
+)
+@click.option('-v', '--verbose', count=True)
+def expire_users(verbose):
+    """ Check user expired and about to expire users and:
+           - delete users who reach their "expiry_date"
+           - notify admins about the users about to expire to allow to renewal those accounts """
+
+    ignored = 0  # User is about to expire but doesn't have any relevant activity or already requested
+    renewal = 0  # User is about to expire and have some relevant activity. Renewal is requested
+    deleted = 0  # User expired and was inactivated/deleted
+
+    before_expire_days = toolkit.config.get('ckanext.unhcr.external_accounts_notify_delta', 30)
+    about_to_expire_users = expired_users_list(before_expire_days=before_expire_days, include_activities=True)
+    if len(about_to_expire_users) == 0:
+        print('There are no users about to expire')
+
+    for about_to_expire_user in about_to_expire_users:
+        print('User {} will expire at {}'.format(about_to_expire_user['name'], about_to_expire_user['expiry_date']))
+        activities = about_to_expire_user.get('activities', [])
+        last_activity = {} if len(activities) == 0 else activities[0]
+
+        if verbose:
+            print(' - Last activity: "{}"'.format(last_activity['activity_type']))
+
+        if last_activity.get('activity_type', 'new user') == 'new user':
+            if verbose:
+                print(' - No relevant activities: {} ignored'.format(about_to_expire_user['name']))
+            ignored += 1
+            continue
+
+        created, reason = request_renewal(about_to_expire_user, last_activity)
+        if created:
+            print(' - Renewal access requested for {}'.format(about_to_expire_user['name']))
+            renewal += 1
+        else:
+            print(' - Renewal access not created for user {}: {}'.format(about_to_expire_user['name'], reason))
+            ignored += 1
+
+    expired_users = expired_users_list()
+    if len(expired_users) == 0:
+        print('There are no expired users')
+
+    for expired_user in expired_users:
+        # this user has expired. Renewal was requested but no one approved it.
+        print('User {} expired on {}'.format(expired_user['name'], expired_user['expiry_date']))
+        toolkit.get_action('user_delete')(
+            {'ignore_auth': True},
+            {'id': expired_user['id']}
+        )
+
+        print(' - Deleted')
+        deleted += 1
+
+    print('Expire users command finished. {} deleted, {} renewal, {} ignored'.format(deleted, renewal, ignored))

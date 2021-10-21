@@ -46,7 +46,6 @@ class TestDatasetViews(object):
             sampling_procedure = 'nonprobability',
             operational_purpose_of_data = 'cartography',
             user=self.user1,
-            visibility='restricted',
             tags=[{'name': 'Keyword1'}, {'name': 'Keyword2'}],
         )
 
@@ -55,6 +54,7 @@ class TestDatasetViews(object):
             name='resource1',
             package_id='dataset1',
             url_type='upload',
+            visibility='restricted',
             upload=mocks.FakeFileStorage(),
         )
 
@@ -121,13 +121,13 @@ class TestDatasetViews(object):
             sampling_procedure = 'nonprobability',
             operational_purpose_of_data = 'cartography',
             user=self.user1,
-            visibility='restricted',
             state='draft',
         )
         factories.Resource(
             name='resource1',
             package_id=draft_dataset['name'],
             url_type='upload',
+            visibility='restricted',
             upload=mocks.FakeFileStorage(),
         )
         self.make_dataset_publish_request(
@@ -359,12 +359,12 @@ class TestPrivateResources(object):
 
     def test_visibility_public(self, app):
         dataset = factories.Dataset(
-            visibility='public',
             owner_org=self.container['id'],
         )
         resource = factories.Resource(
             package_id=dataset['id'],
             url_type='upload',
+            visibility='public',
             upload=mocks.FakeFileStorage(),
         )
 
@@ -379,7 +379,7 @@ class TestPrivateResources(object):
             environ = {'REMOTE_USER': self.normal_user['name'].encode('ascii')}
             res = app.get(dataset_read_url, extra_environ=environ, status=200)
             assert (
-                'You are not authorized to download the resources from this dataset'
+                'You are not authorized to download the private resources from this dataset'
                 not in res.body
             )
             app.get(resource_download_url, extra_environ=environ, status=200)
@@ -388,7 +388,7 @@ class TestPrivateResources(object):
             environ = {'REMOTE_USER': self.org_user['name'].encode('ascii')}
             res = app.get(dataset_read_url, extra_environ=environ, status=200)
             assert (
-                'You are not authorized to download the resources from this dataset'
+                'You are not authorized to download the private resources from this dataset'
                 not in res.body
             )
             app.get(resource_download_url, extra_environ=environ, status=200)
@@ -397,19 +397,19 @@ class TestPrivateResources(object):
             environ = {'REMOTE_USER': self.sysadmin['name'].encode('ascii')}
             res = app.get(dataset_read_url, extra_environ=environ, status=200)
             assert (
-                'You are not authorized to download the resources from this dataset'
+                'You are not authorized to download the private resources from this dataset'
                 not in res.body
             )
             app.get(resource_download_url, extra_environ=environ, status=200)
 
     def test_visibility_restricted(self, app):
         dataset = factories.Dataset(
-            visibility='restricted',
             owner_org=self.container['id'],
         )
         resource = factories.Resource(
             package_id=dataset['id'],
             url_type='upload',
+            visibility='restricted',
             upload=mocks.FakeFileStorage(),
         )
 
@@ -424,7 +424,7 @@ class TestPrivateResources(object):
             environ = {'REMOTE_USER': self.normal_user['name'].encode('ascii')}
             res = app.get(dataset_read_url, extra_environ=environ, status=200)
             assert (
-                'You are not authorized to download the resources from this dataset'
+                'You are not authorized to download the private resources from this dataset'
                 in res.body
             )
             app.get(resource_download_url, extra_environ=environ, status=403)
@@ -433,7 +433,7 @@ class TestPrivateResources(object):
             environ = {'REMOTE_USER': self.org_user['name'].encode('ascii')}
             res = app.get(dataset_read_url, extra_environ=environ, status=200)
             assert (
-                'You are not authorized to download the resources from this dataset'
+                'You are not authorized to download the private resources from this dataset'
                 not in res.body
             )
             app.get(resource_download_url, extra_environ=environ, status=200)
@@ -442,7 +442,7 @@ class TestPrivateResources(object):
             environ = {'REMOTE_USER': self.sysadmin['name'].encode('ascii')}
             res = app.get(dataset_read_url, extra_environ=environ, status=200)
             assert (
-                'You are not authorized to download the resources from this dataset'
+                'You are not authorized to download the private resources from this dataset'
                 not in res.body
             )
             app.get(resource_download_url, extra_environ=environ, status=200)
@@ -456,6 +456,7 @@ class TestPrivateResources(object):
         resource = factories.Resource(
             package_id=dataset['id'],
             url_type='upload',
+            visibility='restricted',
             upload=mocks.FakeFileStorage(),
         )
         # Even though we tried to save this with visibility='private'
@@ -474,7 +475,7 @@ class TestPrivateResources(object):
             environ = {'REMOTE_USER': self.normal_user['name'].encode('ascii')}
             res = app.get(dataset_read_url, extra_environ=environ, status=200)
             assert (
-                'You are not authorized to download the resources from this dataset'
+                'You are not authorized to download the private resources from this dataset'
                 in res.body
             )
             app.get(resource_download_url, extra_environ=environ, status=403)
@@ -483,7 +484,7 @@ class TestPrivateResources(object):
             environ = {'REMOTE_USER': self.org_user['name'].encode('ascii')}
             res = app.get(dataset_read_url, extra_environ=environ, status=200)
             assert (
-                'You are not authorized to download the resources from this dataset'
+                'You are not authorized to download the private resources from this dataset'
                 not in res.body
             )
             app.get(resource_download_url, extra_environ=environ, status=200)
@@ -492,7 +493,7 @@ class TestPrivateResources(object):
             environ = {'REMOTE_USER': self.sysadmin['name'].encode('ascii')}
             res = app.get(dataset_read_url, extra_environ=environ, status=200)
             assert (
-                'You are not authorized to download the resources from this dataset'
+                'You are not authorized to download the private resources from this dataset'
                 not in res.body
             )
             app.get(resource_download_url, extra_environ=environ, status=200)

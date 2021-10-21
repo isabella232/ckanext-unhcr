@@ -1,9 +1,13 @@
+from ckanext.unhcr.kobo.exceptions import KoboApiError
+from functools import wraps
 import logging
 import time
 
 from ckan import model
 from ckanext.unhcr import utils
 import ckan.plugins.toolkit as toolkit
+
+
 log = logging.getLogger(__name__)
 
 
@@ -56,6 +60,9 @@ def process_dataset_on_update(package_id):
 # Internal
 
 def _process_dataset_fields(package_id):
+    """ Process some specific fields that depend on others.
+        These fields should be updated every time we save a
+        package (create or update). """
 
     # Get package
     package_show = toolkit.get_action('package_show')
@@ -65,7 +72,11 @@ def _process_dataset_fields(package_id):
     package = _modify_package(package)
 
     # Update package
-    default_user = toolkit.get_action('get_site_user')({ 'ignore_auth': True })
+    default_user = toolkit.get_action('get_site_user')({'ignore_auth': True})
+
+    # we only want to update visibility for resources, nothing else
+    to_update_resources = [{'id': res['id'], 'visibility': res['visibility']} for res in package['resources']]
+
     data_dict = {
         'match': {'id': package['id']},
         'update': {
@@ -74,6 +85,7 @@ def _process_dataset_fields(package_id):
             'visibility': package['visibility'],
             'date_range_start': package['date_range_start'],
             'date_range_end': package['date_range_end'],
+            'resources': to_update_resources,
         },
     }
     package_revise = toolkit.get_action('package_revise')
@@ -82,21 +94,26 @@ def _process_dataset_fields(package_id):
 
 def _modify_package(package):
 
+    # Update resources before update package
+    for resource in package.get('resources', []):
+        if resource.get('identifiability') == 'personally_identifiable':
+            resource['visibility'] = 'restricted'
+
     # data_range
     package = _modify_date_range(package, 'date_range_start', 'date_range_end')
 
     # process_status
-    weights = {'raw' : 3, 'cleaned': 2, 'anonymized': 1}
+    weights = {'raw': 3, 'cleaned': 2, 'anonymized': 1}
     package = _modify_weighted_field(package, 'process_status', weights)
 
     # identifiability
-    weights = {'personally_identifiable' : 4, 'anonymized_enclave': 3, 'anonymized_scientific': 2,  'anonymized_public': 1}
+    weights = {'personally_identifiable': 4, 'anonymized_enclave': 3, 'anonymized_scientific': 2,  'anonymized_public': 1}
     package = _modify_weighted_field(package, 'identifiability', weights)
 
     # visibility
-    # TODO: clarify what level of anonymization required
-    if package['identifiability'] == 'personally_identifiable':
-        package['visibility'] = 'restricted'
+    # if some of the resources is restricted then the package will be restricted
+    weights = {'restricted': 2, 'public': 1}
+    package = _modify_weighted_field(package, 'visibility', weights, default_value='public')
 
     return package
 
@@ -118,17 +135,18 @@ def _modify_date_range(package, key_start, key_end):
     return package
 
 
-def _modify_weighted_field(package, key, weights):
+def _modify_weighted_field(package, key, weights, default_value=None):
+    """ Set a Package level field considering the MAX value for the same field at all resources """
 
     # Reset for generated
-    package[key] = None
+    package[key] = default_value
 
     # Iterate resources
     for resource in package['resources']:
         if resource.get(key) is None:
             continue
-        package_weight = weights.get(package[key], 0)
-        resource_weight = weights.get(resource[key], 0)
+        package_weight = weights.get(package.get(key), 0)
+        resource_weight = weights.get(resource.get(key), 0)
         if resource_weight > package_weight:
             package[key] = resource[key]
 
@@ -146,3 +164,134 @@ def _delete_link_package_back_references(package_id, link_package_ids):
 def _get_link_package_ids_from_revisions(package_id):
     # TODO: fix backlinks https://github.com/okfn/ckanext-unhcr/issues/577
     return {'prev': [], 'next': []}
+
+
+# KoBo
+
+def update_pkg_kobo_resources(kobo_asset_id, user_id):
+    """ update all resources with new submissions for a KoBo dataset """
+    from ckanext.unhcr.kobo.kobo_dataset import KoboDataset
+    kd = KoboDataset(kobo_asset_id)
+    user_obj = model.User.get(user_id)
+    kd.update_all_resources(user_obj)
+
+
+def _kobo_job_error(kd, resource, user_obj, error):
+    log.error(error)
+    kd.update_kobo_details(
+        resource,
+        user_obj.name,
+        {
+            "kobo_download_status": "error",
+            "kobo_last_error_response": error,
+        }
+    )
+
+
+def kobo_job_exception_handler(func):
+    """ Capture all possible error in this Job """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except Exception as e:
+            resource_id = args[0]
+            kd, _, resource, user_obj = _prepare_kobo_download(resource_id)
+            error = 'Error downloading KoBo resource: {}'.format(e)
+            _kobo_job_error(kd, resource, user_obj, error)
+    return wrapper
+
+
+def _prepare_kobo_download(resource_id):
+    from ckanext.unhcr.kobo.api import KoBoAPI, KoBoSurvey
+    from ckanext.unhcr.kobo.kobo_dataset import KoboDataset
+
+    context = {'ignore_auth': True}
+    resource = toolkit.get_action('resource_show')(context, {'id': resource_id})
+    kobo_details = resource.get('kobo_details')
+    package = toolkit.get_action('package_show')(context, {'id': resource['package_id']})
+    if not package:
+        raise toolkit.ValidationError({'package': ["Missing package for {}".format(resource['package_id'])]})
+    user_id = package['creator_user_id']
+    user_obj = model.User.get(user_id)
+    plugin_extras = {} if user_obj.plugin_extras is None else user_obj.plugin_extras
+    kobo_token = plugin_extras.get('unhcr', {}).get('kobo_token')
+    kobo_url = toolkit.config.get('ckanext.unhcr.kobo_url', 'https://kobo.unhcr.org')
+    kobo_api = KoBoAPI(kobo_token, kobo_url)
+
+    kobo_asset_id = kobo_details['kobo_asset_id']
+    kd = KoboDataset(kobo_asset_id)
+    survey = KoBoSurvey(kobo_asset_id, kobo_api)
+    return kd, survey, resource, user_obj
+
+
+@kobo_job_exception_handler
+def download_kobo_export(resource_id):
+    """ Job for download pending data from a KoBo export.
+        JSON data requires a paginated download """
+
+    kd, survey, resource, user_obj = _prepare_kobo_download(resource_id)
+    kobo_details = resource.get('kobo_details')
+
+    if resource['kobo_type'] == 'questionnaire':
+        try:
+            local_file = survey.download_questionnaire(destination_path=kd.upload_path)
+        except (KoboApiError, ValueError) as e:
+            _kobo_job_error(kd, resource, user_obj, 'Error downloading questionnaire {}'.format(e))
+            return
+        kd.update_resource(resource, local_file, user_obj.name)
+        return
+
+    # Update the submission count
+    new_submission_count = survey.get_total_submissions()
+    if resource['format'].lower() == 'json':
+        try:
+            local_file = survey.download_json_data(destination_path=kd.upload_path)
+        except (KoboApiError, ValueError) as e:
+            _kobo_job_error(kd, resource, user_obj, 'Error downloading json kobo data {}'.format(e))
+            return
+
+        kd.update_resource(resource, local_file, user_obj.name, new_submission_count)
+        return
+
+    # CSV and XLS require export and download
+    export_id = kobo_details['kobo_export_id']
+    if not export_id:
+        raise toolkit.ValidationError(
+            {
+                'kobo_export_id': [
+                    "Missing kobo_export_id at resource {}, {}".format(resource, kobo_details)
+                ]
+            }
+        )
+    export = survey.get_export(export_id)
+    if export['status'] == 'complete':
+        data_url = export['result']
+
+        try:
+            local_file = survey.download_data(destination_path=kd.upload_path, dformat=resource['format'], url=data_url)
+        except (KoboApiError, ValueError) as e:
+            _kobo_job_error(kd, resource, user_obj, 'Error downloading kobo data {}'.format(e))
+            return
+
+        kd.update_resource(resource, local_file, user_obj.name, new_submission_count)
+
+    elif export['status'] in ['processing', 'created']:
+        # wait and re-schedule
+        kobo_download_attempts = kobo_details['kobo_download_attempts'] + 1
+        if kobo_download_attempts > 5:
+            error = 'Failed to download KoBoToolbox data resource {}. ' \
+                    'Last export status from KoBo: {}'.format(resource['id'], export)
+            _kobo_job_error(kd, resource, user_obj, error)
+        else:
+            kd.update_kobo_details(resource, user_obj.name, {"kobo_download_attempts": kobo_download_attempts})
+            time.sleep(30 * kobo_download_attempts)
+            toolkit.enqueue_job(
+                download_kobo_export,
+                [resource['id']],
+                title='Re-scheduling KoBoToolbox download: {}'.format(kobo_download_attempts)
+            )
+    else:  # status = 'error' or unknown
+        error = 'KoBo export error for resource {}. ' \
+                'Last export status from KoBo: {}'.format(resource['id'], export)
+        _kobo_job_error(kd, resource, user_obj, error)

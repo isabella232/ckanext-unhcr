@@ -1,0 +1,11 @@
+{% ckan_extends %}
+
+{% block resource_view %}
+
+  {% if resource['kobo_type'] and resource_view['view_type'] in ['recline_view', 'datatables_view'] %}
+  <div class="alert alert-warning">Note: KoBo fields starting with underscore are prefixed with a <i>kobo</i>string.</div>
+  {% endif %}
+
+  {{ super() }}
+
+{% endblock %}

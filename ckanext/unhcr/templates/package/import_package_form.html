@@ -39,12 +39,31 @@
   {% endif %}
 
   {% if show_visibility_selector %}
+
     {% block package_metadata_fields_visibility %}
-      {% set schema = h.scheming_get_schema('dataset', 'dataset') %}
-      {% set field = h.scheming_field_by_name(schema.dataset_fields, 'visibility') %}
-      {%- snippet 'scheming/snippets/form_field.html',
-      field=field, data={'visibility': 'public'}, errors=errors, licenses=[],
-      entity_type='dataset', object_type='package' -%}
+      
+    {# 
+      Visibility is required for resources and not required for datasets.
+      The "visibility" of a dataset is calculated as the most restricted of its resources.
+      That's why "form_snippet=null" at the dataset schema definition.
+      While we import dataset we want to know the "visibility" for imported resources.
+      Using the default field (scheming/snippets/form_field.html) will raise an 
+        error because the "form_snippet=null" for datasets
+    #}
+
+    <div class="form-group control-medium control-select">
+      <label class="control-label" for="field-visibility">Internal Access Level</label>
+      <div class="controls ">
+
+        <select id="field-visibility" name="visibility" class="form-control">  
+          {% for option in [('restricted', _('Private')), ('public', _('Internally Visible'))] %}
+          <option value="{{ option[0] }}" {% if option[0] == data.visibility|trim %}selected="selected"{% endif %}>{{ option[1] }}</option>
+          {% endfor %}
+
+        </select>
+      </div>
+    </div>
+
     {% endblock %}
   {% endif %}
 

@@ -6,9 +6,13 @@ import mock
 import pytest
 import re
 import responses
+import tempfile
+from dateutil.parser import parse as parse_date
+from werkzeug.datastructures import FileStorage as FlaskFileStorage
 from ckan.plugins import toolkit
 from ckantoolkit.tests import factories as core_factories
 from ckanext.unhcr.tests import factories
+from ckanext.unhcr.kobo.kobo_dataset import DOWNLOAD_PENDING_MSG
 
 
 @pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
@@ -16,9 +20,9 @@ class TestClamAVActions(object):
 
     def setup(self):
         self.sysadmin = core_factories.Sysadmin()
-        dataset = factories.Dataset()
+        self.dataset = factories.Dataset()
         self.resource = factories.Resource(
-            package_id=dataset['id'],
+            package_id=self.dataset['id'],
             url_type='upload',
             last_modified=datetime.datetime.utcnow(),
         )
@@ -40,7 +44,7 @@ class TestClamAVActions(object):
                 'entity_id': self.resource['id'],
                 'entity_type': 'resource',
                 'task_type': 'clamav',
-                'last_updated': str(datetime.datetime.utcnow()),
+                'last_updated': datetime.datetime.utcnow().isoformat(),
                 'state': 'pending',
                 'key': 'clamav',
                 'value': '{}',
@@ -278,23 +282,20 @@ class TestClamAVActions(object):
 
         self.insert_pending_task()
 
+        last_modified = parse_date(self.resource['last_modified'])
+        task_created = last_modified - datetime.timedelta(minutes=1)
         toolkit.get_action("scan_hook")(
             {'user': self.sysadmin['name']},
             {
                 "status": "complete",
                 "data": {
                     "status_code": 0,
-                        "status_text": "SUCCESSFUL SCAN, FILE CLEAN",
-                        "description": "/tmp/tmp37q_kv9u: OK...",
+                    "status_text": "SUCCESSFUL SCAN, FILE CLEAN",
+                    "description": "/tmp/tmp37q_kv9u: OK...",
                 },
                 "metadata": {
                     "resource_id": self.resource['id'],
-                    'task_created': str(
-                        datetime.datetime.strptime(
-                            self.resource['last_modified'],
-                            '%Y-%m-%dT%H:%M:%S.%f'
-                        ) - datetime.timedelta(minutes=1)
-                    ),
+                    'task_created': task_created.isoformat(),
                 }
             }
         )
@@ -322,3 +323,86 @@ class TestClamAVActions(object):
                     "metadata": {}
                 }
             )
+
+    def test_after_resource_create_scan_submit_hook_called(self):
+
+        f = tempfile.NamedTemporaryFile()
+        new_resource_dict = {
+            'package_id': self.dataset['id'],
+            'url_type': 'upload',
+            'upload': FlaskFileStorage(filename=f.name, stream=open(f.name, 'rb')),
+            'type': 'data',
+            'file_type': 'microdata',
+            'identifiability': 'anonymized_public',
+            'date_range_start': '2018-01-01',
+            'date_range_end': '2019-01-01',
+            'process_status': 'anonymized',
+            'visibility': 'public',
+            'version': '1',
+        }
+        action = toolkit.get_action("resource_create")
+
+        action_call = mock.Mock()
+        action_call.return_value = lambda conext, data_dict: True
+        with mock.patch('ckan.plugins.toolkit.get_action', action_call):
+            action({'user': self.sysadmin['name']}, new_resource_dict)
+
+        action_call.assert_called_once_with('scan_submit')
+
+    def test_after_kobo_resource_create_scan_submit_hook_not_called(self):
+
+        f = tempfile.NamedTemporaryFile()
+        new_resource_dict = {
+            'package_id': self.dataset['id'],
+            'url_type': 'upload',
+            'upload': FlaskFileStorage(filename=f.name, stream=open(f.name, 'rb')),
+            'type': 'data',
+            'file_type': 'microdata',
+            'identifiability': 'anonymized_public',
+            'date_range_start': '2018-01-01',
+            'date_range_end': '2019-01-01',
+            'process_status': 'anonymized',
+            'visibility': 'public',
+            'version': '1',
+        }
+        action = toolkit.get_action("resource_create")
+
+        action_call = mock.Mock()
+        action_call.return_value = lambda conext, data_dict: True
+        with mock.patch('ckan.plugins.toolkit.get_action', action_call):
+            ctx = {
+                'user': self.sysadmin['name'],
+                'skip_clamav_scan': True,
+            }
+            action(ctx, new_resource_dict)
+
+        action_call.assert_not_called()
+
+    def test_after_kobo_resource_create_scan_submit_hook_called(self):
+
+        f = tempfile.NamedTemporaryFile()
+        new_resource_dict = {
+            'package_id': self.dataset['id'],
+            'url_type': 'upload',
+            'upload': FlaskFileStorage(filename=f.name, stream=open(f.name, 'rb')),
+            'type': 'data',
+            'file_type': 'microdata',
+            'identifiability': 'anonymized_public',
+            'date_range_start': '2018-01-01',
+            'date_range_end': '2019-01-01',
+            'process_status': 'anonymized',
+            'visibility': 'public',
+            'version': '1',
+        }
+        action = toolkit.get_action("resource_create")
+
+        action_call = mock.Mock()
+        action_call.return_value = lambda conext, data_dict: True
+        with mock.patch('ckan.plugins.toolkit.get_action', action_call):
+            ctx = {
+                'user': self.sysadmin['name']
+            }
+            action(ctx, new_resource_dict)
+
+        action_call.assert_called()
+        assert 'scan_submit' == action_call.call_args_list[0][0][0]

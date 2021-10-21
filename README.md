@@ -57,6 +57,22 @@ $ cd ckanext-unhcr
 
 It's designed to support live development of extensions. The only one requirement is that the folder with the project should be inside `docker-ckan-unhcr-aws/src`. See `docker-ckan-unhcr-aws` for more information.
 
+
+### Extension Settings
+
+About external users
+```
+# days before external user account expires
+ckanext.unhcr.external_accounts_expiry_delta=180
+
+# days before notifying about the expiration of the users account
+ckanext.unhcr.external_accounts_notify_delta=30
+
+# Max size (MB) for a file to be analyzed with ClamAV
+ckan.clamav_max_resource_size=10
+```
+
+
 ## Working with docker
 
 The whole docker setup is inside the `docker-ckan-unhcr-aws` directory. You can tweak any CKAN instance's aspects there (e.g. patches/cron/etc). To add other CKAN extensions to the work - add its folders to `docker-compose.yml` (see `ckan-dev` volumes).
@@ -223,3 +239,12 @@ We use a fake SMTP server to test email notifications:
 - restart the development server
 
 Now all email sent by `from ckan.lib.mailer import mail_user` should be sent to the `Demo Inbox` at Mailtrap.
+
+## KoBo integration
+
+Internal users are allowed to import data from [KoBoToolbox](https://www.kobotoolbox.org/#home).  
+To define where the KoBo instance lives you can configure the `ckanext.unhcr.kobo_url` setting 
+(default is `https://kobo.unhcr.org`).
+
+You can read a RIDL integration with KoBo tutorial [here](docs/kobo.md).  
+

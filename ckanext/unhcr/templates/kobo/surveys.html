@@ -1,0 +1,85 @@
+{% extends "kobo/base.html" %}
+
+{%- block subtitle %}KoBoToolbox{% endblock -%}
+
+{% block primary_content %}
+
+<h1>My KoBoToolbox Surveys</h1>
+
+<p>The following surveys in KoBoToolbox are available for importing to RIDL.</p>
+
+<table id="survey-list-table" class="table table-header table-hover table-bordered table-responsive">
+<thead>
+    <tr>
+    <th class="col-md-3">Survey</th>
+    <th class="col-md-1">Owner</th>
+    <th class="col-md-1">Imported</th>
+    <th class="col-md-2">Actions</th>
+    </tr>
+</thead>
+<tbody>
+{% for survey in surveys %}
+<tr>
+    <td>
+        <b>{{ survey.name }}</b>
+        {% if survey.has_deployment %}
+        <br><small>{{ survey.deployment__submission_count }} submissions</small>
+        {% endif %}
+    </td>
+    <td>{{ survey.owner__username }}</td>
+    <td>
+    {% if survey.ridl_package %}
+        <p>Yes</p>
+    {% elif not survey.has_deployment %}
+        <p>This KoBoToolbox survey has not been deployed</p>
+    {% elif survey.deployment__submission_count == 0 %}
+        <p>The survey is deployed but it does not have submissions yet.</p>
+    {% else %}
+        <p>No</p>
+    {% endif %}
+    </td>
+
+    <td>
+    {# if the survey is already imported we maybe want to create a new version for the resource #}
+    {% if survey.ridl_package %}
+        <a role="button" class="btn btn-default" href="{% url_for 'dataset.read', id=survey.ridl_package.name %}">View RIDL dataset</a>
+        
+        {% if survey.new_submissions > 0 %}
+        <div id="update-kobo-resources-container-{{ survey.uid }}" class="update-kobo-resources-container">
+        {% if survey.update_is_running %}
+            <p>An update job is running to import {{ survey.new_submissions }} new submissions</p>
+        {% else %}
+            <p>There are {{ survey.new_submissions }} new submissions</p>
+            <button
+                class="btn btn-primary kobo-pkg-update-resources"
+                data-kobo-asset-id="{{ survey.uid }}"
+                data-force="false"
+                data-kobo-update-endpoint="{% url_for 'unhcr_kobo.enqueue_survey_update' %}"
+                ><i class="fa fa-refresh"></i> <span class="update-kobo-button-text">Update KoBo data</span>
+            </button>
+        </div>
+        {% endif %}
+        {% else %}
+        <p>No new submissions</p>
+        <button
+                class="btn btn-primary kobo-pkg-update-resources"
+                data-kobo-asset-id="{{ survey.uid }}"
+                data-force="true"
+                data-kobo-update-endpoint="{% url_for 'unhcr_kobo.enqueue_survey_update' %}"
+                ><i class="fa fa-refresh"></i> <span class="update-kobo-button-text">Force update KoBo data</span>
+            </button>
+        {% endif %}
+    {% elif not survey.has_deployment %}
+        -
+    {% elif survey.deployment__submission_count == 0 %}
+        -
+    {% else %}
+        <a role="button" class="btn btn-primary" href="{% url_for 'dataset.new', kobo_asset_id=survey.uid %}">Import</a>
+    {% endif %}
+    </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+{% endblock %}

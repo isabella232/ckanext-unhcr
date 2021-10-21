@@ -29,3 +29,57 @@ i {
 .add-member-form {
   margin-bottom: 20px;
 }
+
+
+.kobo-resources-container {
+  margin: 10px;
+  background-color: rgba(239, 239, 228, 0.137);
+}
+
+.kobo-resources-publish {
+  margin: 40px 0px;
+  padding: 10px 0px;
+}
+
+.kobo-resources-publish a {
+  padding: 5px 20px;
+  margin: 5px 20px;
+}
+
+.kobo-resource-description {
+  list-style: none;
+  font-size: 13px;
+  margin-left: 0;
+  padding-left: 0;
+}
+
+.update-kobo-resources-container {
+  padding: 7px 0;
+}
+
+.running-kobo-update{
+  padding: inherit;
+  margin-top: 10px;
+}
+
+#full_kobo_update_container {
+  overflow-y: auto;
+}
+
+#survey-list-table th {
+  border-bottom-width: 1px;
+}
+
+.fancySearchRow > th {
+  border-bottom-width: 2px !important;
+}
+
+.fancySearchRow > th > input {
+  width: 10%;
+  border: 0;
+  padding: 5px;
+  margin-bottom: 5px;
+  margin-top: 2px;
+  margin-left: 2px;
+  margin-right: 2px;
+}

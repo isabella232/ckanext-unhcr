@@ -12,7 +12,7 @@ this.ckan.module('resource-type', function ($) {
       // Get main elements
       this.field = $('#field-resource-type')
       this.input = $('input', this.field)
-
+      this.new_kobo_dataset = $('.kobo-resources-publish').length > 0;
       // Add event listeners
       $('button.btn-data', this.field).click(this._onDataButtonClick.bind(this))
       $('button.btn-attachment', this.field).click(this._onAttachmentButtonClick.bind(this))
@@ -33,12 +33,22 @@ this.ckan.module('resource-type', function ($) {
       } else {
         this.field.nextAll().hide()
         this.field.show()
+        // also show the release button for KoBo if exists
+        if (this.new_kobo_dataset) {
+          $('.form-actions').css('display', 'inline');
+          $('.kobo-resources-publish').nextAll().hide();
+        }
       }
     },
 
     _onDataButtonClick: function (ev) {
       if (ev) ev.preventDefault()
       this.field.hide()
+      // for new KoBo datasets, hide "release" and show "finish"
+      if (this.new_kobo_dataset) {
+        $('.kobo-resources-publish').hide();
+        $('.kobo-resources-publish').nextAll().show();
+      }
       this.field.nextAll().show()
       // We allow to select only the "Microdata" option
       $('#field-file_type option').each(function () {
@@ -55,6 +65,11 @@ this.ckan.module('resource-type', function ($) {
     _onAttachmentButtonClick: function (ev) {
       if (ev) ev.preventDefault()
       this.field.hide()
+      // for new KoBo datasets, hide "release" and show "finish"
+      if (this.new_kobo_dataset) {
+        $('.kobo-resources-publish').hide();
+        $('.kobo-resources-publish').nextAll().show();
+      }
       this.field.nextAll().show()
       // We hide all the fields below "File Type"
       $('#field-file_type').parents('.form-group').nextAll('.form-group').hide()

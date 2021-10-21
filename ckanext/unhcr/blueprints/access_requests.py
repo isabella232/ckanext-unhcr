@@ -3,7 +3,7 @@
 from flask import Blueprint
 from ckan import model
 import ckan.plugins.toolkit as toolkit
-from ckanext.unhcr import mailer
+from ckanext.unhcr.mailer import notify_rejection
 from ckanext.unhcr.utils import require_user
 
 
@@ -41,16 +41,8 @@ def reject(request_id):
             {'user': toolkit.c.user}, {'id': request_id, 'status': 'rejected'}
         )
 
-        recipient = model.User.get(request['user_id'])
-        obj = toolkit.get_action('{}_show'.format(request['object_type']))(
-            {'user': toolkit.c.user}, {'id': request['object_id']}
-        )
-        if request['object_type'] == 'user':
-            subj = '[UNHCR RIDL] - User account rejected'
-        else:
-            subj = mailer.compose_request_rejected_email_subj(obj)
-        body = mailer.compose_request_rejected_email_body(request['object_type'], recipient, obj, message)
-        mailer.mail_user_by_id(recipient.name, subj, body)
+        notify_rejection(request, message)
+
     except toolkit.ObjectNotFound as e:
         return toolkit.abort(404, toolkit._(str(e)))
     except toolkit.NotAuthorized:
@@ -64,11 +56,11 @@ def reject(request_id):
 unhcr_access_requests_blueprint.add_url_rule(
     rule=u'/approve/<request_id>',
     view_func=approve,
-    methods=['POST',]
+    methods=['POST']
 )
 
 unhcr_access_requests_blueprint.add_url_rule(
     rule=u'/reject/<request_id>',
     view_func=reject,
-    methods=['POST',]
+    methods=['POST']
 )

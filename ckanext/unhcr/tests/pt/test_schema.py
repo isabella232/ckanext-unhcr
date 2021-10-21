@@ -24,6 +24,7 @@ class TestResourceFields(object):
             'description': 'Some description',
             'type': 'attachment',
             'file_type': 'report',
+            'visibility': 'public',
             'url_type': 'upload',
         }
 
@@ -70,7 +71,8 @@ class TestResourceFields(object):
             assert error == ['Missing value']
 
     def test_both_types_data_fields_missing(self):
-
+        """ Test we have one error in the second spot of the error list 
+            Requires 2 resources. Only one invalid. """
         dataset = factories.Dataset()
 
         resource1 = {
@@ -80,8 +82,7 @@ class TestResourceFields(object):
             'description': 'Some description',
             'type': 'attachment',
             'file_type': 'report',
-            # TODO add 'visibility' after merge #583 
-            # 'visibility': 'public',
+            'visibility': 'public'
         }
         resource2 = {
             'name': 'Test Data file',

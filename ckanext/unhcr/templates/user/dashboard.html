@@ -16,6 +16,17 @@
       {% set icon = 'exclamation' if total else 'check' %}
       {{ h.build_nav_icon('unhcr_dashboard.requests', _('Pending Requests') + suffix, icon=icon) }}
     {% endif %}
+
+    {% if not user.external and h.user_is_editor() %}
+      {# point to token form if new or the asset list if token was already defined #}
+      {% if h.get_kobo_token() %}
+        {{ h.build_nav_icon('unhcr_kobo.kobo_surveys', _('KoBoToolbox'), icon='plug') }}
+      {% else %}
+        {{ h.build_nav_icon('unhcr_kobo.index', _('KoBoToolbox'), icon='plug') }}
+      {% endif %}
+
+    {% endif %}
+
   </ul>
   </header>
 {% endblock %}

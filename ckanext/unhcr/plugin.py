@@ -197,7 +197,9 @@ class UnhcrPlugin(
             'page_authorized': helpers.page_authorized,
             'get_came_from_param': helpers.get_came_from_param,
             'user_is_curator': helpers.user_is_curator,
+            'user_is_editor': helpers.user_is_editor,
             'user_is_container_admin': helpers.user_is_container_admin,
+            'user_orgs': helpers.user_orgs,
             # Linked datasets
             'get_linked_datasets_for_form': helpers.get_linked_datasets_for_form,
             'get_linked_datasets_for_display': helpers.get_linked_datasets_for_display,
@@ -217,11 +219,16 @@ class UnhcrPlugin(
             'get_default_container_for_user': helpers.get_default_container_for_user,
             # Microdata
             'get_microdata_collections': helpers.get_microdata_collections,
+            # KoBo
+            'get_kobo_token': helpers.get_kobo_token,
+            'get_kobo_url': helpers.get_kobo_url,
+            'get_kobo_initial_dataset': helpers.get_kobo_initial_dataset,
             # Misc
             'current_path': helpers.current_path,
             'normalize_list': helpers.normalize_list,
             'get_field_label': helpers.get_field_label,
             'can_download': helpers.can_download,
+            'can_request_access': helpers.can_request_access,
             'get_choice_label': helpers.get_choice_label,
             'get_data_container_choice_label': helpers.get_data_container_choice_label,
             'get_ridl_version': helpers.get_ridl_version,
@@ -230,6 +237,8 @@ class UnhcrPlugin(
             'get_google_analytics_id': helpers.get_google_analytics_id,
             'nl_to_br': helpers.nl_to_br,
             'is_plugin_loaded': helpers.is_plugin_loaded,
+            'get_resource_value_label': helpers.get_resource_value_label,
+            'get_kobo_import_process_real_status': helpers.get_kobo_import_process_real_status,
         }
 
     # IPackageController
@@ -383,7 +392,11 @@ class UnhcrPlugin(
     def _package_after_create(self, context, pkg_dict):
         if not context.get('job') and not context.get('defer_commit'):
             if self._package_is_active(context, pkg_dict):
-                toolkit.enqueue_job(jobs.process_dataset_on_create, [pkg_dict['id']])
+                toolkit.enqueue_job(
+                    jobs.process_dataset_on_create,
+                    [pkg_dict['id']],
+                    title="_package_after_create {}".format(pkg_dict['name'])
+                )
 
         if pkg_dict.get('type') == 'deposited-dataset':
             user_id = None
@@ -400,7 +413,11 @@ class UnhcrPlugin(
     def _resource_after_create(self, context, res_dict):
         if not context.get('job'):
             if self._resource_is_active(context, res_dict):
-                toolkit.enqueue_job(jobs.process_dataset_on_update, [res_dict['package_id']])
+                toolkit.enqueue_job(
+                    jobs.process_dataset_on_update,
+                    [res_dict['package_id']],
+                    title="_resource_after_create {}".format(res_dict['id'])
+                )
 
     def after_update(self, context, data_dict):
         if 'owner_org' in data_dict and 'package_id' not in data_dict:
@@ -412,16 +429,28 @@ class UnhcrPlugin(
     def _package_after_update(self, context, pkg_dict):
         if not context.get('job') and not context.get('defer_commit'):
             if self._package_is_active(context, pkg_dict):
-                toolkit.enqueue_job(jobs.process_dataset_on_update, [pkg_dict['id']])
+                toolkit.enqueue_job(
+                    jobs.process_dataset_on_update,
+                    [pkg_dict['id']],
+                    title="_package_after_update {}".format(pkg_dict['name'])
+                )
 
     def _resource_after_update(self, context, res_dict):
         if not context.get('job'):
             if self._resource_is_active(context, res_dict):
-                toolkit.enqueue_job(jobs.process_dataset_on_update, [res_dict['package_id']])
+                toolkit.enqueue_job(
+                    jobs.process_dataset_on_update,
+                    [res_dict['package_id']],
+                    title="_resource_after_update {}".format(res_dict['id'])
+                )
 
     def after_delete(self, context, data_dict):
         if not context.get('job') and type(data_dict) == dict and data_dict.get('id'):
-            toolkit.enqueue_job(jobs.process_dataset_on_delete, [data_dict['id']])
+            toolkit.enqueue_job(
+                jobs.process_dataset_on_delete,
+                [data_dict['id']],
+                title="_resource_after_update {}".format(data_dict['id'])
+            )
 
     def _package_is_active(self, context, pkg_dict):
         if pkg_dict.get('state') == 'active':
@@ -480,6 +509,7 @@ class UnhcrPlugin(
             'access_request_update': actions.access_request_update,
             'access_request_create': actions.access_request_create,
             'package_update': actions.package_update,
+            'package_create': actions.package_create,
             'package_publish_microdata': actions.package_publish_microdata,
             'package_get_microdata_collections': actions.package_get_microdata_collections,
             'package_collaborator_create': actions.package_collaborator_create,
@@ -508,6 +538,7 @@ class UnhcrPlugin(
             'user_show': actions.user_show,
             'user_create': actions.user_create,
             'user_update': actions.user_update,
+            'datastore_create': actions.datastore_create,
         }
         return functions
 
@@ -524,6 +555,7 @@ class UnhcrPlugin(
             'deposited_dataset_curator_id': validators.deposited_dataset_curator_id,
             'always_false_if_not_sysadmin': validators.always_false_if_not_sysadmin,
             'visibility_validator': validators.visibility_validator,
+            'visibility_validator_resource': validators.visibility_validator_resource,
             'file_type_validator': validators.file_type_validator,
             'upload_not_empty': validators.upload_not_empty,
             'object_id_validator': validators.object_id_validator,
@@ -601,4 +633,5 @@ class UnhcrPlugin(
             blueprints.unhcr_resource_blueprint,
             blueprints.unhcr_search_index_blueprint,
             blueprints.unhcr_user_blueprint,
+            blueprints.unhcr_kobo_blueprint,
         ]

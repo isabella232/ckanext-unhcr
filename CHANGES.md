@@ -1,5 +1,74 @@
 # RIDL Changelog
 
+## v3.1.5 - 2021-10-19 - STABLE PRODUCTION RELEASE
+Tag version for production
+Bug fixes:
+ - Show _Visibility_ field metadata in resources read template.
+ - Fix visibility error for _Attachment_ resource files.
+ - Fix submission counter for KoBo updates [Hotfix](https://github.com/okfn/ckanext-unhcr/commit/13fdbce28fe1f2bb8b835e9aafcb256ddec3ea3f)
+ - Add _private_ label for resources [#727](https://github.com/okfn/ckanext-unhcr/pull/727)
+
+## v3.1.4d - 2021-10-12
+New features
+ - Move questionnaire download as job [#721](https://github.com/okfn/ckanext-unhcr/pull/721)
+
+
+## v3.1.4c - 2021-10-07
+Bug fixes
+ - Fix old resources dict error [#720](https://github.com/okfn/ckanext-unhcr/pull/720)
+ - Small fixes after release [#717](https://github.com/okfn/ckanext-unhcr/pull/700)
+
+## v3.1.4b - 2021-10-06
+
+New features
+ - **Started using CKAN 2.9.4**
+ - Allow forcing update from Kobo [#700](https://github.com/okfn/ckanext-unhcr/pull/700)
+ - Add HQ email and update user guide URL [#695](https://github.com/okfn/ckanext-unhcr/pull/695)
+ - Skip big files from ClamAV [#688](https://github.com/okfn/ckanext-unhcr/pull/688)
+ - Remove no longer required CKAN core patch to move to CKAN 2.9.4
+ - Start expiring users in UAT [docker#43](https://github.com/okfn/docker-ckan-unhcr-aws/pull/43)
+ - Start allowing bigger resource files [docker#64](https://github.com/okfn/docker-ckan-unhcr-aws/pull/64)
+
+Bug fixes
+ - Fix permission for depositors to deposit [#699](https://github.com/okfn/ckanext-unhcr/pull/699)
+ - Fix preview for KoBo resources [#701](https://github.com/okfn/ckanext-unhcr/pull/701)
+ - Detect and show kobo token missing error [#704](https://github.com/okfn/ckanext-unhcr/pull/704)
+
+
+## v3.1.4 - 2021-09-10
+
+New features
+ - [#691](https://github.com/okfn/ckanext-unhcr/pull/691) KoBo -> KoBoToolbox user interface refactor
+
+Bug fixes
+ - [#693](https://github.com/okfn/ckanext-unhcr/pull/693) Fix publish button for KoBo resources
+ - [#692](https://github.com/okfn/ckanext-unhcr/pull/692) Fix container titles for user access request emails
+
+
+## v3.1.3 - 2021-09-08
+New features
+ - [#687](https://github.com/okfn/ckanext-unhcr/pull/687) Improve information about requests for new/renewal external user
+ - [#681](https://github.com/okfn/ckanext-unhcr/pull/681) Show new submissions to update KoBo datasets
+ - [#672](https://github.com/okfn/ckanext-unhcr/pull/672) Allow skipping ClamAV for fake KoBo resources
+ - [#683](https://github.com/okfn/ckanext-unhcr/pull/683) Allow sorting and searching at KoBo survey list
+
+## v3.1.2b - 2021-08-25 
+
+New features
+- [KoBo tutorial](https://github.com/okfn/ckanext-unhcr/blob/c34c4a50e4122a3e26558913d651369bc65b6e82/docs/kobo.md) created
+- [#666](https://github.com/okfn/ckanext-unhcr/pull/666) Prevent uploading files to automatically imported KoBo resources
+- [#671](https://github.com/okfn/ckanext-unhcr/pull/671) Use Kobo survey submission count to validate
+
+## v3.1.2 - 2021-08-10
+
+New features
+- [#628](https://github.com/okfn/ckanext-unhcr/pull/628) Move visibility as resource field
+- [#604](https://github.com/okfn/ckanext-unhcr/pull/604) Expire external users after 180 days and handle renewal requests
+- [#637](https://github.com/okfn/ckanext-unhcr/pull/637) + [#657](https://github.com/okfn/ckanext-unhcr/pull/657) + [#662](https://github.com/okfn/ckanext-unhcr/pull/662) Allow users to integrate with KoBo and import surveys as datasets + resources. This includes the questionnaire and the actual data in JSON/CSV and XLS formats.
+Bug fixes:
+- [#642](https://github.com/okfn/ckanext-unhcr/pull/642) Improve styles for curation activities
+- [#661](https://github.com/okfn/ckanext-unhcr/pull/661) Show pending requests for data containers
+
 ## v3.1.1b - 2021-08-03
 
 Bug fixes:

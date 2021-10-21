@@ -27,13 +27,13 @@ class TestDatastoreAuthRestrictedDownloads(object):
 
         # Datasets
         self.dataset = factories.Dataset(
-            visibility='restricted',
             owner_org=self.container['id'],
         )
         self.resource = factories.Resource(
             package_id=self.dataset['id'],
             url_type='datastore',
             upload=mocks.FakeFileStorage(),
+            visibility='restricted',
         )
 
         # Actions

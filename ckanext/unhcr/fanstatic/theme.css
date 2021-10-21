@@ -1521,6 +1521,10 @@ ol.unstyled {
   }
 }
 
+#real-flash-msg a {
+  color: #0072BC;
+}
+
 .site-footer {
   background-color: #000;
   color: rgba(255,255,255, 0.8);
@@ -1535,7 +1539,7 @@ ol.unstyled {
 
 .site-footer .attribution {
   position: absolute;
-  bottom: 15px;
+  bottom: 4px;
   left: 25px;
   z-index: 1;
   background-color: rgba(0,0,0,0.2);
@@ -1794,6 +1798,54 @@ ol.unstyled {
 
 .validation-badge img {
   vertical-align: baseline;
+}
+
+.kobo-resource-item {
+  font-size: 10px;
+  padding: 4px;
+  margin: 4px;
+  border-radius: 4px;
+  color: #090846
+}
+
+.kobo-resource-status {
+  padding: 4px 10px;
+  font-weight: bold;
+  border-radius: 4px;
+  margin-right: 5px;
+}
+
+.kobo-resource-pending {
+  background-color: #63683c44;
+}
+
+.kobo-resource-complete {
+  background-color: #95dfa144;
+}
+
+.kobo-resource-stalled {
+  background-color: #db6e2544;
+}
+
+.kobo-resource-error {
+  background-color: #df756744;
+}
+
+.kobo-resource-item-action {
+  margin-left: 10px;
+}
+
+.kobo-item-info {
+  display: none;
+  line-height: 15px;
+  padding: 12px 25px;
+  margin: 2px 0;
+  width: 400px;
+  font-size: 13px;
+}
+
+.kobo-item-info ul {
+  padding-left: 0;
 }
 
 ul.hierarchy-tree-top li.highlighted > a, ul.hierarchy-tree li.highlighted > a {
@@ -2205,6 +2257,59 @@ i {
   margin-bottom: 20px;
 }
 
+.kobo-resources-container {
+  margin: 10px;
+  background-color: rgba(239, 239, 228, 0.137);
+}
+
+.kobo-resources-publish {
+  margin: 40px 0px;
+  padding: 10px 0px;
+}
+
+.kobo-resources-publish a {
+  padding: 5px 20px;
+  margin: 5px 20px;
+}
+
+.kobo-resource-description {
+  list-style: none;
+  font-size: 13px;
+  margin-left: 0;
+  padding-left: 0;
+}
+
+.update-kobo-resources-container {
+  padding: 7px 0;
+}
+
+.running-kobo-update{
+  padding: inherit;
+  margin-top: 10px;
+}
+
+#full_kobo_update_container {
+  overflow-y: auto;
+}
+
+#survey-list-table th {
+  border-bottom-width: 1px;
+}
+
+.fancySearchRow > th {
+  border-bottom-width: 2px !important;
+}
+
+.fancySearchRow > th > input {
+  width: 10%;
+  border: 0;
+  padding: 5px;
+  margin-bottom: 5px;
+  margin-top: 2px;
+  margin-left: 2px;
+  margin-right: 2px;
+}
+
 /* General */
 
 .curation-sidebar .btn {
@@ -2321,6 +2426,18 @@ i {
 
 .activity .item.changed-curation-state .icon {
   background-color: #8c76ce;
+}
+
+.activity .item.changed-curation-state .icon.fa-check {
+  background-color: #69A67A;
+}
+
+.activity .item.changed-curation-state .icon.fa-upload {
+  background-color: #69a68e;
+}
+
+.activity .item.changed-curation-state .icon.fa-times {
+  background-color: #b95274;
 }
 
 .modal-content form {

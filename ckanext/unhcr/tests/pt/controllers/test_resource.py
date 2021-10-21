@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
-
 import datetime
+import mock
 import pytest
 from sqlalchemy import select, and_
 import ckan.model as model
@@ -14,11 +13,13 @@ from ckanext.unhcr.tests import factories, mocks
 class TestResourceViews(object):
 
     def setup(self):
+
         # Users
         self.sysadmin = core_factories.Sysadmin(name='sysadmin', id='sysadmin')
         self.user1 = core_factories.User(name='user1', id='user1')
         self.user2 = core_factories.User(name='user2', id='user2')
         self.user3 = core_factories.User(name='user3', id='user3')
+        self.kobo_user = factories.InternalKoBoUser(name='kobo_user', id='kobo_user')
 
         # Containers
         self.container1 = factories.DataContainer(
@@ -45,7 +46,6 @@ class TestResourceViews(object):
             sampling_procedure = 'nonprobability',
             operational_purpose_of_data = 'cartography',
             user=self.user1,
-            visibility='restricted',
         )
 
         # Resources
@@ -53,9 +53,9 @@ class TestResourceViews(object):
             name='resource1',
             package_id='dataset1',
             url_type='upload',
+            visibility='restricted',
             upload=mocks.FakeFileStorage(),
         )
-
 
     # Helpers
 
@@ -145,7 +145,7 @@ class TestResourceViews(object):
                 'entity_id': self.resource1['id'],
                 'entity_type': 'resource',
                 'task_type': 'clamav',
-                'last_updated': str(datetime.datetime.utcnow()),
+                'last_updated': datetime.datetime.utcnow().isoformat(),
                 'state': 'complete',
                 'key': 'clamav',
                 'value': '{"data": {"status_code": 1}}',
@@ -183,7 +183,6 @@ class TestResourceViews(object):
         result = model.Session.execute(sql).fetchall()
         assert 1 == len(result)
 
-
     # Resource Upload
 
     def test_edit_resource_works(self, app):
@@ -207,7 +206,7 @@ class TestResourceViews(object):
             'version': self.resource1['version'],
             'process_status': self.resource1['process_status'],
             'identifiability': self.resource1['identifiability'],
-
+            'visibility': self.resource1['visibility'],
             'url': 'test.txt',
             'save': ''
 
@@ -238,7 +237,7 @@ class TestResourceViews(object):
             'version': self.resource1['version'],
             'process_status': self.resource1['process_status'],
             'identifiability': self.resource1['identifiability'],
-
+            'visibility': self.resource1['visibility'],
             'url': '',
             'clear_upload': 'true',
             'save': ''
@@ -249,3 +248,59 @@ class TestResourceViews(object):
 
         assert 'The form contains invalid entries:' in resp.body
         assert 'All data resources require an uploaded file' in resp.body
+
+    @mock.patch('ckanext.unhcr.kobo.kobo_dataset.KoboDataset.create_kobo_resources')
+    @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.get_total_submissions')
+    def test_edit_kobo_resource_must_preserve_upload(self, submissions, create_kobo_resources, app):
+
+        # required to create KoBo dataset
+        submissions.return_value = 1
+
+        self.kobo_dataset = factories.Dataset(
+            name='kobo-dataset',
+            title='KoBo Dataset',
+            owner_org='container1',
+            data_collection_technique = 'f2f',
+            sampling_procedure = 'nonprobability',
+            operational_purpose_of_data = 'cartography',
+            user=self.kobo_user,
+            kobo_asset_id='test_1234',
+        )
+
+        self.kobo_resource = factories.Resource(
+            name='kobo-resource',
+            package_id='kobo-dataset',
+            url_type='upload',
+            visibility='restricted',
+            upload=mocks.FakeFileStorage(),
+            url='original-file.csv',
+            kobo_type='data'
+        )
+
+        url = toolkit.url_for(
+            'resource.edit',
+            id=self.kobo_dataset['id'],
+            resource_id=self.kobo_resource['id']
+        )
+        env = {'REMOTE_USER': self.sysadmin['name'].encode('ascii')}
+
+        # Mock a resource edit payload
+        form_data = {
+            'description': 'updated',
+            'url_type': 'upload',
+            'upload': mocks.FakeFileStorage(filename='different-file.csv'),
+
+            # this is manually added to the update form as hidden fields:
+            'original_url': self.kobo_resource['url'],
+            'kobo_type': 'data',
+
+            'url': 'different-file.csv',
+            'clear_upload': '',
+            'save': ''
+
+        }
+        data = dict(self.kobo_resource, **form_data)
+        resp = app.post(url, data=data, extra_environ=env, status=200)
+
+        assert 'The form contains invalid entries:' in resp.body
+        assert 'You cannot update a KoBoToolbox data file directly, please re-import the data instead' in resp.body

@@ -141,6 +141,7 @@ class TestUserRegister(object):
             '[UNHCR RIDL] - Request for new user account' ==
             mock_mailer.call_args[0][1][1]
         )
+        assert self.container['title'] in mock_mailer.call_args[0][1][2]
 
         # 'success' page content
         assert resp.status_code == 200

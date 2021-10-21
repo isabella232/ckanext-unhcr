@@ -2,9 +2,11 @@ import json
 from functools import wraps
 import ckan.plugins.toolkit as toolkit
 # TODO: move here helpers not used in templates
+from ckanext.unhcr.helpers import user_is_editor
 
 
 INTERNAL_DOMAINS = ['unhcr.org']
+
 
 def get_internal_domains():
     return toolkit.aslist(
@@ -79,6 +81,34 @@ def require_user(func):
     def view_wrapper(*args, **kwargs):
         if (not hasattr(toolkit.c, "user") or not toolkit.c.user):
             return toolkit.abort(403, "Forbidden")
+        return func(*args, **kwargs)
+    return view_wrapper
+
+
+def require_internal_user(func):
+    '''
+    Decorator for flask view functions. Returns 403 response if no user is logged in or if the login user is external
+    '''
+    @wraps(func)
+    def view_wrapper(*args, **kwargs):
+        if (not hasattr(toolkit.c, "user") or not toolkit.c.user):
+            return toolkit.abort(403, "Forbidden")
+        if user_is_external(toolkit.c.userobj):
+            return toolkit.abort(403, "Internal user required")
+        return func(*args, **kwargs)
+    return view_wrapper
+
+
+def require_editor_user(func):
+    '''
+    Decorator for flask view functions. Returns 403 response if no user is logged in or if the login user is external
+    '''
+    @wraps(func)
+    def view_wrapper(*args, **kwargs):
+        if (not hasattr(toolkit.c, "user") or not toolkit.c.user):
+            return toolkit.abort(403, "Forbidden")
+        if not user_is_editor():
+            return toolkit.abort(403, "Editor user required")
         return func(*args, **kwargs)
     return view_wrapper
 

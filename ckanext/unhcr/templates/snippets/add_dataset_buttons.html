@@ -8,6 +8,11 @@
         {% link_for _('Import Dataset from DDI/XML'), named_route='ddi_import.import', class_='btn btn-primary', icon='plus-square', group=group  %}
       </span>
     {% endif %}
+    {% if h.get_kobo_token() %}
+    <span>
+      {% link_for _('Import Dataset from KoBoToolbox'), named_route='unhcr_kobo.kobo_surveys', class_='btn btn-primary', icon='plus-square', group=group  %}
+    </span>
+    {% endif %}
   {% else %}
     <span >
       {% link_for _('Add Dataset'), named_route='dataset.new', class_='btn btn-primary', icon='plus-square' %}
@@ -16,6 +21,11 @@
       <span>
         {% link_for _('Import Dataset from DDI/XML'), named_route='ddi_import.import', class_='btn btn-primary', icon='plus-square' %}
       </span>
+    {% endif %}
+    {% if h.get_kobo_token() %}
+    <span>
+      {% link_for _('Import Dataset from KoBoToolbox'), named_route='unhcr_kobo.kobo_surveys', class_='btn btn-primary', icon='plus-square'  %}
+    </span>
     {% endif %}
   {% endif %}
 </div>

@@ -54,4 +54,4 @@ def create_curation_activity(
         for key, value in kwargs.items():
             data_dict['data'][key] = value
 
-    toolkit.get_action('activity_create')(activity_context, data_dict)
+    return toolkit.get_action('activity_create')(activity_context, data_dict)

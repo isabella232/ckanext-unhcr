@@ -109,3 +109,12 @@
 .activity .item.changed-curation-state .icon {
   background-color: #8c76ce;
 }
+.activity .item.changed-curation-state .icon.fa-check {
+  background-color: #69A67A;
+}
+.activity .item.changed-curation-state .icon.fa-upload {
+  background-color: #69a68e;
+}
+.activity .item.changed-curation-state .icon.fa-times {
+  background-color: #b95274;
+}

@@ -11,13 +11,21 @@ from ckanext.unhcr.tests import factories, mocks
 class TestHooks(object):
 
     def setup(self):
-        self.container = factories.DataContainer()
+
+        self.user = core_factories.Sysadmin(name='sysadmin', id='sysadmin')
+        self.kobo_user = factories.InternalKoBoUser(name='kobo_user', id='kobo_user')
+
+        self.container = factories.DataContainer(
+            users=[
+                {'name': self.kobo_user['name'], 'capacity': 'editor'},
+            ]
+        )
+
         self.dataset = factories.Dataset(owner_org=self.container['id'])
         self.resource = factories.Resource(
             package_id=self.dataset['id'],
             url_type='upload',
         )
-        self.user = core_factories.Sysadmin()
 
         self.new_package_dict = {
             'external_access_level': 'public_use',
@@ -25,7 +33,6 @@ class TestHooks(object):
             'archived': 'False',
             'data_collector': 'test',
             'data_collection_technique': 'nf',
-            'visibility': 'public',
             'name': 'test',
             'notes': 'test',
             'unit_of_measurement': 'test',
@@ -43,6 +50,7 @@ class TestHooks(object):
             'date_range_start': '2018-01-01',
             'date_range_end': '2019-01-01',
             'process_status': 'anonymized',
+            'visibility': 'public',
             'version': '1',
         }
 
@@ -84,6 +92,23 @@ class TestHooks(object):
     def test_after_package_create_hook_not_called_not_active(self, mock_hook):
         action = toolkit.get_action("package_create")
         self.new_package_dict['state'] = 'pending'
+        dataset = action({'user': self.user['name']}, self.new_package_dict)
+        mock_hook.assert_not_called()
+
+    @mock.patch('ckanext.unhcr.kobo.kobo_dataset.KoboDataset.create_kobo_resources')
+    @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.get_total_submissions')
+    def test_after_package_create_hook_kobo(self, submissions, mock_hook):
+        """ New datasets using 'kobo_asset_id' should be initilized """
+        submissions.return_value = 1
+        action = toolkit.get_action("package_create")
+        self.new_package_dict['kobo_asset_id'] = 'test_id01'
+        dataset = action({'user': self.kobo_user['name']}, self.new_package_dict)
+        mock_hook.assert_called_once()
+
+    @mock.patch('ckanext.unhcr.kobo.kobo_dataset.KoboDataset.create_kobo_resources')
+    def test_after_package_create_no_hook_kobo(self, mock_hook):
+        """ New datasets NOT using 'kobo_asset_id' should NOT be initilized """
+        action = toolkit.get_action("package_create")
         dataset = action({'user': self.user['name']}, self.new_package_dict)
         mock_hook.assert_not_called()
 

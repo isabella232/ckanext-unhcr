@@ -1,0 +1,292 @@
+{
+	"url": "https://kobo.unhcr.org/assets/XXXXXXXX.json",
+	"owner": "https://kobo.unhcr.org/users/avazquez.json",
+	"owner__username": "avazquez",
+	"parent": null,
+	"settings": {
+		"sector": {
+			"label": "Public Administration",
+			"value": "Public Administration"
+		},
+		"country": {
+			"label": "Argentina",
+			"value": "ARG"
+		},
+		"description": "Provided by Marian",
+		"share-metadata": true
+	},
+	"asset_type": "survey",
+	"date_created": "2021-07-07T15:11:55.937046Z",
+	"summary": {
+		"geo": false,
+		"labels": ["Select Country", "Name", "Sex", "Document", "Family Members"],
+		"columns": ["name", "type", "label", "required", "select_from_list_name", "calculation"],
+		"languages": [null],
+		"row_count": 8,
+		"default_translation": null
+	},
+	"date_modified": "2021-07-07T15:12:42.870166Z",
+	"version_id": "xxxxxx",
+	"version__content_hash": "xxxxxxxxxxxx",
+	"version_count": 3,
+	"has_deployment": false,
+	"deployed_version_id": null,
+	"deployed_versions": {
+		"count": 0,
+		"next": null,
+		"previous": null,
+		"results": []
+	},
+	"deployment__identifier": null,
+	"deployment__links": {},
+	"deployment__active": false,
+	"deployment__data_download_links": {},
+	"deployment__submission_count": 0,
+	"report_styles": {
+		"default": {},
+		"specified": {
+			"Sex": {},
+			"end": {},
+			"Name": {},
+			"start": {},
+			"Document": {},
+			"lrtuvsd7J": {},
+			"__version__": {},
+			"Select_Country": {},
+			"family_members": {},
+			"Family_Member_Age": {},
+			"Family_Member_Name": {}
+		},
+		"kuid_names": {
+			"Sex": "IYIm2D0uW",
+			"end": "bysr1zgBh",
+			"Name": "1ZiHmXcVN",
+			"start": "Udncsd6wV",
+			"Document": "keH8igO0N",
+			"lrtuvsd7J": "lrtuvsd7J",
+			"__version__": "T2nplB5Ev",
+			"Select_Country": "7shYIKZtg",
+			"family_members": "urB2jpkLj",
+			"Family_Member_Age": "GVbNYa9aW",
+			"Family_Member_Name": "GkKUmEqgE"
+		}
+	},
+	"report_custom": {},
+	"map_styles": {},
+	"map_custom": {},
+	"content": {
+		"schema": "1",
+		"survey": [{
+			"name": "start",
+			"type": "start",
+			"$kuid": "Udncsd6wV",
+			"$autoname": "start"
+		}, {
+			"name": "end",
+			"type": "end",
+			"$kuid": "bysr1zgBh",
+			"$autoname": "end"
+		}, {
+			"name": "Select_Country",
+			"type": "select_one",
+			"$kuid": "7shYIKZtg",
+			"label": ["Select Country"],
+			"required": false,
+			"$autoname": "Select_Country",
+			"select_from_list_name": "so7fi74"
+		}, {
+			"name": "Name",
+			"type": "text",
+			"$kuid": "1ZiHmXcVN",
+			"label": ["Name"],
+			"required": false,
+			"$autoname": "Name"
+		}, {
+			"name": "Sex",
+			"type": "select_one",
+			"$kuid": "IYIm2D0uW",
+			"label": ["Sex"],
+			"required": false,
+			"$autoname": "Sex",
+			"select_from_list_name": "ju3su91"
+		}, {
+			"name": "Document",
+			"type": "select_multiple",
+			"$kuid": "keH8igO0N",
+			"label": ["Document"],
+			"required": false,
+			"$autoname": "Document",
+			"select_from_list_name": "pc7ld82"
+		}, {
+			"name": "family_members",
+			"type": "begin_repeat",
+			"$kuid": "urB2jpkLj",
+			"label": ["Family Members"],
+			"$autoname": "family_members"
+		}, {
+			"name": "Family_Member_Name",
+			"type": "text",
+			"$kuid": "GkKUmEqgE",
+			"label": ["Family Member Name"],
+			"required": false,
+			"$autoname": "Family_Member_Name"
+		}, {
+			"name": "Family_Member_Age",
+			"type": "integer",
+			"$kuid": "GVbNYa9aW",
+			"label": ["Family Member Age"],
+			"required": false,
+			"$autoname": "Family_Member_Age"
+		}, {
+			"type": "end_repeat",
+			"$kuid": "lrtuvsd7J"
+		}, {
+			"name": "__version__",
+			"type": "calculate",
+			"$kuid": "T2nplB5Ev",
+			"$autoname": "__version__",
+			"calculation": "'v6R9Jn6yDikz6EZhrBJ7fv'"
+		}],
+		"choices": [{
+			"name": "AFG",
+			"$kuid": "7O7KVW2y6",
+			"label": ["Afghanistan"],
+			"list_name": "so7fi74",
+			"$autovalue": "AFG"
+		}, {
+			"name": "SER",
+			"$kuid": "FrK9dAr9O",
+			"label": ["Serbia"],
+			"list_name": "so7fi74",
+			"$autovalue": "SER"
+		}, {
+			"name": "Male",
+			"$kuid": "yrcnIwa5a",
+			"label": ["Male"],
+			"list_name": "ju3su91",
+			"$autovalue": "Male"
+		}, {
+			"name": "Female",
+			"$kuid": "HVBZVafTl",
+			"label": ["Female"],
+			"list_name": "ju3su91",
+			"$autovalue": "Female"
+		}, {
+			"name": "Other",
+			"$kuid": "mLf0erBJa",
+			"label": ["Other"],
+			"list_name": "ju3su91",
+			"$autovalue": "Other"
+		}, {
+			"name": "id_card",
+			"$kuid": "mNSRGVrIY",
+			"label": ["ID Card"],
+			"list_name": "pc7ld82",
+			"$autovalue": "id_card"
+		}, {
+			"name": "passport",
+			"$kuid": "rhyyUaGSB",
+			"label": ["Passport"],
+			"list_name": "pc7ld82",
+			"$autovalue": "passport"
+		}],
+		"settings": {
+			"version": "1 (2021-07-07 14:18:12)"
+		},
+		"translated": ["label"],
+		"translations": [null]
+	},
+	"downloads": [{
+		"format": "xls",
+		"url": "https://kobo.unhcr.org/assets/xxx.xls"
+	}, {
+		"format": "xml",
+		"url": "https://kobo.unhcr.org/assets/xxx.xml"
+	}],
+	"embeds": [{
+		"format": "xls",
+		"url": "https://kobo.unhcr.org/assets/xxx/xls/"
+	}, {
+		"format": "xform",
+		"url": "https://kobo.unhcr.org/assets/xxxx/xform/"
+	}],
+	"koboform_link": "https://kobo.unhcr.org/assets/xxx/koboform/",
+	"xform_link": "https://kobo.unhcr.org/assets/xx/xform/",
+	"hooks_link": "https://kobo.unhcr.org/assets/xx/hooks/",
+	"tag_string": "",
+	"uid": "xxxxx",
+	"kind": "asset",
+	"xls_link": "https://kobo.unhcr.org/assets/xxxxxx/xls/",
+	"name": "TEST aaZSQ29VRHJmofjGSfDDv4",
+	"permissions": [{
+		"uid": "pb4J4D6bPov5HDMgUa9QbQ",
+		"kind": "objectpermission",
+		"url": "https://kobo.unhcr.org/permissions/pb4J4D6bPov5HDMgUa9QbQ.json",
+		"user": "https://kobo.unhcr.org/users/avazquez.json",
+		"permission": "view_submissions",
+		"deny": false,
+		"inherited": true
+	}, {
+		"uid": "pMq82ghP2Xfxe78h5KCcSM",
+		"kind": "objectpermission",
+		"url": "https://kobo.unhcr.org/permissions/pMq82ghP2Xfxe78h5KCcSM.json",
+		"user": "https://kobo.unhcr.org/users/avazquez.json",
+		"permission": "view_asset",
+		"deny": false,
+		"inherited": true
+	}, {
+		"uid": "pzMuVpFKjkSLxwcNQzqqsB",
+		"kind": "objectpermission",
+		"url": "https://kobo.unhcr.org/permissions/pzMuVpFKjkSLxwcNQzqqsB.json",
+		"user": "https://kobo.unhcr.org/users/avazquez.json",
+		"permission": "validate_submissions",
+		"deny": false,
+		"inherited": true
+	}, {
+		"uid": "pr4pUwqcEW9T2M33XBgZJV",
+		"kind": "objectpermission",
+		"url": "https://kobo.unhcr.org/permissions/pr4pUwqcEW9T2M33XBgZJV.json",
+		"user": "https://kobo.unhcr.org/users/avazquez.json",
+		"permission": "manage_asset",
+		"deny": false,
+		"inherited": true
+	}, {
+		"uid": "piw5BMmbjno3783d3RFDWX",
+		"kind": "objectpermission",
+		"url": "https://kobo.unhcr.org/permissions/piw5BMmbjno3783d3RFDWX.json",
+		"user": "https://kobo.unhcr.org/users/avazquez.json",
+		"permission": "delete_submissions",
+		"deny": false,
+		"inherited": true
+	}, {
+		"uid": "psoSZ6R6awLCuS9SzfTcMN",
+		"kind": "objectpermission",
+		"url": "https://kobo.unhcr.org/permissions/psoSZ6R6awLCuS9SzfTcMN.json",
+		"user": "https://kobo.unhcr.org/users/avazquez.json",
+		"permission": "change_submissions",
+		"deny": false,
+		"inherited": true
+	}, {
+		"uid": "pyXU73YrDyRxbvPtdMKa57",
+		"kind": "objectpermission",
+		"url": "https://kobo.unhcr.org/permissions/pyXU73YrDyRxbvPtdMKa57.json",
+		"user": "https://kobo.unhcr.org/users/avazquez.json",
+		"permission": "change_asset",
+		"deny": false,
+		"inherited": true
+	}, {
+		"uid": "pCiW2Ane9ST7WTPZRp9ZbM",
+		"kind": "objectpermission",
+		"url": "https://kobo.unhcr.org/permissions/pCiW2Ane9ST7WTPZRp9ZbM.json",
+		"user": "https://kobo.unhcr.org/users/avazquez.json",
+		"permission": "add_submissions",
+		"deny": false,
+		"inherited": true
+	}],
+	"children": {
+		"count": 0,
+		"next": null,
+		"previous": null,
+		"results": []
+	}
+}

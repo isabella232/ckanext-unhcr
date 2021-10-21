@@ -1,9 +1,70 @@
 {% ckan_extends %}
 
+{% set kobo_resource = pkg_dict and pkg_dict.kobo_asset_id %}
+{% set kobo_auto_resource = data and data.kobo_type %}
+{% set draft_kobo_resource = kobo_resource and pkg_dict.state == 'draft' %}
+{% set new_kobo_resource = kobo_resource and not data %}
+
+{% block stages %}
+  {% if stage %}
+    {% if kobo_resource %}
+      {{ h.snippet('package/snippets/import-kobo-stages.html', stages=stage, kobo_asset_id=data.kobo_asset_id) }}
+    {% else %}
+      {{ h.snippet('package/snippets/stages.html', stages=stage, pkg_name=pkg_name) }}
+    {% endif %}
+  {% endif %}
+
+  {% if draft_kobo_resource and new_kobo_resource %}
+
+  <h1>KoBoToolbox resources</h1>
+
+    {# We are just after a new KoBo package is created. We are not editing a resource #}
+
+  <div class="kobo-resources-container">
+    <p>The following resources were automatically imported from KoBoToolbox.
+        Please review and edit their metadata as necessary</p>
+
+    {# Customized Kobo specific snippets #}
+    {% snippet "package/snippets/resources_list_kobo.html", pkg=pkg_dict, kobo_type='questionnaire' %}
+    {% snippet "package/snippets/resources_list_kobo.html", pkg=pkg_dict, kobo_type='data' %}
+
+  <h1>Additional resources</h1>
+
+  <p>You can optionally add additional resources to the dataset. This can also be done later.</p>
+
+{% endif %}
+
+{% endblock %}
+
 {% block basic_fields %}
   <div class="info-block" id="upload-size-info-block" style="display:none;">
     <i class="fa fa-info-circle"></i>
     Max upload size: {{ h.get_max_resource_size() }}Mb
   </div>
+
+  <input type="hidden" value="{{ data.kobo_type }}" name="kobo_type" id="kobo_type_field"/>
+
+  {# to detect changes on uploaded file #}
+  <input type="hidden" value="{{ data.url }}" name="original_url" />
+  
   {{ super() }}
+
+{% endblock %}
+
+{% block metadata_fields %}
+{% endblock %}
+{% block previous_button %}{% if not draft_kobo_resource %}{{ super() }}{% endif %}{% endblock %}
+{% block again_button %}
+  {% if draft_kobo_resource %}
+    {% if new_kobo_resource%}
+      <div class="kobo-resources-publish">
+        The dataset is currently in a Draft state
+        <a href="{% url_for 'unhcr_dataset.publish', dataset_id=pkg_dict.id %}" class="btn btn-primary"> {{ _('Finish Import') }}</a>
+      </div>
+    {% else %}
+      <button class="btn btn-primary" name="save" value="again" type="submit">{{ _('Update KoBoToolbox Resource') }}</button>
+    {% endif %}    
+  {% else %}
+    {{ super() }}
+  {% endif %}
 {% endblock %}

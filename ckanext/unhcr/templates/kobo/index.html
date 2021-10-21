@@ -1,0 +1,58 @@
+{% extends "kobo/base.html" %}
+
+{%- block subtitle %}Import from KoBoToolbox{% endblock -%}
+
+{% block primary_content %}
+
+<h1>Import from KoBoToolbox</h1>
+
+<p>RIDL users can import surveys and data from the <a target='_blank' href="{{ h.get_kobo_url() }}">KoBoToolbox</a>.
+<p>To do so, you will need to access to your KoBoToolbox account in order to get your <a target='_blank' href="https://support.kobotoolbox.org/api.html">KoBo API token</a>. You can then provide your token in the input field below.</p>
+
+<p>Your token will be used to authenticate and get your data from KoBoToolbox.</p>
+
+{% if kobo_token %}
+  <h2>Current token</h2>
+  {{ h.truncate(kobo_token, 10) }}
+{% endif %}
+
+{% if kobo_token %}
+    <h2>Update token</h2>
+{% else %}
+    <h2>Add token</h2>
+{% endif %}
+
+<form action="{% url_for 'unhcr_kobo.update_token' %}" method="POST">
+  <div class="form-group control-medium">
+    <div class="controls ">
+      <input
+          type="text"
+          name="kobo_token"
+          value=""
+          placeholder="Insert your KoBo token here"
+          size="45"
+          maxlength="120"
+          class="form-control"/>
+    </div>
+  </div>
+  <div class="form-actions">
+    <input type="submit" class="btn btn-primary" value="{% if kobo_token %}Update{% else %}Submit{% endif %} token" />
+  </div>
+</form>
+
+{% if kobo_token %}
+
+<h2>Remove token</h2>
+
+You can also remove your KoBoToolbox token.
+This won't remove your KoBoToolbox datasets from RIDL.
+
+<form action="{% url_for 'unhcr_kobo.remove_token' %}" method="POST">
+  <div class="form-actions">
+    <input type="submit" class="btn btn-primary" value="Remove my token" />
+  </div>
+</form>
+
+{% endif %}
+
+{% endblock %}

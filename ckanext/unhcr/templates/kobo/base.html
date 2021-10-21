@@ -1,0 +1,28 @@
+{% extends "page.html" %}
+
+{%- block subtitle %}KoBo{% endblock -%}
+
+{% block secondary_content %}
+  <h2 class="module-heading"><i class="fa fa-line-chart"></i> KoBoToolbox</h2>
+  
+  <nav>
+    <ul class="unstyled nav nav-simple">
+      {% if h.get_kobo_token() %}
+      <li class="nav-item">
+        <a href="{{ h.url_for('unhcr_kobo.index') }}" title="Update my KoBo token">Update my KoBoToolbox token</a>
+      </li>
+      <li class="nav-item">
+        <a href="{{ h.url_for('unhcr_kobo.kobo_surveys') }}" title="My KoBo surveys">My KoBoToolbox surveys</a>
+      </li>
+      {% else %}
+      <li class="nav-item">
+        <a href="{{ h.url_for('unhcr_kobo.index') }}" title="Set my KoBo token">Set my KoBoToolbox token</a>
+      </li>
+      {% endif %}
+      <li class="nav-item">
+        <a target='_blank' href="https://support.kobotoolbox.org/api.html">About the KoBoToolbox API token</a>
+      </li>
+    </ul>
+  </nav>
+
+{% endblock %}

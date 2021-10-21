@@ -1,11 +1,14 @@
+import datetime
 import logging
 import os
 import re
+from dateutil.parser import parse as parse_date
 from urllib.parse import quote
 from jinja2 import Markup, escape
 from ckan import model
 from ckan.lib import uploader
 from operator import itemgetter
+from ckan.authz import get_group_or_org_admin_ids
 from ckan.logic import ValidationError
 from ckan.plugins import toolkit, plugin_loaded
 import ckan.lib.helpers as core_helpers
@@ -14,9 +17,10 @@ from ckanext.hierarchy import helpers as hierarchy_helpers
 from ckanext.scheming.helpers import (
     scheming_get_dataset_schema, scheming_field_by_name, scheming_get_organization_schema
 )
-from ckanext.unhcr import utils
 from ckanext.unhcr import __VERSION__
-from ckanext.unhcr.models import AccessRequest
+from ckanext.unhcr.models import AccessRequest, USER_REQUEST_TYPE_NEW
+from ckanext.unhcr.kobo.exceptions import KoboApiError
+from ckanext.unhcr.kobo.kobo_dataset import KoboDataset
 
 
 log = logging.getLogger(__name__)
@@ -241,14 +245,75 @@ def user_is_curator(userobj=None):
     return user_id in user_ids
 
 
-def user_is_container_admin(user=None):
-    if not user:
-        user = toolkit.c.user
+def user_orgs(permission, user_name=None):
+    if not user_name:
+        user_name = toolkit.c.user
     orgs = toolkit.get_action("organization_list_for_user")(
-        {"user": user},
-        {"id": user, "permission": "admin"}
+        {"user": user_name},
+        {"id": user_name, "permission": permission}
     )
+    return orgs
+
+
+def user_is_container_admin(user_name=None):
+    orgs = user_orgs(permission='admin', user_name=user_name)
     return len(orgs) > 0
+
+
+def user_is_editor(user_name=None):
+    orgs = user_orgs(permission='create_dataset', user_name=user_name)
+    return len(orgs) > 0
+
+
+def get_kobo_token():
+    user = toolkit.c.userobj
+    if user.plugin_extras is None:
+        return None
+    return user.plugin_extras.get('unhcr', {}).get('kobo_token')
+
+
+def get_kobo_url():
+    return toolkit.config.get('ckanext.unhcr.kobo_url', 'https://kobo.unhcr.org')
+
+
+def get_kobo_initial_dataset(kobo_asset_id):
+    """ Get package init data from KoBo asset (survey)
+        Return pkd_dict, errors """
+    kd = KoboDataset(kobo_asset_id)
+    initial_data = errors = {}
+
+    # package should not exists
+    pkg = kd.get_package()
+    if not pkg:
+        try:
+            initial_data = kd.get_initial_package(toolkit.c.userobj)
+        except KoboApiError as e:
+            errors = {
+                'kobo_asset': ['KoBoToolbox error: {}'.format(e)]
+            }
+    else:
+        errors = {
+            'kobo_asset': ['This KoBoToolbox surveys has already been imported']
+        }
+
+    return initial_data, errors
+
+
+def get_kobo_import_process_real_status(resource_id):
+    """ Check if KoBo process is stalled (more than 1 hour in pending status)
+        Return True if process is stalled, False otherwise """
+    resource = toolkit.get_action('resource_show')({}, {'id': resource_id})
+    kobo_details = resource.get('kobo_details', {})
+    if kobo_details.get('kobo_download_status') != 'pending':
+        return kobo_details.get('kobo_download_status')
+    updated = kobo_details.get('kobo_last_updated')
+    if not updated:
+        return 'unknown'
+    date_updated = parse_date(updated)
+    if datetime.datetime.now() - date_updated > datetime.timedelta(hours=1):
+        return 'stalled'
+    else:
+        return 'pending'
 
 
 # Linked datasets
@@ -303,7 +368,7 @@ def get_linked_datasets_for_display(value, context=None):
 
     # Get datasets
     datasets = []
-    ids = utils.normalize_list(value)
+    ids = normalize_list(value)
     for id in ids:
         dataset = toolkit.get_action('package_show')(context, {'id': id})
         href = toolkit.url_for('dataset.read', id=dataset['name'], qualified=True)
@@ -346,11 +411,16 @@ def get_existing_access_request(user_id, object_id, status):
 
 
 def get_access_request_for_user(user_id):
-    return model.Session.query(AccessRequest).filter(
+
+    requests = model.Session.query(AccessRequest).filter(
         AccessRequest.object_id==user_id,
         AccessRequest.object_type=='user',
-    ).one_or_none()
+    ).all()
 
+    for request in requests:
+        if request.data.get('user_request_type', USER_REQUEST_TYPE_NEW) == USER_REQUEST_TYPE_NEW:
+            return request
+    return None
 
 # Deposited datasets
 
@@ -571,7 +641,9 @@ def get_deposited_dataset_user_curation_actions(status):
         "reject", "request_changes", "assign", "request_review", "approve"
     :rtype: list
     '''
-    if not status['active']:
+
+    # Actions are for active datasets and draft ones while the depositor is still creating the dataset
+    if not status['active'] and status['state'] != 'draft':
         return []
 
     actions = []
@@ -968,6 +1040,7 @@ def get_data_container_choice_label(name, value):
     else:
         log.warning('Could not get field {} from data-container schema'.format(name))
 
+
 def normalize_list(value):
     # It takes into account that ''.split(',') == ['']
     if not value:
@@ -978,13 +1051,32 @@ def normalize_list(value):
 
 
 def can_download(package_dict):
+    """ True if the user can download ALL resources
+        If one resource is not accessible, return False """
     try:
         context = {'user': toolkit.c.user}
-        resource_dict = package_dict.get('resources', [])[0]
-        toolkit.check_access('resource_download', context, resource_dict)
+        resources = package_dict.get('resources', [])
+        if len(resources) == 0:
+            return False
+        for resource_dict in resources:
+            # Copy context because will be filled wioth 'resource' and 'get_resource_object' 
+            # inside 'resource_download' will use this resource all times
+            ret = toolkit.check_access('resource_download', context.copy(), resource_dict)
         return True
-    except (toolkit.NotAuthorized, toolkit.ObjectNotFound, IndexError):
+    except (toolkit.NotAuthorized, toolkit.ObjectNotFound):
         return False
+
+
+def can_request_access(user, pkg):
+    """ Define if user is able to request access for private resources in dataset """
+    resources = pkg['resources'] if type(pkg) == dict else pkg.resources
+    if len(resources) == 0:
+        return False
+    if can_download(pkg):
+        return False
+    pkg_id = pkg['id'] if type(pkg) == dict else pkg.id
+    access_already_requested = get_existing_access_request(user.id, pkg_id, 'requested')
+    return not access_already_requested
 
 
 def get_resource_file_path(resource):
@@ -1035,3 +1127,52 @@ def nl_to_br(text):
 
 def is_plugin_loaded(plugin_name):
     return plugin_loaded(plugin_name)
+
+
+def get_user_packages(user_id):
+    datasets = model.Session.query(model.Package).filter_by(creator_user_id=user_id)
+    return datasets
+
+
+def get_user_curators(user_id):
+    """ Get who approved user datasets """
+    datasets = get_user_packages(user_id)
+    curators = []
+    for dataset in datasets:
+        curations = model.Session.query(
+            model.Activity
+        ).filter_by(
+            object_id=dataset.id,
+            activity_type="changed curation state",
+        ).all()
+        for curation in curations:
+            if curation.data.get('curation_activity') == 'dataset_approved':
+                if curation.user_id not in curators:
+                    curators.append(curation.user_id)
+
+    return curators
+
+
+def get_user_admins(user_id):
+    """ get containers admins for user datasets """
+    datasets = get_user_packages(user_id)
+    user_admins = []
+    for dataset in datasets:
+        for admin in get_group_or_org_admin_ids(dataset.owner_org):
+            if admin not in user_admins:
+                user_admins.append(admin)
+
+    return user_admins
+
+
+def get_resource_value_label(field_name, resource, dataset_type='dataset'):
+    schema = scheming_get_dataset_schema(dataset_type)
+
+    for field in schema['resource_fields']:
+        if field['field_name'] == field_name:
+            return toolkit.render_snippet(
+                'scheming/snippets/display_field.html',
+                data=dict(
+                    field=field, data=resource, entity_type='dataset',
+                    object_type=dataset_type)
+            )

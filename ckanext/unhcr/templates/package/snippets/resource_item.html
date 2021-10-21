@@ -1,5 +1,52 @@
 {% ckan_extends %}
 
+{% set can_download_resource = h.check_access('resource_download', {'id':res.id }) %}
+
+{% block resource_item_description %}
+  <p class="description">
+    {% if not can_download_resource %}
+    <span class="dataset-private label label-inverse">
+      <i class="fa fa-lock"></i> {{ _('Private') }}
+    </span>
+    {% endif %}
+    {% if res.kobo_type and h.check_access('package_update', {'id': pkg.id}) %}
+      {% set kobo_status = h.get_kobo_import_process_real_status(res.id) %}
+      {% if kobo_status %}
+        <span class="kobo-resource-status kobo-resource-{{ kobo_status }}" data-resource-id="{{ res.id }}" data-status="{{ kobo_status }}">
+          sync {{ kobo_status }} 
+          {% if kobo_status != 'complete'%} 
+           <i class="fa fa-caret-down" style="margin-left: 5px;"></i>
+          {% endif %}
+        </span>
+        {% if kobo_status == 'pending'%}
+          <img src="/base/images/loading.gif" style="height:auto; width: 15px; margin:5px;"/>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+
+    {% if res.description %}
+      {{ h.markdown_extract(h.get_translated(res, 'description'), extract_length=80) }}
+    {% endif %}
+
+    {% if res.kobo_type and res.kobo_details and h.check_access('package_update', {'id': pkg.id}) %}
+    <div id="kobo-item-info-{{ res.id }}" class="kobo-item-info kobo-resource-{{ kobo_status }}">
+      <ul>
+        {% if kobo_status == 'error' %}
+        <li>Process error <b>{{ res.kobo_details.kobo_last_error_response }}</b></li>
+        {% endif %}
+        {% if kobo_status == 'pending'%}
+        <li>Refresh this page to update the status</li>
+        {% else%}
+        <li>Use the <b>Update KoBo data</b> button to try again</li>
+        {% endif %}
+        <li>Attempt {{ res.kobo_details.kobo_download_attempts }}/5</li>
+        <li>Last updated {{ res.kobo_details.kobo_last_updated }}</li>
+      </ul>
+    </div>
+    {% endif %}
+  </p>
+{% endblock %}
+
 {% block resource_item_explore_links %}
   <li>
     <a href="{{ url }}">
@@ -13,7 +60,7 @@
     </a>
   </li>
   {% if res.url and h.is_url(res.url) %}
-    {% if h.can_download(pkg) %}
+    {% if can_download_resource %}
       <li>
         <a href="{{ res.url }}" class="resource-url-analytics" target="_blank">
           {% if res.has_views or res.url_type == 'upload' %}
