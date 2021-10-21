@@ -1,5 +1,9 @@
 # RIDL Changelog
 
+## v3.1.6 - 2021-10-21 - STABLE PRODUCTION RELEASE
+Bug fixes:
+ - Fix admin dashboard to show renewal requests (after running expire-users) correctly.
+
 ## v3.1.5 - 2021-10-19 - STABLE PRODUCTION RELEASE
 Tag version for production
 Bug fixes:

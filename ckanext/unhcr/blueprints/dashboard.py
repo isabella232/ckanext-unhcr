@@ -72,16 +72,17 @@ def requests():
 
     extras_user_access_request = {}
     for uar in user_account_requests + user_renewal_requests:
-
-        containers = [
-            model.Group.get(container_id)
-            for container_id in uar['data']['default_containers']
-        ]
-        cleaned_containers = [container for container in containers if container.name != 'data-deposit']
-
         # access_request_list_for_user removes plugin_extras where focal-point lives
         user_obj = model.User.get(uar['user_id'])
         focal_point = user_obj.plugin_extras.get('unhcr', {}).get('focal_point')
+        default_containers = user_obj.plugin_extras.get('unhcr', {}).get('default_containers', [])
+
+        containers = [
+            model.Group.get(container_id)
+            for container_id in default_containers
+        ]
+        cleaned_containers = [container for container in containers if container and container.name != 'data-deposit']
+
         extras = {
             'default_containers': cleaned_containers,
             'focal_point': focal_point
