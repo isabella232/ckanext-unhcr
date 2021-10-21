@@ -15,16 +15,19 @@ class TestAccessRequests(object):
         self.sysadmin = core_factories.Sysadmin()
         self.requesting_user = core_factories.User()
         self.standard_user = core_factories.User()
-        self.pending_user = factories.ExternalUser(
-            state=model.State.PENDING,
-            focal_point='test-point'
-            )
 
         self.container1_admin = core_factories.User()
         self.container1 = factories.DataContainer(
             users=[{"name": self.container1_admin["name"], "capacity": "admin"}]
         )
         self.container2 = factories.DataContainer()
+
+        self.pending_user = factories.ExternalUser(
+            state=model.State.PENDING,
+            focal_point='test-point',
+            default_containers=[self.container1["id"], self.container2["id"]]
+            )
+
         self.dataset1 = factories.Dataset(
             owner_org=self.container1["id"], visibility="restricted"
         )
