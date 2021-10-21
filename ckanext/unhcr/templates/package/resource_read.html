@@ -4,6 +4,7 @@
 
 {% set can_request_access = h.can_request_access(c.userobj, c.package) %}
 {% set access_already_requested = h.get_existing_access_request(c.userobj.id, c.package.id, 'requested') %}
+{% set can_download_resource = h.check_access('resource_download', {'id': c.resource.id }) %}
 
 {% block resource_read_title %}
   <div class="heading dropdown">
@@ -25,7 +26,6 @@
     <li>{% link_for _('Manage'), named_route=pkg.type ~ '_resource.edit', id=pkg.name, resource_id=res.id, class_='btn', icon='wrench' %}</li>
   {% endif %}
 
-  {% set can_download_resource = h.check_access('resource_download', {'id':res.id }) %}
   {% if not can_download_resource %}
     <li>
       <span class="dataset-private label label-inverse">
@@ -84,7 +84,7 @@
 
 {% if res.kobo_type %}
 <section class="module">
-  
+
   <div class="module-content">
     <h2>{{ _('KoBoToolbox information') }}</h2>
     <table class="table table-striped table-bordered table-condensed" data-module="table-toggle-more">
@@ -113,11 +113,11 @@
           <td>{{ res.kobo_details.kobo_last_updated }} UTC</td>
         </tr>
         {% endif %}
-        
+
       </tbody>
     </table>
   </div>
-  
+
 </section>
 {% endif %}
 
