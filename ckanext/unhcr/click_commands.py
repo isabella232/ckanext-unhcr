@@ -6,6 +6,7 @@ from ckan.plugins import toolkit
 import ckan.model as model
 
 from ckanext.unhcr.commands import expired_users_list, request_renewal
+from ckanext.unhcr.activity import create_system_activity
 from ckanext.unhcr.arcgis import import_geographies as arcgis_import_geographies
 from ckanext.unhcr.models import create_tables, TimeSeriesMetric
 from ckanext.unhcr.mailer import (
@@ -34,8 +35,20 @@ def init_db():
     short_help=u'Import geographies from UNHCR GeoPortal'
 )
 def import_geographies():
-    arcgis_import_geographies()
+    data = {}
+    try:  # we want to capture a system activity for each execution
+        arcgis_import_geographies(data)
+    except Exception as e:
+        data['error'] = str(e)
+        description = 'Error! '
+    else:
+        if data.get('finished'):
+            description = 'Finished OK. '
+        else:
+            description = 'Process not finished. '
 
+    description += '{} geographies imported'.format(data.get('imported_geos', 0))
+    create_system_activity(title='import-geographies', description=description, extra_data=data)
 
 @unhcr.command(
     u'snapshot-metrics',
@@ -113,9 +126,17 @@ def expire_users(verbose):
     ignored = 0  # User is about to expire but doesn't have any relevant activity or already requested
     renewal = 0  # User is about to expire and have some relevant activity. Renewal is requested
     deleted = 0  # User expired and was inactivated/deleted
+    # Extra data for logging this activity
+    data = {
+        'users_about_to_expire': [],
+        'expired_users': [],
+        'renewal_access_requests': [],
+        'renewal_access_ignored': [],
+    }  
 
     before_expire_days = toolkit.config.get('ckanext.unhcr.external_accounts_notify_delta', 30)
     about_to_expire_users = expired_users_list(before_expire_days=before_expire_days, include_activities=True)
+    data['users_about_to_expire'] = about_to_expire_users
     if len(about_to_expire_users) == 0:
         print('There are no users about to expire')
 
@@ -131,15 +152,18 @@ def expire_users(verbose):
             if verbose:
                 print(' - No relevant activities: {} ignored'.format(about_to_expire_user['name']))
             ignored += 1
+            data['renewal_access_ignored'].append(about_to_expire_user)
             continue
 
         created, reason = request_renewal(about_to_expire_user, last_activity)
         if created:
             print(' - Renewal access requested for {}'.format(about_to_expire_user['name']))
             renewal += 1
+            data['renewal_access_requests'].append(about_to_expire_user)
         else:
             print(' - Renewal access not created for user {}: {}'.format(about_to_expire_user['name'], reason))
             ignored += 1
+            data['renewal_access_ignored'].append(about_to_expire_user)
 
     expired_users = expired_users_list()
     if len(expired_users) == 0:
@@ -152,8 +176,10 @@ def expire_users(verbose):
             {'ignore_auth': True},
             {'id': expired_user['id']}
         )
-
+        data['expired_users'].append(expired_user)
         print(' - Deleted')
         deleted += 1
 
-    print('Expire users command finished. {} deleted, {} renewal, {} ignored'.format(deleted, renewal, ignored))
+    result = '{} deleted, {} renewal, {} ignored'.format(deleted, renewal, ignored)
+    print('Expire users command finished. {}'.format(result))
+    create_system_activity(title='expire-users', description=result, extra_data=data)

@@ -236,12 +236,17 @@ def upload_not_empty(key, data, errors, context):
     if upload_missing:
         errors[('resources', index, 'url',)] = ['All data resources require an uploaded file']
 
+# Custom validator for system activity
+def system_activity_validator(object_id, context):
+    """ System activities do not require an object_id """
+    return object_id
 
 # Custom Activities
 
 _object_id_validators = {
     'download resource': validators.package_id_exists,
     'changed curation state': validators.package_id_exists,
+    'system activity': system_activity_validator
 }
 
 def object_id_validator(key, activity_dict, errors, context):

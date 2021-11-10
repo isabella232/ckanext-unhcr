@@ -2,6 +2,7 @@ import datetime
 import pytest
 from ckan.plugins import toolkit
 from ckantoolkit.tests import factories as core_factories
+from ckanext.unhcr.helpers import get_system_activities
 from ckanext.unhcr.models import USER_REQUEST_TYPE_RENEWAL
 from ckanext.unhcr.tests import factories
 from ckan.cli.cli import ckan
@@ -107,3 +108,31 @@ def test_expired_user_command(cli):
     assert '1 deleted' in result.output
     assert '1 renewal' in result.output
     assert '2 ignored' in result.output
+
+    system_activities = get_system_activities()
+    for activity in system_activities:
+        if activity.data['title'] == 'expire-users':
+            extras = activity.data['extras']
+
+            assert len(extras['users_about_to_expire']) == 3
+            user_names_about_to_expire = [user['name'] for user in extras['users_about_to_expire']]
+            assert user3['name'] in user_names_about_to_expire
+            assert user4['name'] in user_names_about_to_expire
+            assert user5['name'] in user_names_about_to_expire
+
+            assert len(extras['expired_users']) == 1
+            user_names_expired = [user['name'] for user in extras['expired_users']]
+            assert user2['name'] in user_names_expired
+            
+            assert len(extras['renewal_access_requests']) == 1
+            user_names_to_renew = [user['name'] for user in extras['renewal_access_requests']]
+            assert user3['name'] in user_names_to_renew
+
+            assert len(extras['renewal_access_ignored']) == 2
+            user_names_ignored = [user['name'] for user in extras['renewal_access_ignored']]
+            assert user4['name'] in user_names_ignored
+            assert user5['name'] in user_names_ignored
+
+            break
+    else:
+        raise Exception('System activity for expire-users not found')

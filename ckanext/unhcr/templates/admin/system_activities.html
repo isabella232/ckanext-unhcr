@@ -1,0 +1,90 @@
+{% extends "admin/base.html" %}
+
+{% set activities = h.get_system_activities() %}
+
+{% block primary_content_inner %}
+
+<h2>Log for system activities</h2>
+<table id="system-activities-list" class="table table-header table-hover table-bordered table-responsive">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>System activity</th>
+      <th>Description</th>
+      <th>More info</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for activity in activities %}
+    <tr>
+      <td>{{ h.render_datetime(activity.timestamp, with_hours=True) }}</td> 
+      <td>{{ activity.data.title }}</td>
+      <td>{{ activity.data.description }}</td>
+      <td>
+        <a
+          href="#system-data-{{ activity.id }}"
+          role="button"
+          class="btn"
+          title="More info"
+          data-toggle="modal"
+          data-target="#system-data-{{ activity.id }}"
+        >+ info</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
+
+{% block body_extras %}
+{{ super() }}
+{% for activity in activities %}
+
+<div id="system-data-{{ activity.id }}" class="modal fade" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3>System activity data</h3>
+      </div>
+
+      <div class="modal-body">
+        <h4>{{ activity.data.title }}</h4>
+        <p>{{ activity.data.description }}</p>
+        <div style="max-height: 400px; overflow-y: scroll;">
+          <h4>Data</h4>
+          <ul>
+            {% for k, v in activity.data.extras.items() %}
+            <li><b>{{ k }}</b>: {{ v }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">Done</button>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+{% endfor %}
+
+{% endblock %}
+
+{% block secondary_content %}
+<div class="module module-narrow module-shallow">
+  <h2 class="module-heading">
+    <i class="fa fa-history"></i>
+    {{ _('System activities') }}
+  </h2>
+  <div class="module-content">
+    {% trans %}
+      <p>Check system activities</p>
+    {% endtrans %}
+  </div>
+</div>
+{% endblock %}

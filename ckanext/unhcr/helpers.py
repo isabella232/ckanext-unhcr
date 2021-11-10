@@ -1176,3 +1176,18 @@ def get_resource_value_label(field_name, resource, dataset_type='dataset'):
                     field=field, data=resource, entity_type='dataset',
                     object_type=dataset_type)
             )
+
+
+def get_system_activities():
+    """ Get a list of systema activities """
+    # TODO this should be paginated
+    limit = toolkit.config.get('ckanext.unhcr.limit_system_activities', 500)
+    activities = model.Session.query(
+        model.Activity
+    ).filter_by(
+        activity_type="system activity",
+    ).order_by(
+        model.Activity.timestamp.desc()
+    ).limit(limit).all()
+
+    return activities

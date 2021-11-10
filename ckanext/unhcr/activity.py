@@ -55,3 +55,27 @@ def create_curation_activity(
             data_dict['data'][key] = value
 
     return toolkit.get_action('activity_create')(activity_context, data_dict)
+
+
+def create_system_activity(title, description, extra_data={}):
+    """
+    Log a System level activity
+    """
+    site_user = toolkit.get_action('get_site_user')({'ignore_auth': True}, {})
+    context = {'user': site_user['name'], 'ignore_auth': True}
+
+    data = {
+        'title': title,
+        'description': description,
+        'extras': extra_data
+    }
+    activity_dict = {
+        'activity_type': 'system activity',
+        'user_id': site_user['name'],
+        'object_id': '0',
+        'data': data
+    }
+
+    create_activity = toolkit.get_action('activity_create')
+    activity = create_activity(context, activity_dict)
+    return activity

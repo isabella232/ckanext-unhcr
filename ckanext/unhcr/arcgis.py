@@ -172,7 +172,7 @@ BASE_PARAMS = {
 }
 
 
-def import_geographies():
+def import_geographies(data={}):
     """
     Countries are not versioned, so the first thing we're going to to is
     set all the countries to inactive but not commit the transaction yet.
@@ -185,6 +185,9 @@ def import_geographies():
       (and we'll set the gis_status to GisStatus.ACTIVE)
     - Any countries that were in our DB but aren't in the ArcGIS layer
       will be set to inactive
+
+    data parameter it's a dict and used to track this process internals
+        even if the process failed or not finished
     """
     model.Session.query(
         Geography
@@ -195,6 +198,8 @@ def import_geographies():
         synchronize_session=False
     )
 
+    data['finished'] = False
+    data['imported_geos'] = 0
     for layer in LAYERS:
         base_url = URL_TEMPLATE.format(layer)
         has_next_page = True
@@ -238,6 +243,8 @@ def import_geographies():
                 pagination_params['resultOffset'] +
                 pagination_params['resultRecordCount']
             )
+            data['imported_geos'] += len(features)
 
     print('\n..Finished importing geographies')
     print_summary(model.Session)
+    data['finished'] = True

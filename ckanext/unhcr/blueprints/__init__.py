@@ -9,5 +9,6 @@ from .deposited_dataset import unhcr_deposited_dataset_blueprint
 from .metrics import unhcr_metrics_blueprint
 from .resource import unhcr_resource_blueprint
 from .search_index import unhcr_search_index_blueprint
+from .system_activities import unhcr_system_activities_blueprint
 from .user import unhcr_user_blueprint
 from .kobo import unhcr_kobo_blueprint

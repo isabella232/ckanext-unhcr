@@ -122,6 +122,7 @@ class UnhcrPlugin(
         toolkit.add_public_directory(config_, 'public')
         toolkit.add_resource('fanstatic', 'unhcr')
         toolkit.add_ckan_admin_tab(config_, 'unhcr_search_index.index', 'Search Index', icon='hdd-o')
+        toolkit.add_ckan_admin_tab(config_, 'unhcr_system_activities.index', 'System activities', icon='history')
 
         User.external = property(utils.user_is_external)
         if (authz.is_authorized.__name__ != 'unhcr_auth_wrapper'):
@@ -239,6 +240,7 @@ class UnhcrPlugin(
             'is_plugin_loaded': helpers.is_plugin_loaded,
             'get_resource_value_label': helpers.get_resource_value_label,
             'get_kobo_import_process_real_status': helpers.get_kobo_import_process_real_status,
+            'get_system_activities': helpers.get_system_activities,
         }
 
     # IPackageController
@@ -632,6 +634,7 @@ class UnhcrPlugin(
             blueprints.unhcr_metrics_blueprint,
             blueprints.unhcr_resource_blueprint,
             blueprints.unhcr_search_index_blueprint,
+            blueprints.unhcr_system_activities_blueprint,
             blueprints.unhcr_user_blueprint,
             blueprints.unhcr_kobo_blueprint,
         ]

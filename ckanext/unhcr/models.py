@@ -99,6 +99,11 @@ class Geography(Base):
     )
     layer = Column(UnicodeText, nullable=False)
     hierarchy_pcode = Column(UnicodeText, nullable=False)
+    last_modified = Column(
+        DateTime,
+        default=datetime.datetime.utcnow,
+        onupdate=datetime.datetime.utcnow
+    )
     # TODO: PostGIS geometry column
 
     @hybrid_property
