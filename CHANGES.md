@@ -2,6 +2,7 @@
 
 ## v3.1.7 - 2021-XX-XX
 New features:
+ - Add KoBo technical documentation [#737](https://github.com/okfn/ckanext-unhcr/pull/737)
  - Tracking system activities [#734](https://github.com/okfn/ckanext-unhcr/pull/734)
 Bug fixes:
  - Show deposit errors [#733](https://github.com/okfn/ckanext-unhcr/pull/733)

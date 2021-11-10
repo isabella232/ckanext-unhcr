@@ -10,22 +10,26 @@ CKAN extension for the UNHCR RIDL project
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
 
-- [Requirements](#requirements)
-- [Setting up environment](#setting-up-environment)
-- [Working with docker](#working-with-docker)
-- [Starting development server](#starting-development-server)
-- [Running unit tests](#running-unit-tests)
-- [Running E2E tests](#running-e2e-tests)
-- [Building static assets](#building-static-assets)
-- [Working with i18n](#working-with-i18n)
-- [Logging into container](#logging-into-container)
-- [Updating readme](#updating-readme)
-- [Managing docker](#managing-docker)
-- [Prepare a local environment for running scripts](#prepare-a-local-environment-for-running-scripts)
-- [Generate deposited-dataset schema](#generate-deposited-dataset-schema)
-- [Create data containers and data deposit](#create-data-containers-and-data-deposit)
-- [Create development users](#create-development-users)
-- [Testing email notifications](#testing-email-notifications)
+- [ckanext-unhcr](#ckanext-unhcr)
+  - [Requirements](#requirements)
+  - [Setting up environment](#setting-up-environment)
+    - [Extension Settings](#extension-settings)
+  - [Working with docker](#working-with-docker)
+  - [Starting development server](#starting-development-server)
+  - [Running unit tests](#running-unit-tests)
+    - [Troubleshooting](#troubleshooting)
+  - [Running E2E tests](#running-e2e-tests)
+  - [Building static assets](#building-static-assets)
+  - [Working with i18n](#working-with-i18n)
+  - [Logging into container](#logging-into-container)
+  - [Updating readme](#updating-readme)
+  - [Managing docker](#managing-docker)
+  - [Prepare a local environment for running scripts](#prepare-a-local-environment-for-running-scripts)
+  - [Generate deposited-dataset schema](#generate-deposited-dataset-schema)
+  - [Create data containers and data deposit](#create-data-containers-and-data-deposit)
+  - [Create development users](#create-development-users)
+  - [Testing email notifications](#testing-email-notifications)
+  - [KoBo integration](#kobo-integration)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -247,4 +251,4 @@ To define where the KoBo instance lives you can configure the `ckanext.unhcr.kob
 (default is `https://kobo.unhcr.org`).
 
 You can read a RIDL integration with KoBo tutorial [here](docs/kobo.md).  
-
+Technical details about the KoBo integration are available [here](docs/kobo-technical.md).  

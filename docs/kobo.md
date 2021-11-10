@@ -1,5 +1,7 @@
 # KoBo on RIDL
 
+## End user documentation
+
 If you a are a user with permission on (at least) one Data Container you
 will be able to create new datasets importing your surveys from KoBoToolbox.  
 
