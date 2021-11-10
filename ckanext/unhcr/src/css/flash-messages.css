@@ -39,6 +39,11 @@
   }
 }
 
+.deposited-dataset-form .alert-error {
+  background-color: #f3d7ae;
+  color: #463503;
+}
+
 .env-banner {
   position: fixed;
   z-index: 2;

@@ -15,7 +15,16 @@
 {% set kobo_asset_id = data.kobo_asset_id %}
 {% endif %}
 
-<form id="dataset-edit" class="dataset-form form-horizontal" method="post" action="{{ h.current_path(action) }}" data-module="basic-form" novalidate>
+{% if dataset_type == 'deposited-dataset' and data.id %}
+  {# Editing/curating a deposited dataset. Show error summary and highlight fields with errors #}
+  {% set curation = h.get_deposited_dataset_user_curation_status(data, c.userobj.id) %}
+  {% if curation.error %}
+    {% set errors = curation.error.error_dict %}
+    {% set error_summary = curation.error.error_summary %}
+  {% endif %}
+{% endif %}
+
+<form id="dataset-edit" class="dataset-form form-horizontal {% if dataset_type == 'deposited-dataset' %}deposited-dataset-form{% endif %}" method="post" action="{{ h.current_path(action) }}" data-module="basic-form" novalidate>
   {% block stages %}
   {% if kobo_asset_id %}
     {{ h.snippet('package/snippets/import-kobo-stages.html', stages=stage) }}

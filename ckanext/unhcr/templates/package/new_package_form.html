@@ -2,12 +2,22 @@
 
 {% block stages %}
   {{ super() }}
+
   {% if dataset_type == 'deposited-dataset' %}
+  {% if data.id %}
+    {% set curation = h.get_deposited_dataset_user_curation_status(data, c.userobj.id) %}
+    {% if curation.error %}
+    <div class="review alert alert-info" role="alert">
+      The errors below need to be fixed before the final approval of this dataset.
+    </div>
+    {% endif %}
+  {% else %}
     <div class="review alert alert-info" role="alert">
       You are depositing a dataset.
       After depositing, additional changes can still be made until
       it is submitted for further documentation and curation.
     </div>
+    {% endif %}
   {% elif data.original_dataset %}
     <div class="review alert alert-info" role="alert">
       <p>

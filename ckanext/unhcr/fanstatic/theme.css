@@ -1503,6 +1503,11 @@ ol.unstyled {
   color: #fff;
 }
 
+.deposited-dataset-form .alert-error {
+  background-color: #f3d7ae;
+  color: #463503;
+}
+
 .env-banner {
   position: fixed;
   z-index: 2;
@@ -2385,37 +2390,6 @@ i {
   padding-left: 0;
 }
 
-/* Editing */
-
-.control-group.curation-invalid {
-  border-radius: 3px;
-  background-color: #FF4C0F;
-  padding-top: 1em;
-  padding-bottom: 1em;
-  padding-right: 1em
-}
-
-.control-group.curation-invalid label {
-  color: #fff;
-}
-
-.control-group.curation-invalid input,
-  .control-group.curation-invalid select,
-  .control-group.curation-invalid textarea {
-  border-width: 0;
-}
-
-.control-group.curation-invalid .info-block {
-  color: #fff;
-}
-
-.control-group.curation-invalid .info-block:nth-of-type(2) {
-  padding-top: 0;
-  padding-bottom: 0;
-  margin-top: 0;
-  margin-bottom: 0;
-}
-
 /* Stream */
 
 .activity .curation-message {
@@ -2438,6 +2412,11 @@ i {
 
 .activity .item.changed-curation-state .icon.fa-times {
   background-color: #b95274;
+}
+
+.deposited-dataset-form .error-block {
+  background: #f3d7ae;
+  color: #463503;
 }
 
 .modal-content form {

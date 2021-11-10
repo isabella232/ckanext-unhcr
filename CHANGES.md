@@ -1,5 +1,9 @@
 # RIDL Changelog
 
+## v3.1.7 - 2021-XX-XX
+Bug fixes:
+ - Show deposit errors [#733](https://github.com/okfn/ckanext-unhcr/pull/733)
+
 ## v3.1.6 - 2021-10-21 - STABLE PRODUCTION RELEASE
 Bug fixes:
  - Fix admin dashboard to show renewal requests (after running expire-users) correctly.
