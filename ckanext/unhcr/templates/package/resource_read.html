@@ -26,10 +26,19 @@
     <li>{% link_for _('Manage'), named_route=pkg.type ~ '_resource.edit', id=pkg.name, resource_id=res.id, class_='btn', icon='wrench' %}</li>
   {% endif %}
 
-  {% if not can_download_resource %}
+  {% if res.visibility == 'restricted' %}
     <li>
-      <span class="dataset-private label label-inverse">
-        <i class="fa fa-lock"></i> {{ _('Private') }}
+      <span 
+        title="
+          {% if can_download_resource %}
+          You can download this file, but is private to the rest of non-authorized users
+          {% else %}
+          You are not allowed to download this file
+          {% endif %}" 
+    
+        class="dataset-private label label-inverse">
+        <i class="fa {% if can_download_resource %}green-icon fa-unlock{% else %}fa-lock{% endif %}">
+        </i> {{ _('Private') }}
       </span>
     </li>
   {% endif %}
