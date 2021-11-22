@@ -1,11 +1,8 @@
 # encoding: utf-8
-import os
 import json
 import logging
-
-from ckan.common import config
+from ckan import model
 import ckan.lib.helpers as core_helpers
-from ckan.model import User
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from ckan.lib.plugins import DefaultTranslation
@@ -16,7 +13,7 @@ import ckan.authz as authz
 
 from ckanext.unhcr import actions, auth, click_commands, blueprints, helpers, jobs, utils, validators
 from ckanext.unhcr.activity import create_curation_activity
-
+from ckanext.unhcr.models import Geography
 from ckanext.scheming.helpers import scheming_get_dataset_schema
 from ckanext.hierarchy.helpers import group_tree_section
 
@@ -32,6 +29,8 @@ ALLOWED_ACTIONS = [
     'datastore_info',
     'datastore_search',
     'format_autocomplete',
+    'geography_autocomplete',
+    'geography_show',
     'group_list_authz',
     'group_show',
     'organization_list_for_user',
@@ -68,7 +67,7 @@ def restrict_external(func):
     Decorator function to restrict external users to a small number of allowed_actions
     '''
     def unhcr_auth_wrapper(action, context, data_dict=None):
-        user = User.by_name(context.get('user'))
+        user = model.User.by_name(context.get('user'))
         if not user:
             return func(action, context, data_dict)
         if user.sysadmin:
@@ -124,7 +123,7 @@ class UnhcrPlugin(
         toolkit.add_ckan_admin_tab(config_, 'unhcr_search_index.index', 'Search Index', icon='hdd-o')
         toolkit.add_ckan_admin_tab(config_, 'unhcr_system_activities.index', 'System activities', icon='history')
 
-        User.external = property(utils.user_is_external)
+        model.User.external = property(utils.user_is_external)
         if (authz.is_authorized.__name__ != 'unhcr_auth_wrapper'):
             authz.is_authorized = restrict_external(authz.is_authorized)
         core_helpers.url_for = url_for
@@ -204,6 +203,8 @@ class UnhcrPlugin(
             # Linked datasets
             'get_linked_datasets_for_form': helpers.get_linked_datasets_for_form,
             'get_linked_datasets_for_display': helpers.get_linked_datasets_for_display,
+            # Geography
+            'get_geographies_for_display': helpers.get_geographies_for_display,
             # Access requests
             'get_pending_requests_total': helpers.get_pending_requests_total,
             'get_existing_access_request': helpers.get_existing_access_request,
@@ -282,7 +283,7 @@ class UnhcrPlugin(
         schema = scheming_get_dataset_schema('dataset')
         fields = ['data_collector', 'keywords', 'sampling_procedure',
                   'operational_purpose_of_data',  'data_collection_technique',
-                  'process_status', 'identifiability']
+                  'process_status', 'identifiability', 'geographies']
         for field in fields:
             if pkg_dict.get(field):
                 value = pkg_dict[field]
@@ -290,6 +291,20 @@ class UnhcrPlugin(
                 # Free text values: value1,value2
                 if field == 'data_collector':
                     pkg_dict['vocab_' + field] = helpers.normalize_list(value)
+                # Index geo info (names and pcodes)
+                elif field == 'geographies':
+                    if pkg_dict.get('geographies'):
+                        vocab_geos = []
+                        ids = helpers.normalize_list(pkg_dict['geographies'])
+                        for id_ in ids:
+                            geog = model.Session.query(Geography).get(id_)
+                            if geog:
+                                vocab_geos.extend([geog.gis_name, geog.pcode])
+
+                                for parent in geog.parents:
+                                    vocab_geos.extend([parent.gis_name, parent.pcode])
+
+                        pkg_dict['vocab_geo'] = vocab_geos
 
                 # Select values: ["value1","value2"]
                 else:
@@ -498,6 +513,8 @@ class UnhcrPlugin(
         functions['user_update_sysadmin'] = auth.user_update_sysadmin
         functions['external_user_update_state'] = auth.external_user_update_state
         functions['search_index_rebuild'] = auth.search_index_rebuild
+        functions['geography_autocomplete'] = auth.geography_autocomplete
+        functions['geography_show'] = auth.geography_show
         functions['user_show'] = auth.user_show
         functions['user_reset'] = auth.user_reset
         functions['request_reset'] = auth.request_reset
@@ -536,6 +553,8 @@ class UnhcrPlugin(
             'external_user_update_state': actions.external_user_update_state,
             'search_index_rebuild': actions.search_index_rebuild,
             'user_autocomplete': actions.user_autocomplete,
+            'geography_autocomplete': actions.geography_autocomplete,
+            'geography_show': actions.geography_show,
             'user_list': actions.user_list,
             'user_show': actions.user_show,
             'user_create': actions.user_create,
@@ -550,6 +569,7 @@ class UnhcrPlugin(
         return {
             'ignore_if_attachment': validators.ignore_if_attachment,
             'linked_datasets_validator': validators.linked_datasets,
+            'geographies_validator': validators.geographies,
             'unhcr_choices': validators.unhcr_choices,
             'deposited_dataset_owner_org': validators.deposited_dataset_owner_org,
             'deposited_dataset_owner_org_dest': validators.deposited_dataset_owner_org_dest,
@@ -562,6 +582,7 @@ class UnhcrPlugin(
             'upload_not_empty': validators.upload_not_empty,
             'object_id_validator': validators.object_id_validator,
             'activity_type_exists': validators.activity_type_exists,
+            'output_list': validators.output_list,
         }
 
     # IPermissionLabels
@@ -627,6 +648,7 @@ class UnhcrPlugin(
         return [
             blueprints.unhcr_access_requests_blueprint,
             blueprints.unhcr_admin_blueprint,
+            blueprints.unhcr_api_blueprint,
             blueprints.unhcr_dashboard_blueprint,
             blueprints.unhcr_dataset_blueprint,
             blueprints.unhcr_data_container_blueprint,

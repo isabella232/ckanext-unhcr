@@ -711,6 +711,11 @@
             "required": false
         },
         {
+            "field_name": "geographies",
+            "preset": "geographies",
+            "required": false
+        },
+        {
             "field_name": "archived",
             "help_text": "Allows users to indicate if the dataset is archived or active",
             "label": "Archived",

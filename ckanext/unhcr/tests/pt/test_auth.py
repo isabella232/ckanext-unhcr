@@ -141,6 +141,7 @@ class TestAuthUI(object):
             '/api/2/util/resource/format_autocomplete?incomplete=a',
             '/api/2/util/tag/autocomplete?incomplete=a',
             '/user/{}'.format(external_user['name']),
+            '/api/2/util/geography/autocomplete?q=a',
         ]
         for endpoint in endpoints_200:
             resp = app.get(endpoint, extra_environ=env, status=200)
@@ -361,6 +362,8 @@ class TestAuthUnit(object):
             'group_list_authz',
             'organization_list_for_user',
             'tag_autocomplete',
+            'geography_autocomplete',
+            'geography_show',
             'tag_list',
         ]
         context = {'user': external_user['name']}

@@ -8,6 +8,8 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.sql.expression import func, false
+from sqlalchemy.sql.sqltypes import Boolean
 from sqlalchemy.types import Enum, UnicodeText
 
 from ckan.model.meta import metadata
@@ -82,7 +84,7 @@ PRP = {
     'display_name': 'Reference Place',
 }
 LAYER_TO_DISPLAY_NAME = {
-    l['layer_name']: l['display_name'] for l in [ADMIN1, ADMIN2, COUNTRY, POC, PRP]
+    l['layer_name']: l['display_name'] for l in [COUNTRY, ADMIN1, ADMIN2, POC, PRP]
 }
 
 
@@ -104,11 +106,56 @@ class Geography(Base):
         default=datetime.datetime.utcnow,
         onupdate=datetime.datetime.utcnow
     )
+    # some territories have the same ISO code as a country
+    # These "secondary territories" must be treated as no-countries
+    secondary_territory=Column(Boolean, default=False)
+    
     # TODO: PostGIS geometry column
+
+    @property
+    def layer_nice_name(self):
+        return LAYER_TO_DISPLAY_NAME[self.layer]
 
     @hybrid_property
     def display_name(self):
-        return f'{LAYER_TO_DISPLAY_NAME[self.layer]}: {self.gis_name} ({self.hierarchy_pcode})'
+        return f'{self.gis_name} ({self.hierarchy_pcode})'
+
+    @property
+    def display_full_name(self):
+        parent_names = [parent.gis_name for parent in self.parents]
+        if len(parent_names) > 0:
+            parent_names_str = ', '.join(parent_names)
+            return f'{self.gis_name} ({parent_names_str})'
+        else:
+            return self.gis_name
+
+    @hybrid_property
+    def parents(self):
+        # see diagram in https://github.com/okfn/ckanext-unhcr/issues/618 for pcode structure
+        parent_pcodes = [
+            self.hierarchy_pcode[0:11] if len(self.hierarchy_pcode) >= 14 else None, # admin2
+            self.hierarchy_pcode[0:8] if len(self.hierarchy_pcode) >= 11 else None, # admin1
+            self.hierarchy_pcode[2:5] if len(self.hierarchy_pcode) >= 8 else None, # country
+        ]
+        parent_pcodes = list(filter(lambda x: x is not None, parent_pcodes))
+        if len(parent_pcodes) == 0:
+            return []
+
+        parents = model.Session.query(
+            Geography
+        ).filter(
+            Geography.pcode.in_(parent_pcodes),
+            Geography.gis_status == GisStatus.ACTIVE,
+            # secondary terrirories are not counted as countries
+            Geography.secondary_territory == false(),
+        ).order_by(  # ADMIN2 > ADMIN1 > COUNTRY
+            func.length(Geography.pcode).desc()
+        ).all()
+
+        return parents
+
+    def __str__(self):
+        return f'{LAYER_TO_DISPLAY_NAME[self.layer]}: {self.gis_name} ({self.pcode})'
 
 
 def create_metric_columns():

@@ -668,6 +668,10 @@
             "help_text": "Links to other RIDL datasets. It supports multiple selections"
         },
         {
+            "field_name": "geographies",
+            "preset": "geographies"
+        },
+        {
             "field_name": "archived",
             "help_text": "Allows users to indicate if the dataset is archived or active",
             "label": "Archived",

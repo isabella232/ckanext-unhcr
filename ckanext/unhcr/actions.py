@@ -21,7 +21,10 @@ from ckanext.unhcr import helpers, mailer, utils
 from ckanext.unhcr.kobo.api import KoBoAPI, KoBoSurvey
 from ckanext.unhcr.kobo.exceptions import KoboMissingAssetIdError, KoBoEmptySurveyError
 from ckanext.unhcr.kobo.kobo_dataset import KoboDataset
-from ckanext.unhcr.models import AccessRequest, USER_REQUEST_TYPE_NEW, USER_REQUEST_TYPE_RENEWAL
+from ckanext.unhcr.models import (
+    AccessRequest, Geography, GisStatus, LAYER_TO_DISPLAY_NAME,
+    USER_REQUEST_TYPE_NEW, USER_REQUEST_TYPE_RENEWAL
+)
 from ckanext.unhcr.utils import is_saml2_user
 
 
@@ -40,8 +43,11 @@ def _get_user_obj(context):
 
 
 # Package
+
+
 @toolkit.chained_action
 def package_update(up_func, context, data_dict):
+
     notify = False
     if not context.get('ignore_auth'):
         user_obj = _get_user_obj(context)
@@ -1233,7 +1239,7 @@ def search_index_rebuild(context, data_dict):
 # Autocomplete
 
 @core_logic.schema.validator_args
-def unhcr_autocomplete_schema(
+def unhcr_user_autocomplete_schema(
         not_missing,
         unicode_safe,
         ignore_missing,
@@ -1248,7 +1254,7 @@ def unhcr_autocomplete_schema(
     }
 
 
-@core_logic.validate(unhcr_autocomplete_schema)
+@core_logic.validate(unhcr_user_autocomplete_schema)
 def user_autocomplete(context, data_dict):
     '''Return a list of user names that contain a string.
 
@@ -1296,6 +1302,95 @@ def user_autocomplete(context, data_dict):
 
     return user_list
 
+
+# Geography
+
+def _dictize_geography(geog, include_parents=True):
+    dct = {k:v for k,v in geog.__dict__.items() if not k.startswith('_')}
+    dct['name'] = geog.display_full_name
+    dct['layer_nice_name'] = geog.layer_nice_name
+    # ensure serializable for API calls
+    for k, v in dct.items():
+        if not v or type(v) in [str, int]:
+            continue
+        if type(v) in [datetime.date, datetime.datetime]:
+            dct[k] = v.isoformat()
+        else:
+            dct[k] = str(v)
+    if include_parents:
+        dct['parents'] = [
+            _dictize_geography(parent, include_parents=False)
+            for parent in geog.parents
+            ]
+
+    return dct
+
+
+@core_logic.schema.validator_args
+def unhcr_geography_autocomplete_schema(
+        not_missing,
+        unicode_safe,
+        ignore_missing,
+        natural_number_validator,
+    ):
+    return {
+        'q': [not_missing, unicode_safe],
+        'limit': [ignore_missing, natural_number_validator],
+    }
+
+
+@core_logic.validate(unhcr_geography_autocomplete_schema)
+def geography_autocomplete(context, data_dict):
+    m = context.get('model', model)
+    q = data_dict['q']
+    limit = data_dict.get('limit', 100)
+
+    toolkit.check_access('geography_autocomplete', context, data_dict)
+
+    query = m.Session.query(
+        Geography
+    ).filter(
+        or_(
+            Geography.gis_name.ilike(f'%{q}%'),
+            Geography.pcode.ilike(f'%{q}%')
+        )
+    ).filter(
+        Geography.gis_status == GisStatus.ACTIVE
+    ).order_by(
+        Geography.layer,
+        Geography.gis_name,
+    ).limit(
+        limit
+    )
+
+    # Ensure groups ordered
+    groups = {v: [] for k, v in LAYER_TO_DISPLAY_NAME.items()}
+    for geog in query.all():
+        geo = _dictize_geography(geog)
+        groups[geo['layer_nice_name']].append(geo)
+
+    ret = []
+    for group_name, elements in groups.items():
+        if len(elements) > 0:
+            ret.append({'name': group_name, 'children': elements})
+    return ret
+
+
+@toolkit.side_effect_free
+def geography_show(context, data_dict):
+    m = context.get('model', model)
+    globalid = toolkit.get_or_bust(data_dict, "id")
+
+    toolkit.check_access('geography_show', context, data_dict)
+
+    geog = m.Session.query(Geography).get(globalid)
+    if geog:
+        return _dictize_geography(geog)
+
+    raise toolkit.ObjectNotFound("Geography not found")
+
+
+# User
 
 @toolkit.chained_action
 def user_list(up_func, context, data_dict):

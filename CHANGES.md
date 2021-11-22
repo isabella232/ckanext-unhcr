@@ -1,7 +1,14 @@
 # RIDL Changelog
 
-## v3.1.7 - 2021-XX-XX
+## v3.1.6c - 2021-11-22
 New features:
+ - Improve search and show for Geography field [#744](https://github.com/okfn/ckanext-unhcr/pull/744)
+Bug fixes:
+ - Remove `secondary_terrotory` as countries for Geography field [#746](https://github.com/okfn/ckanext-unhcr/pull/746)
+
+## v3.1.6b - 2021-11-10
+New features:
+ - New Geography table. Allow tagging dataset with multiple geographies [#636](https://github.com/okfn/ckanext-unhcr/pull/636)
  - Add KoBo technical documentation [#737](https://github.com/okfn/ckanext-unhcr/pull/737)
  - Tracking system activities [#734](https://github.com/okfn/ckanext-unhcr/pull/734)
 Bug fixes:

@@ -40,7 +40,8 @@ module.exports = function(grunt) {
           'ckanext/unhcr/src/js/survey-list.js',
           'ckanext/unhcr/src/js/kobo-dataset.js',
           'ckanext/unhcr/src/js/plugins/fancyTable.min.js',  // from https://github.com/myspace-nu/jquery.fancyTable
-          'ckanext/unhcr/src/js/activities-list.js'
+          'ckanext/unhcr/src/js/geographies.js',
+          'ckanext/unhcr/src/js/activities-list.js',
         ],
         dest: 'ckanext/unhcr/fanstatic/theme.js',
       },

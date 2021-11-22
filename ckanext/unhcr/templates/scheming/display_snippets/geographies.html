@@ -1,0 +1,7 @@
+<ul>
+  {% for geog in h.get_geographies_for_display(data[field.field_name]) %}
+    <li>
+      {{ geog.name }}
+    </li>
+  {% endfor %}
+</ul>

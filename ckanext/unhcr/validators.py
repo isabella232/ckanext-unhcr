@@ -46,6 +46,18 @@ def linked_datasets(value, context):
     return value
 
 
+# Geographies
+
+def geographies(value, context):
+    values = helpers.normalize_list(value)
+    for id_ in values:
+        try:
+            toolkit.get_action('geography_show')(context, {'id': id_})
+        except toolkit.ObjectNotFound:
+            raise Invalid('Invalid Geography {}'.format('id_'))
+    return values
+
+
 # TODO:
 # it could be better to extract core linked datasets
 # preparing function to use here and in the helpers
@@ -269,3 +281,7 @@ def activity_type_exists(activity_type):
     if activity_type in _object_id_validators:
         return activity_type
     return validators.activity_type_exists(activity_type)
+
+
+def output_list(value):
+    return helpers.normalize_list(value)

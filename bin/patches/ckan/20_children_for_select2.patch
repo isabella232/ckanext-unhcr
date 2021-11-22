@@ -1,0 +1,88 @@
+From e6a96db5c3979e60acb7bc08ab93a469df92a5bf Mon Sep 17 00:00:00 2001
+From: Andres Vazquez <andres@data99.com.ar>
+Date: Wed, 27 Oct 2021 13:23:33 -0300
+Subject: [PATCH 1/2] Allow children for select2
+
+---
+ ckan/public/base/javascript/client.js | 21 ++++++++++++++++++++-
+ 1 file changed, 20 insertions(+), 1 deletion(-)
+
+diff --git a/ckan/public/base/javascript/client.js b/ckan/public/base/javascript/client.js
+index b016eb3ccac..fedc0a2c7e3 100644
+--- a/ckan/public/base/javascript/client.js
++++ b/ckan/public/base/javascript/client.js
+@@ -172,18 +172,37 @@
+         var key = typeof options.key != 'undefined' ? item[options.key] : false;
+         var label = typeof options.label != 'undefined' ? item[options.label] : false;
+ 
++        let children = item.children;
+         item = typeof item === 'string' ? item : item.name || item.Name || item.Format || '';
+         item = jQuery.trim(item);
+ 
+         key = key ? key : item;
+         label = label ? label : item;
+ 
++        /* Having the "ID" mark an element as selectable
++           Group labels should not be selectable
++           Children should include its own IDs and TEXTs
++        */
++        let ret = {text: label};
++        if (children !== null) {
++          // This is a group. Children need ID and TEXT
++          // "key" and "label" should be defined
++          for (i = 0, l = children.length; i < l; i = i + 1) {
++            children[i].id = children[i][options.key];
++            children[i].text = children[i][options.label];
++          }
++          ret.children = children;
++        } else {
++          // This is a regular element without children
++          ret.id = key;
++        }
++
+         var lowercased = item.toLowerCase();
+         var returnObject = options && options.objects === true;
+ 
+         if (lowercased && !map[lowercased]) {
+           map[lowercased] = 1;
+-          return returnObject ? {id: key, text: label} : item;
++          return returnObject ? ret : item;
+         }
+ 
+         return null;
+
+From 6b5ea2b96e7569caef02c657ebf96aca1ea357b7 Mon Sep 17 00:00:00 2001
+From: Andres Vazquez <andres@data99.com.ar>
+Date: Wed, 27 Oct 2021 14:37:45 -0300
+Subject: [PATCH 2/2] Fix children type
+
+---
+ ckan/public/base/javascript/client.js | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/ckan/public/base/javascript/client.js b/ckan/public/base/javascript/client.js
+index fedc0a2c7e3..1da0e90dde8 100644
+--- a/ckan/public/base/javascript/client.js
++++ b/ckan/public/base/javascript/client.js
+@@ -184,7 +184,10 @@
+            Children should include its own IDs and TEXTs
+         */
+         let ret = {text: label};
+-        if (children !== null) {
++        if (children === undefined) {
++          // This is a regular element without children
++          ret.id = key;
++        } else {
+           // This is a group. Children need ID and TEXT
+           // "key" and "label" should be defined
+           for (i = 0, l = children.length; i < l; i = i + 1) {
+@@ -192,9 +195,6 @@
+             children[i].text = children[i][options.label];
+           }
+           ret.children = children;
+-        } else {
+-          // This is a regular element without children
+-          ret.id = key;
+         }
+ 
+         var lowercased = item.toLowerCase();

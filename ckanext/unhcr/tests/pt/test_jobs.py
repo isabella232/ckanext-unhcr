@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pytest
+from ckan.plugins import toolkit
 from ckantoolkit.tests import factories as core_factories
 from ckan.tests import helpers
 from ckanext.unhcr.jobs import _modify_package, process_dataset_on_update
@@ -238,3 +239,12 @@ class TestReviseJobs(object):
         assert pkg['visibility'] == 'restricted'
         # package should use identifiability from the more restricted resource
         assert pkg['identifiability'] == 'personally_identifiable'
+
+    def test_update_invalid_geographies(self):
+        with pytest.raises(toolkit.ValidationError):
+            helpers.call_action(
+                'package_update',
+                {'user': self.internal_user['name']},
+                id=self.dataset['id'],
+                geographies="not-an-id"
+            )

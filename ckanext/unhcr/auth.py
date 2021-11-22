@@ -450,6 +450,14 @@ def external_user_update_state(context, data_dict):
     return {'success': False}
 
 
+def geography_autocomplete(context, data_dict):
+    return {'success': True}
+
+
+def geography_show(context, data_dict):
+    return {'success': True}
+
+
 # Admin
 
 def user_update_sysadmin(context, data_dict):

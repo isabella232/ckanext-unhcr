@@ -5,7 +5,7 @@ from time import sleep
 import requests
 from requests.exceptions import RequestException
 from retry import retry
-from sqlalchemy import func
+from sqlalchemy import func, text
 from ckan import model
 from ckanext.unhcr.models import (
     Geography,
@@ -58,6 +58,7 @@ def get_geography_record(layer, feature):
         gis_status=get_gis_status(properties),
         layer=layer,
         hierarchy_pcode=properties['hierarchy_pcode'],
+        secondary_territory=bool(int(properties.get('secondary_territory', 0))),
     )
 
 
@@ -172,7 +173,7 @@ BASE_PARAMS = {
 }
 
 
-def import_geographies(data={}):
+def import_geographies(data={}, verbose=False, **kwargs):
     """
     Countries are not versioned, so the first thing we're going to to is
     set all the countries to inactive but not commit the transaction yet.
@@ -188,11 +189,18 @@ def import_geographies(data={}):
 
     data parameter it's a dict and used to track this process internals
         even if the process failed or not finished
+    kwargs is used to override default query params
+      *****
+      If we use the "where" param to update only some countries,
+        we need to skip the inactivation for all countries
+      *****
     """
+
     model.Session.query(
         Geography
     ).filter(
-        Geography.layer==COUNTRY['layer_name']
+        Geography.layer==COUNTRY['layer_name'],
+        text(kwargs.get('where', 'gis_name IS NOT NULL'))
     ).update(
         {Geography.gis_status: GisStatus.INACTIVE},
         synchronize_session=False
@@ -213,9 +221,10 @@ def import_geographies(data={}):
                 base_url,
                 pagination_params['resultOffset']
             ))
+            final_query_params = merge_dicts(BASE_PARAMS, pagination_params, kwargs)
             r = request_wrapper(
                 base_url,
-                params=merge_dicts(BASE_PARAMS, pagination_params)
+                params=final_query_params
             )
             """
             Note we are passing r.content (bytes) to json.loads() here instead
@@ -224,10 +233,29 @@ def import_geographies(data={}):
             the response incorrectly and .json() gives us mangled text.
             """
             geoj = json.loads(r.content)
-
+            # Server can respond with status=200 and "error" in the response
+            if geoj.get('error'):
+                data['error'] = geoj['error']
+                print('ERROR in query: {}'.format(data['error']))
+                break
             features = geoj['features']
+            if verbose:
+                print('Page content {} features.'.format(len(features)))
+
+            if len(features) == 0:
+                print(' - No features found in layer {}'.format(layer))
+                break
+
             for feature in features:
                 feature['properties']['globalid'] = feature['properties']['globalid'].strip('{}')
+                if verbose:
+                    print(' - {} {} {}: {}'.format(
+                        feature['properties'].get('pcode'),
+                        feature['properties'].get('iso3'),
+                        feature['properties'].get('hierarchy_pcode'),
+                        feature['properties'].get('gis_name')
+                        )
+                    )
             print("importing {} features..".format(len(features)))
 
             features_to_upsert = {

@@ -10,6 +10,18 @@
         "form_snippet": "linked_datasets.html",
         "display_snippet": "linked_datasets.html"
       }
+    },
+    {
+      "preset_name": "geographies",
+      "values": {
+        "validators": "ignore_missing geographies_validator",
+        "output_validators": "output_list",
+        "form_snippet": "geographies.html",
+        "display_snippet": "geographies.html",
+        "label": "Geographies",
+        "help_text": "One or more geographies related to this dataset",
+        "required": false
+      }
     }
   ]
 }

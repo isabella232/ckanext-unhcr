@@ -377,6 +377,19 @@ def get_linked_datasets_for_display(value, context=None):
     return datasets
 
 
+def get_geographies_for_display(value):
+    geogs = []
+    ids = normalize_list(value)
+    for id_ in ids:
+        try:
+            geog = toolkit.get_action('geography_show')({}, {'id': id_})
+            geogs.append(geog)
+        except toolkit.ObjectNotFound:
+            pass
+    geogs = sorted(geogs, key=lambda k: k['name'])
+    return geogs
+
+
 # Access requests
 
 def get_pending_requests_total(context=None):
@@ -1043,11 +1056,13 @@ def get_data_container_choice_label(name, value):
 
 def normalize_list(value):
     # It takes into account that ''.split(',') == ['']
-    if not value:
-        return []
     if isinstance(value, list):
         return value
-    return value.strip('{}').split(',')
+    if isinstance(value, str):
+        value = value.strip('{}')
+    if not value:
+        return []
+    return value.split(',')
 
 
 def can_download(package_dict):

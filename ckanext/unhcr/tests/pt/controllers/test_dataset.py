@@ -326,6 +326,49 @@ class TestDatasetViews(object):
         )
 
 
+@pytest.mark.usefixtures('clean_db', 'unhcr_migrate', 'with_request_context')
+class TestGisDataset:
+    def setup(self):
+
+        self.geo1 = factories.Geography(
+            pcode='IRQ',
+            iso3='IRQ',
+            gis_name='Iraq',
+            hierarchy_pcode='IRQ'
+        )
+        self.geo2 = factories.Geography(
+            pcode='20IRQ015',
+            iso3='IRQ',
+            gis_name='Ninewa',
+            hierarchy_pcode='20IRQ015',
+        )
+        self.geo3 = factories.Geography(
+            pcode='BRZ',
+            iso3='BRZ',
+            gis_name='Brazil',
+            hierarchy_pcode='BRZ'
+        )
+        self.user = core_factories.User(name='user1', id='user1')
+
+        # Datasets
+        self.dataset = factories.Dataset(
+            user=self.user,
+            geographies=self.geo2.globalid
+        )
+
+    def test_geographies(self, app):
+        """ ensure we show geographies with names and parents """
+        environ = {'REMOTE_USER': self.user['name']}
+        resp = app.get('/dataset/{}'.format(self.dataset['name']), extra_environ=environ)
+        assert resp.status_code == 200
+        assert self.geo2.gis_name in resp.body
+        assert self.geo2.pcode not in resp.body
+        assert self.geo1.gis_name in resp.body
+        assert self.geo1.pcode not in resp.body
+        assert self.geo3.gis_name not in resp.body
+        assert self.geo3.pcode not in resp.body
+
+
 @pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
 class TestPrivateResources(object):
 

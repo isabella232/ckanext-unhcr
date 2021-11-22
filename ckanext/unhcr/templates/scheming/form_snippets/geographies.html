@@ -1,0 +1,23 @@
+<div class="form-group control-full">
+  <label class="control-label" for="field-geographies">Geographies</label>
+  <div class="controls">
+    <input
+      name="geographies"
+      id="field-geographies"
+      multiple="multiple"
+      style="width: 100%"
+      data-module="autocomplete",
+      data-module-source="/api/2/util/geography/autocomplete?q=?"
+      data-module-tags="true"
+      data-module-createtags="false"
+      data-module-key="globalid"
+      data-module-label="name"
+      value="{{ data[field.field_name]|join(',') }}"
+      placeholder="Select geographies"
+    />
+    <div class="info-block ">
+      <i class="fa fa-info-circle"></i>
+      {{ field.help_text }}
+    </div>
+  </div>
+</div>

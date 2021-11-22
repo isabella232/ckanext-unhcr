@@ -1,10 +1,37 @@
+import uuid
 import factory
+from ckan import model
 from ckantoolkit.tests import factories
 from ckanext.unhcr.utils import get_internal_domains
+from ckanext.unhcr.models import Geography
 
 
 def _generate_email(user):
     return "{0}@externaluser.com".format(user.name).lower()
+
+
+class Geography(factory.Factory):
+    class Meta:
+        model = Geography
+
+    globalid = factory.LazyAttribute(lambda obj: str(uuid.uuid1()).upper())
+    pcode = 'BIHr000000043'
+    iso3 = 'BIH'
+    gis_name = 'Sarajevo'
+    gis_status = 'active'
+    layer = 'wrl_prp_p_unhcr_ALL'
+    hierarchy_pcode = '20BIH002006004'
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        if args:
+            assert False, "Positional args aren't supported, use keyword args."
+
+        geog = target_class(**kwargs)
+        model.Session.add(geog)
+        model.Session.commit()
+        model.Session.remove()
+        return geog
 
 
 class DataContainer(factories.Organization):

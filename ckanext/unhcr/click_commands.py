@@ -27,19 +27,25 @@ def unhcr():
 )
 def init_db():
     create_tables()
-    print(u'UNHCR tables initialized')
+    click.echo(u'UNHCR tables initialized')
 
 
 @unhcr.command(
     u'import-geographies',
     short_help=u'Import geographies from UNHCR GeoPortal'
 )
-def import_geographies():
+@click.option('--where', '-w', 'where_list', multiple=True, help='Where clause for query')
+@click.option('-v', '--verbose', is_flag=True)
+def import_geographies(where_list, verbose):
     data = {}
+    # If available, "where" it's a list and we need string
+    where = ' AND '.join(where_list) if where_list else 'gis_name IS NOT NULL'
+
     try:  # we want to capture a system activity for each execution
-        arcgis_import_geographies(data)
+        arcgis_import_geographies(data, where=where, verbose=verbose)
     except Exception as e:
         data['error'] = str(e)
+        click.echo(' - Error: {} {}'.format(type(e), str(e)), err=True)
         description = 'Error! '
     else:
         if data.get('finished'):
@@ -48,6 +54,7 @@ def import_geographies():
             description = 'Process not finished. '
 
     description += '{} geographies imported'.format(data.get('imported_geos', 0))
+    click.echo(description)
     create_system_activity(title='import-geographies', description=description, extra_data=data)
 
 @unhcr.command(
@@ -79,7 +86,7 @@ def snapshot_metrics():
     model.Session.add(rec)
     model.Session.commit()
     model.Session.refresh(rec)
-    print('Snapshot saved at {}'.format(rec.timestamp))
+    click.echo('Snapshot saved at {}'.format(rec.timestamp))
 
 
 @unhcr.command(
@@ -89,7 +96,7 @@ def snapshot_metrics():
 @click.option('-v', '--verbose', count=True)
 def send_summary_emails(verbose):
     if not toolkit.asbool(toolkit.config.get('ckanext.unhcr.send_summary_emails', False)):
-        print('ckanext.unhcr.send_summary_emails is False. Not sending anything.')
+        click.echo('ckanext.unhcr.send_summary_emails is False. Not sending anything.')
         return
 
     recipients = get_summary_email_recipients()
@@ -100,17 +107,17 @@ def send_summary_emails(verbose):
             email = compose_summary_email_body(recipient)
 
             if email['total_events'] == 0:
-                print('SKIPPING summary email to: {}'.format(recipient['email']))
+                click.echo('SKIPPING summary email to: {}'.format(recipient['email']))
                 continue
 
-            print('SENDING summary email to: {}'.format(recipient['email']))
+            click.echo('SENDING summary email to: {}'.format(recipient['email']))
             if verbose > 0:
-                print(email['body'])
-                print('')
+                click.echo(email['body'])
+                click.echo('')
 
             mail_user_by_id(recipient['id'], subject, email['body'])
 
-    print('Sent weekly summary emails.')
+    click.echo('Sent weekly summary emails.')
 
 
 @unhcr.command(
@@ -138,48 +145,60 @@ def expire_users(verbose):
     about_to_expire_users = expired_users_list(before_expire_days=before_expire_days, include_activities=True)
     data['users_about_to_expire'] = about_to_expire_users
     if len(about_to_expire_users) == 0:
-        print('There are no users about to expire')
+        click.echo('There are no users about to expire')
 
     for about_to_expire_user in about_to_expire_users:
-        print('User {} will expire at {}'.format(about_to_expire_user['name'], about_to_expire_user['expiry_date']))
+        click.echo('User {} will expire at {}'.format(about_to_expire_user['name'], about_to_expire_user['expiry_date']))
         activities = about_to_expire_user.get('activities', [])
         last_activity = {} if len(activities) == 0 else activities[0]
 
         if verbose:
-            print(' - Last activity: "{}"'.format(last_activity['activity_type']))
+            click.echo(' - Last activity: "{}"'.format(last_activity['activity_type']))
 
         if last_activity.get('activity_type', 'new user') == 'new user':
             if verbose:
-                print(' - No relevant activities: {} ignored'.format(about_to_expire_user['name']))
+                click.echo(' - No relevant activities: {} ignored'.format(about_to_expire_user['name']))
             ignored += 1
             data['renewal_access_ignored'].append(about_to_expire_user)
             continue
 
         created, reason = request_renewal(about_to_expire_user, last_activity)
         if created:
-            print(' - Renewal access requested for {}'.format(about_to_expire_user['name']))
+            click.secho(
+                ' - Renewal access requested for {}'.format(
+                    about_to_expire_user['name']
+                ),
+                bold=True
+            )
             renewal += 1
             data['renewal_access_requests'].append(about_to_expire_user)
         else:
-            print(' - Renewal access not created for user {}: {}'.format(about_to_expire_user['name'], reason))
+            click.echo(' - Renewal access not created for user {}: {}'.format(about_to_expire_user['name'], reason))
             ignored += 1
             data['renewal_access_ignored'].append(about_to_expire_user)
 
     expired_users = expired_users_list()
     if len(expired_users) == 0:
-        print('There are no expired users')
+        click.secho('There are no expired users', bold=True)
 
     for expired_user in expired_users:
         # this user has expired. Renewal was requested but no one approved it.
-        print('User {} expired on {}'.format(expired_user['name'], expired_user['expiry_date']))
+        click.secho(
+            'User {} expired on {}'.format(
+                expired_user['name'], expired_user['expiry_date']
+            ),
+            bold=True,
+            fg='red',
+            bg='white'
+        )
         toolkit.get_action('user_delete')(
             {'ignore_auth': True},
             {'id': expired_user['id']}
         )
         data['expired_users'].append(expired_user)
-        print(' - Deleted')
+        click.secho(' - Deleted', bold=True, fg='red', bg='white')
         deleted += 1
 
     result = '{} deleted, {} renewal, {} ignored'.format(deleted, renewal, ignored)
-    print('Expire users command finished. {}'.format(result))
+    click.secho('Expire users command finished. {}'.format(result), bold=True)
     create_system_activity(title='expire-users', description=result, extra_data=data)
