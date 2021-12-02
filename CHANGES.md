@@ -1,8 +1,10 @@
 # RIDL Changelog
 
-## v3.1.6d - 2021-11-XX
+## v3.1.6d - 2021-12-02
 New features:
  - Improve search with select2 [CKAN#6554](https://github.com/ckan/ckan/pull/6554)
+ - Start using country codes from DDI extension [#755](https://github.com/okfn/ckanext-unhcr/pull/755)
+ - Change Geographies primary key (pcode instead globalid) [#753](https://github.com/okfn/ckanext-unhcr/pull/753)
 Bug fixes:
  - Remove `globalid` as primary key for Geography field [#753](https://github.com/okfn/ckanext-unhcr/pull/753)
 
