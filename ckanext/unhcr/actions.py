@@ -92,7 +92,7 @@ def package_create(up_func, context, data_dict):
     # check if we have some geographies from DDI fields
     if data_dict.get('country_codes'):
         # this is a list of ISO3 country codes
-        country_codes = data_dict.get('country_coeds').split(',')
+        country_codes = data_dict.get('country_codes').split(',')
         geographies = []
         for country_code in country_codes:
             geog = Geography.get_country_by_iso3(iso3=country_code.strip())
