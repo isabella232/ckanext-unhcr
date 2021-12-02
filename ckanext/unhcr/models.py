@@ -91,8 +91,7 @@ LAYER_TO_DISPLAY_NAME = {
 class Geography(Base):
     __tablename__ = u'geography'
 
-    globalid = Column(UnicodeText, primary_key=True)
-    pcode = Column(UnicodeText, nullable=False)
+    pcode = Column(UnicodeText, primary_key=True)
     iso3 = Column(UnicodeText, nullable=False)
     gis_name = Column(UnicodeText, nullable=False)
     gis_status = Column(

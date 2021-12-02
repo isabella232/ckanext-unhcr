@@ -14,8 +14,7 @@ class Geography(factory.Factory):
     class Meta:
         model = Geography
 
-    globalid = factory.LazyAttribute(lambda obj: str(uuid.uuid1()).upper())
-    pcode = 'BIHr000000043'
+    pcode = factory.Sequence(lambda n: "BIHr0000{0:05d}".format(n))
     iso3 = 'BIH'
     gis_name = 'Sarajevo'
     gis_status = 'active'

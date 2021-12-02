@@ -353,7 +353,7 @@ class TestGisDataset:
         # Datasets
         self.dataset = factories.Dataset(
             user=self.user,
-            geographies=self.geo2.globalid
+            geographies=self.geo2.pcode
         )
 
     def test_geographies(self, app):

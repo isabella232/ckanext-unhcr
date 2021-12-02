@@ -116,7 +116,7 @@ def test_flaky_api_recovery():
     _run_import()
 
     total = model.Session.query(
-        func.count(Geography.globalid).label('count')
+        func.count(Geography.pcode).label('count')
     ).all()
 
     assert 13 == total[0].count
@@ -149,7 +149,6 @@ def test_deactivate_country():
         model.Session,
         {
             'YUG': Geography(
-                globalid='YUG',
                 pcode='YUG',
                 iso3='YUG',
                 gis_name='Yugoslavia',
@@ -168,7 +167,7 @@ def test_deactivate_country():
     yugoslavia = model.Session.query(
         Geography
     ).filter(
-        Geography.globalid == 'YUG'
+        Geography.pcode == 'YUG'
     ).one()
 
     assert GisStatus.INACTIVE == yugoslavia.gis_status

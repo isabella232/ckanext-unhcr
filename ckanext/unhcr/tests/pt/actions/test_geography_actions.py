@@ -74,9 +74,9 @@ class TestGeographyShow:
     def test_valid(self):
         geog = toolkit.get_action('geography_show')(
             {'user': self.user['name']},
-            {'id': self.geog.globalid}
+            {'id': self.geog.pcode}
         )
-        assert self.geog.globalid == geog['globalid']
+        assert self.geog.pcode == geog['pcode']
         assert self.geog.display_full_name == geog['name']
 
     def test_invalid_id(self):

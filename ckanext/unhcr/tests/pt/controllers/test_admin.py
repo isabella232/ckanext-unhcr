@@ -111,11 +111,11 @@ class TestGISSearchIndex(object):
         self.no_gis_dataset = factories.Dataset()
         self.gis_dataset1 = factories.Dataset(
             name="gis1",
-            geographies=','.join([self.hierarchy['20IRQ015004159'].globalid, self.unrelated['BRZ'].globalid])
+            geographies=','.join([self.hierarchy['20IRQ015004159'].pcode, self.unrelated['BRZ'].pcode])
         )
         self.gis_dataset2 = factories.Dataset(
             name="gis2",
-            geographies=self.unrelated['20DEU010004'].globalid
+            geographies=self.unrelated['20DEU010004'].pcode
         )
         self.sysadmin = core_factories.Sysadmin(name='sysadmin', id='sysadmin')
 

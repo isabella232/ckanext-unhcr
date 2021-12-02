@@ -45,20 +45,17 @@ def get_gis_status(properties):
 def get_geography_record(layer, feature):
     properties = feature['properties']
 
-    if 'pcode' not in properties:
-        properties['pcode'] = properties['iso3']
     if 'hierarchy_pcode' not in properties:
         properties['hierarchy_pcode'] = properties['pcode']
 
     return Geography(
-        globalid=properties['globalid'],
         pcode=properties['pcode'],
         iso3=properties['iso3'],
         gis_name=properties['gis_name'],
         gis_status=get_gis_status(properties),
         layer=layer,
         hierarchy_pcode=properties['hierarchy_pcode'],
-        secondary_territory=bool(int(properties.get('secondary_territory', 0))),
+        secondary_territory=properties['secondary_territory'],
     )
 
 
@@ -86,12 +83,12 @@ def upsert_features(session, features):
     existing_features = session.query(
         Geography
     ).filter(
-        Geography.globalid.in_(features.keys())
+        Geography.pcode.in_(features.keys())
     ).all()
 
     for rec in existing_features:
         # merge features that already exist in the DB, pop them off as we go
-        session.merge(features.pop(rec.globalid))
+        session.merge(features.pop(rec.pcode))
 
     # add anything we've got left that didn't match an existing record
     session.add_all(features.values())
@@ -247,7 +244,22 @@ def import_geographies(data={}, verbose=False, **kwargs):
                 break
 
             for feature in features:
-                feature['properties']['globalid'] = feature['properties']['globalid'].strip('{}')
+                feature['properties']['secondary_territory'] = bool(int(feature['properties'].get('secondary_territory', 0)))
+
+                if 'pcode' not in feature['properties']:
+                    # secondary territories don't have pCode but a objectid field)
+                    # for countries, we just want the ISO3 (to detect parents properly)
+                    
+                    if feature['properties']['secondary_territory']:
+                        pcode = '{}-{}'.format(
+                            feature['properties']['iso3'],
+                            feature['properties'].get('objectid')
+                        )
+                    else:
+                        pcode = feature['properties']['iso3']
+
+                    feature['properties']['pcode'] = pcode
+            
                 if verbose:
                     print(' - {} {} {}: {}'.format(
                         feature['properties'].get('pcode'),
@@ -259,7 +271,7 @@ def import_geographies(data={}, verbose=False, **kwargs):
             print("importing {} features..".format(len(features)))
 
             features_to_upsert = {
-                f['properties']['globalid']: get_geography_record(layer, f)
+                f['properties']['pcode']: get_geography_record(layer, f)
                 for f in features
             }
             upsert_features(model.Session, features_to_upsert)

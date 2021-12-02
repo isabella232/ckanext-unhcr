@@ -1,5 +1,11 @@
 # RIDL Changelog
 
+## v3.1.6d - 2021-11-XX
+New features:
+ - Improve search with select2 [CKAN#6554](https://github.com/ckan/ckan/pull/6554)
+Bug fixes:
+ - Remove `globalid` as primary key for Geography field [#753](https://github.com/okfn/ckanext-unhcr/pull/753)
+
 ## v3.1.6c - 2021-11-22
 New features:
  - Improve search and show for Geography field [#744](https://github.com/okfn/ckanext-unhcr/pull/744)

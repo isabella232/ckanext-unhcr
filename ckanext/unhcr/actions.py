@@ -1379,11 +1379,11 @@ def geography_autocomplete(context, data_dict):
 @toolkit.side_effect_free
 def geography_show(context, data_dict):
     m = context.get('model', model)
-    globalid = toolkit.get_or_bust(data_dict, "id")
+    pcode = toolkit.get_or_bust(data_dict, "id")
 
     toolkit.check_access('geography_show', context, data_dict)
 
-    geog = m.Session.query(Geography).get(globalid)
+    geog = m.Session.query(Geography).get(pcode)
     if geog:
         return _dictize_geography(geog)
 
