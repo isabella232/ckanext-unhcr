@@ -252,3 +252,15 @@ To define where the KoBo instance lives you can configure the `ckanext.unhcr.kob
 
 You can read a RIDL integration with KoBo tutorial [here](docs/kobo.md).  
 Technical details about the KoBo integration are available [here](docs/kobo-technical.md).  
+
+## Microdata library
+
+Datasets could be published to the [UNHCR Microdata Library](https://microdata.unhcr.org/index.php/home).  
+This is a manual task and is only allowed for Sysdadmins.  
+
+Get collections: `https://microdata.unhcr.org/index.php/api/collections [GET]`.  
+Publish dataset `https://microdata.unhcr.org/index.php/api/datasets/create/survey/<IDNO> [POST]`.  
+Publish resource `https://microdata.unhcr.org/index.php/api/datasets/<IDNO>/resources [POST]`.  
+See published dataset: `https://microdata.unhcr.org/index.php/catalog/<DATASET_ID> [GET]`.  
+
+All calls must include the `X-Api-Key` header.  
