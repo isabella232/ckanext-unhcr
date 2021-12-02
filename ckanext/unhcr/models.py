@@ -156,6 +156,18 @@ class Geography(Base):
     def __str__(self):
         return f'{LAYER_TO_DISPLAY_NAME[self.layer]}: {self.gis_name} ({self.pcode})'
 
+    @classmethod
+    def get_country_by_iso3(cls, iso3):
+        return model.Session.query(
+            Geography
+        ).filter(
+            Geography.iso3 == iso3,
+            Geography.gis_status == GisStatus.ACTIVE,
+            # secondary terrirories are not counted as countries
+            Geography.secondary_territory == false(),
+            Geography.layer == COUNTRY['layer_name']
+        ).one_or_none()
+
 
 def create_metric_columns():
     cols = ['datasets_count', 'deposits_count', 'containers_count']
