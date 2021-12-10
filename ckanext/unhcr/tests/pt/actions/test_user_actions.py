@@ -9,6 +9,7 @@ from ckanext.unhcr.tests import factories
 from ckanext.unhcr.actions import user_list
 from ckanext.unhcr.activity import create_curation_activity
 from ckanext.unhcr.commands import expired_users_list, request_renewal
+from ckanext.unhcr.jobs import process_last_admin_on_delete
 from ckanext.unhcr.helpers import get_existing_access_request
 from ckanext.unhcr.models import USER_REQUEST_TYPE_RENEWAL
 
@@ -328,6 +329,56 @@ class TestUserActions(object):
         context = {'user': native_user['name']}
         result = toolkit.get_action('user_update')(context, native_user)
         assert type(result) == dict
+
+    @mock.patch('ckanext.unhcr.actions.mailer.mail_user_by_id')
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
+    def test_user_delete(self, mock_hook, mail_user_by_id):
+        sysadmin = core_factories.Sysadmin()
+        external_user = factories.ExternalUser(name='to-delete', id='to-delete')
+        
+        # User will leave this container orphaned after being deleted
+        container = factories.DataContainer(
+            user=sysadmin,
+            users=[
+                {'name': external_user['name'], 'capacity': 'admin'},
+            ]
+        )
+        # the container creatopr will be added as admin
+        toolkit.get_action('member_delete')(
+            {'ignore_auth': True},
+            {
+                'id': container['id'],
+                'object_type': 'user',
+                'object': sysadmin['id']
+            }
+        )
+
+        toolkit.get_action('user_delete')(
+            {'ignore_auth': True},
+            {'id': external_user['id']}
+        )
+        
+        mock_hook.assert_called_once()
+        
+        assert mock_hook.call_args_list[0][0][0].__name__ == 'process_last_admin_on_delete'
+        assert mock_hook.call_args_list[0][0][1][0] == container['id']
+
+        # run the job
+        process_last_admin_on_delete(container['id'])
+        # and validate we have a new admin
+        container = toolkit.get_action('organization_show')(
+            {'ignore_auth': True},
+            {'id': container['id']}
+        )
+        assert container['users'][0]['capacity'] == 'admin'
+        assert container['users'][0]['name'] == sysadmin['name']
+
+        # Test the extra comment in the email
+        mail_user_by_id.assert_called_once()
+        args_list = mail_user_by_id.call_args_list
+        mail_body = args_list[0][0][2]
+        assert 'You have been assigned as admin' in mail_body
+
 
 @pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
 class TestUserAutocomplete(object):

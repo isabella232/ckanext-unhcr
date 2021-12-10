@@ -9,7 +9,7 @@ from sqlalchemy import and_, desc, or_, select, not_
 from sqlalchemy.dialects.postgresql import array
 from sqlalchemy.orm import aliased
 from ckan import model
-from ckan.authz import has_user_permission_for_group_or_org
+from ckan.authz import get_group_or_org_admin_ids, has_user_permission_for_group_or_org
 from ckan.plugins import toolkit
 from ckan.lib import mailer as core_mailer
 from ckan.lib.mailer import MailerException
@@ -18,6 +18,7 @@ from ckan.lib.search import index_for, commit
 import ckan.logic as core_logic
 import ckan.lib.dictization.model_dictize as model_dictize
 from ckanext.unhcr import helpers, mailer, utils
+from ckanext.unhcr.jobs import process_last_admin_on_delete
 from ckanext.unhcr.kobo.api import KoBoAPI, KoBoSurvey
 from ckanext.unhcr.kobo.exceptions import KoboMissingAssetIdError, KoBoEmptySurveyError
 from ckanext.unhcr.kobo.kobo_dataset import KoboDataset
@@ -281,7 +282,7 @@ def organization_create(up_func, context, data_dict):
         notify_sysadmins = True
     if notify_sysadmins:
         try:
-            for user in helpers.get_sysadmins():
+            for user in helpers.get_valid_sysadmins():
                 if user.email:
                     subj = mailer.compose_container_email_subj(org_dict, event='request')
                     body = mailer.compose_request_container_email_body(
@@ -315,10 +316,11 @@ def organization_member_create(up_func, context, data_dict):
         # Get container/user
         container = toolkit.get_action('organization_show')(context, {'id': data_dict['id']})
         user = toolkit.get_action('user_show')(context, {'id': data_dict['username']})
+        extra_mail_msg = data_dict.get('extra_mail_msg')
 
         # Notify the user
         subj = mailer.compose_membership_email_subj(container)
-        body = mailer.compose_membership_email_body(container, user, 'create')
+        body = mailer.compose_membership_email_body(container, user, 'create', extra_mail_msg)
         mailer.mail_user_by_id(user['id'], subj, body)
 
     return up_func(context, data_dict)
@@ -1443,6 +1445,39 @@ def user_show(up_func, context, data_dict):
     user['default_containers'] = unhcr_extras['default_containers']
 
     return user
+
+
+@toolkit.chained_action
+def user_delete(up_func, context, data_dict):
+
+    # Upstream function will delete the user and all memberships
+    # Before deleting memberships, consider which ones will orphan data containers
+    model = context['model']
+    user_id = data_dict['id']
+    user_orgs = toolkit.get_action('organization_list_for_user')(
+        {'ignore_auth': True},
+        {'id': user_id}
+    )
+    user_admin_orgs = [org for org in user_orgs if org['capacity'] == 'admin']
+
+    # All the memberships will be deleted in CKAN core
+    # We only need to fix orphan containers here
+    orgs_to_fix = []
+    # Check 'admin' membership
+    for org in user_admin_orgs:
+        # get all admins for this group
+        admins = get_group_or_org_admin_ids(org['id'])
+        # check if is the only admin
+        if len(admins) == 1:
+            log.info('User {} is the last admin for {}'.format(user_id, org['id']))
+            orgs_to_fix.append(org['id'])
+
+    # Delete user and memberships
+    up_func(context, data_dict)
+
+    # If user is deleted without error we can fix the orphan memberships
+    for org_id in orgs_to_fix:
+        toolkit.enqueue_job(process_last_admin_on_delete, [org_id])
 
 
 @toolkit.chained_action

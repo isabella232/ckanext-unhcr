@@ -23,4 +23,9 @@
     View Data Container
   {% endcall %}
 
+  {% if extra_mail_msg %}
+    {% call email.paragraph() %}
+      {{ extra_mail_msg }}
+    {% endcall %}
+  {% endif %}
 {% endblock %}

@@ -559,6 +559,7 @@ class UnhcrPlugin(
             'user_show': actions.user_show,
             'user_create': actions.user_create,
             'user_update': actions.user_update,
+            'user_delete': actions.user_delete,
             'datastore_create': actions.datastore_create,
         }
         return functions

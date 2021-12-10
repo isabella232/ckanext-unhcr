@@ -1,5 +1,8 @@
 # RIDL Changelog
 
+## v3.1.6e - 2021-12-10
+ - Check for orphaned containers after removing users. Define fallback adminis [#756](https://github.com/okfn/ckanext-unhcr/pull/756)
+
 ## v3.1.6d - 2021-12-02
 New features:
  - Improve search with select2 [CKAN#6554](https://github.com/ckan/ckan/pull/6554)

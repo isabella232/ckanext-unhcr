@@ -889,6 +889,28 @@ class TestUserOrgs(object):
 
 
 @pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
+class TestFunctions(object):
+    def setup(self):
+        self.sysadmin1 = core_factories.Sysadmin()
+        self.sysadmin2 = core_factories.Sysadmin()
+        self.sysadmin3 = core_factories.Sysadmin()
+
+    def test_random_sysadmin(self):
+        random_sysadmin = helpers.get_random_sysadmin()
+        assert random_sysadmin.id in [
+            self.sysadmin1['id'],
+            self.sysadmin2['id'],
+            self.sysadmin3['id']
+        ]
+
+    def test_get_valid_sysadmin(self):
+        sysadmins = helpers.get_valid_sysadmins()
+        assert self.sysadmin1['id'] in [s.id for s in sysadmins]
+        assert self.sysadmin2['id'] in [s.id for s in sysadmins]
+        assert self.sysadmin3['id'] in [s.id for s in sysadmins]
+
+
+@pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
 class TestRenewalMailer(object):
 
     def setup(self):

@@ -2,6 +2,7 @@ import datetime
 import logging
 import os
 import re
+from sqlalchemy import func
 from dateutil.parser import parse as parse_date
 from urllib.parse import quote
 from jinja2 import Markup, escape
@@ -1111,6 +1112,21 @@ def add_file_name_suffix(file_name, file_suffix):
 
 def get_sysadmins():
     return model.Session.query(model.User).filter(model.User.sysadmin==True).all()
+
+
+def get_valid_sysadmins():
+    default_user = toolkit.get_action("get_site_user")({'ignore_auth': True})
+    return model.Session.query(
+        model.User
+    ).filter(
+        model.User.sysadmin == True,
+        model.User.state == 'active',
+        model.User.name != default_user["name"]
+    )
+
+
+def get_random_sysadmin():
+    return get_valid_sysadmins().order_by(func.random()).first()
 
 
 def get_ridl_version():

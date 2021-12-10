@@ -4,7 +4,9 @@ import logging
 import time
 
 from ckan import model
+from ckan.authz import get_group_or_org_admin_ids
 from ckanext.unhcr import utils
+from ckanext.unhcr.helpers import get_random_sysadmin
 import ckan.plugins.toolkit as toolkit
 
 
@@ -55,6 +57,51 @@ def process_dataset_on_update(package_id):
     # Delete back references
     removed_link_package_ids = set(link_package_ids['prev']).difference(link_package_ids['next'])
     _delete_link_package_back_references(package_id, removed_link_package_ids)
+
+
+def _define_new_admin_member(group_id):
+    """ A data-container require a fallback admin.
+        Check if this group has a parent and define its admin
+        If container has no parent then pick one from sysadmins.
+        """
+    data_container = toolkit.get_action('organization_show')(
+        {'ignore_auth': True},
+        {'id': group_id, 'include_groups': True}
+    )
+    if len(data_container['groups']) > 0:
+        for parent in data_container['groups']:
+            if 'id' not in parent:
+                parent = toolkit.get_action('organization_show')(
+                    {'ignore_auth': True},
+                    {'id': parent['name']}
+                )
+            admins = get_group_or_org_admin_ids(parent['id'])
+            if len(admins) > 0:
+                admin = model.User.get(admins[0])
+                return admin
+
+    return get_random_sysadmin()
+
+
+def process_last_admin_on_delete(org_id):
+    """ The only admin of a data container was deleted a we need to assign
+        a fallback admin and notify sysadmin """
+
+    new_admin = _define_new_admin_member(org_id)
+    context = {'model': model, 'job': True, 'ignore_auth': True, 'user': new_admin.name}
+
+    extra_msg = 'You have been assigned as admin of this Data Container because the previous admin user was deleted'
+
+    member_create = toolkit.get_action("organization_member_create")
+    return member_create(
+        context,
+        {
+            'id': org_id,
+            'username': new_admin.name,
+            'role': 'admin',
+            'extra_mail_msg': extra_msg
+        }
+    )
 
 
 # Internal

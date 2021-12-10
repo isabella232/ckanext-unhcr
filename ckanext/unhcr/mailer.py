@@ -96,10 +96,12 @@ def compose_membership_email_subj(container):
     return '[UNHCR RIDL] Membership: %s' % container.get('title')
 
 
-def compose_membership_email_body(container, user_dict, event):
+def compose_membership_email_body(container, user_dict, event, extra_mail_msg=None):
     context = get_base_context()
     context['recipient'] = user_dict.get('fullname') or user_dict.get('name')
     context['container'] = container
+    context['extra_mail_msg'] = extra_mail_msg
+
     # single
     if isinstance(container, dict):
         context['container_url'] = toolkit.url_for('data-container.read', id=container['name'], qualified=True)
@@ -251,14 +253,9 @@ def get_summary_email_recipients():
 # Access Requests
 
 def _get_sysadmins():
-    context = {"ignore_auth": True}
-    default_user = toolkit.get_action("get_site_user")(context)
-
-    sysadmins = helpers.get_sysadmins()
-    return [
-        model_dictize.user_dictize(user, context) for user in sysadmins
-        if user.sysadmin and user.name != default_user["name"]
-    ]
+    context = {"ignore_auth": True, "model": model}
+    sysadmins = helpers.get_valid_sysadmins()
+    return [model_dictize.user_dictize(user, context) for user in sysadmins]
 
 
 def get_container_request_access_email_recipients(container_dict):
