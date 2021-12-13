@@ -266,6 +266,7 @@ See published dataset: `https://microdata.unhcr.org/index.php/catalog/<DATASET_I
 All calls must include the `X-Api-Key` header.  
 To interact via the API we need an API key. To get one we need an admin account in the site. You then use [this endpoint](https://microdata.unhcr.org/api-documentation/catalog-admin/index.html#operation/createApiKey) to get the key.  
 Documentation on this API: https://microdata.unhcr.org/api-documentation/catalog-admin/index.html#tag/API-keys
+The API KEY **must be** from an administrator user. If not, you'll get the response: `{"status":"ACCESS-DENIED","message":"Access denied"}`.  
 
 The corresponding entity for RIDL datasets in MDL is the [Survey](https://microdata.unhcr.org/api-documentation/catalog-admin/index.html#tag/Survey).
 
