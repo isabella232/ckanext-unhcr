@@ -1,0 +1,30 @@
+{
+    "username": "avazquez",
+    "first_name": "",
+    "last_name": "",
+    "email": "andres.vazquez@okfn.org",
+    "server_time": "2021-12-10T11:00:21Z",
+    "date_joined": "2021-07-07T14:45:08Z",
+    "projects_url": "https://kobocat.unhcr.org/avazquez",
+    "is_superuser": false,
+    "gravatar": "https://www.gravatar.com/avatar/8ec44719526d48b55c0f4f8ea0dc6d23?s=40",
+    "is_staff": false,
+    "last_login": "2021-12-07T18:14:03.528729Z",
+    "extra_details": {
+        "name": "Andres",
+        "gender": {
+            "label": "Male",
+            "value": "male"
+        },
+        "sector": "",
+        "country": "",
+        "twitter": "avdata99",
+        "organization": "OKF",
+        "require_auth": false,
+        "primarySector": {
+            "label": "Arts, Entertainment, and Recreation",
+            "value": "Arts, Entertainment, and Recreation"
+        }
+    },
+    "git_rev": false
+}

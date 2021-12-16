@@ -518,6 +518,7 @@ class UnhcrPlugin(
         functions['user_show'] = auth.user_show
         functions['user_reset'] = auth.user_reset
         functions['request_reset'] = auth.request_reset
+        functions['package_kobo_update'] = auth.package_kobo_update
         return functions
 
     # IActions

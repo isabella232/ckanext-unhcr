@@ -94,7 +94,8 @@ class TestKoBo(object):
         assert resp.status_code == 403
 
     @mock.patch('ckanext.unhcr.blueprints.kobo.KoBoAPI.get_surveys')
-    def test_internal_user_get_surveys(self, kobo_surveys, app):
+    @mock.patch('ckanext.unhcr.blueprints.kobo.KoBoAPI.current_user')
+    def test_internal_user_get_surveys(self, current_user, kobo_surveys, app):
         environ = {
             'REMOTE_USER': self.internal_editor_user['name']
         }
@@ -103,12 +104,14 @@ class TestKoBo(object):
         assert 'url' in asset_list[1]
         assert 'TEST aaZSQ29VRHJmofjGSfDDv4' == asset_list[1]['name']
         kobo_surveys.return_value = asset_list
+        current_user.return_value = {'username': 'avazquez'}
 
         resp = app.get('/kobo/surveys', extra_environ=environ)
         assert resp.status_code == 200
         assert '<h1>My KoBoToolbox Surveys</h1>' in resp.body
-        # Test import URL
-        assert '/dataset/new?kobo_asset_id=' in resp.body
+        # Test import URL (only for managed surveys)
+        assert '/dataset/new?kobo_asset_id=Z2' in resp.body
+        assert '/dataset/new?kobo_asset_id=XXXXXXXXXXXX' not in resp.body
         assert 'This KoBoToolbox survey has not been deployed' in resp.body
         assert 'TEST aaZSQ29VRHJmofjGSfDDv4' in resp.body
 
@@ -305,16 +308,33 @@ class TestKoBoJobs(object):
             **base_resource
         )
 
-    def test_kobo_dataset_page_allow_update(self, app):
+    @mock.patch('ckanext.unhcr.blueprints.kobo.KoBoAPI.get_asset')
+    def test_kobo_dataset_page_allow_update(self, asset, app):
         """
-        Test that the dataset page show the check for updates for write permission users
+        Test that the dataset page show the check for updates
+        only for write permission users and KoBo managers
         """
         environ = {
             'REMOTE_USER': self.kobo_user['name']
         }
+        asset.return_value = {'user_is_manager': True}
         resp = app.get('/dataset/{}'.format(self.kobo_dataset['name']), extra_environ=environ)
         assert resp.status_code == 200
         assert "Update KoBo data" in resp.body
+
+    @mock.patch('ckanext.unhcr.blueprints.kobo.KoBoAPI.get_asset')
+    def test_kobo_dataset_page_not_allow_update(self, asset, app):
+        """
+        Test that the dataset page show the check for updates
+        only for write permission users and KoBo managers
+        """
+        environ = {
+            'REMOTE_USER': self.kobo_user['name']
+        }
+        asset.return_value = {'user_is_manager': False}
+        resp = app.get('/dataset/{}'.format(self.kobo_dataset['name']), extra_environ=environ)
+        assert resp.status_code == 200
+        assert "Update KoBo data" not in resp.body
 
     def test_kobo_dataset_page_avoid_update(self, app):
         """

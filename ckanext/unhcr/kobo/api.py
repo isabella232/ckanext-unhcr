@@ -18,6 +18,7 @@ class KoBoAPI:
         self.kobo_url = kobo_url
         self.base_url = '{}/api/v2/'.format(kobo_url)
         self.surveys = None
+        self._user = None
 
     def _get(self, resource_url, return_json=True):
         """ Get any api/v2 resource in JSON format (or base response) """
@@ -63,11 +64,37 @@ class KoBoAPI:
                     return surveys
                 next_url = response.get('next')
             self.surveys = surveys
+
+        # add permission information
+        # detect if user has permission to manage the survey
+        for survey in self.surveys:
+            survey['user_is_manager'] = self._detect_manager_permission(survey)
+
         return self.surveys
 
     def get_asset(self, asset_id):
         resource_url = 'assets/{}.json'.format(asset_id)
-        return self._get(resource_url)
+        asset = self._get(resource_url)
+        asset['user_is_manager'] = self._detect_manager_permission(asset)
+        return asset
+
+    @property
+    def current_user(self):
+        if self._user is None:
+            url = '{}/me'.format(self.kobo_url)
+            self._user = self._get(url)
+        return self._user
+
+    def _detect_manager_permission(self, survey):
+        user_name = self.current_user['username']
+        manager_permission_id = '{}/api/v2/permissions/manage_asset.json'.format(self.kobo_url)
+        user_id = '{}/api/v2/users/{}.json'.format(self.kobo_url, user_name)
+        permissions = survey.get('permissions', [])
+        manage_permissions = [
+            p for p in permissions 
+            if p['permission'] == manager_permission_id and p['user'] == user_id
+        ]
+        return len(manage_permissions) > 0
 
     def test_token(self):
         try:

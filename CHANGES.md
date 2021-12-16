@@ -1,7 +1,9 @@
 # RIDL Changelog
 
 ## v3.1.6e - 2021-12-10
+New features:
  - Check for orphaned containers after removing users. Define fallback adminis [#756](https://github.com/okfn/ckanext-unhcr/pull/756)
+ - Hide import/update KoBo buttons if the user does not have _manage_ permissions [#759](https://github.com/okfn/ckanext-unhcr/pull/759)
 
 ## v3.1.6d - 2021-12-02
 New features:

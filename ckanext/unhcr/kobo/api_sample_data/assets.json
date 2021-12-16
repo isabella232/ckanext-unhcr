@@ -6,7 +6,9 @@
 		{
 			"name": "fake deployed",
 			"uid": "x",
-			"has_deployment": true
+			"has_deployment": true,
+			"permissions": [],
+			"user_is_manager": false
 		},
 		{
 		"url": "https://kobo.unhcr.org/assets/XXXXXXXXXXX.json",
@@ -51,7 +53,7 @@
 			"kind": "objectpermission",
 			"url": "https://kobo.unhcr.org/permissions/XXXXXXXXXXXXXXX.json",
 			"user": "https://kobo.unhcr.org/users/avazquez.json",
-			"permission": "view_submissions",
+			"permission": "https://kobo.unhcr.org/api/v2/permissions/view_submissions.json",
 			"deny": false,
 			"inherited": true
 		}],
@@ -61,6 +63,18 @@
 		}, {
 			"format": "xml",
 			"url": "https://kobo.unhcr.org/assets/XXXXXXXXXX.xml"
-		}]
+		}],
+		"user_is_manager": false
+	},
+	{
+		"name": "fake as manager",
+		"uid": "Z2",
+		"has_deployment": true,
+		"deployment__submission_count": 1,
+		"permissions": [{
+			"user": "https://kobo.unhcr.org/users/avazquez.json",
+			"permission": "https://kobo.unhcr.org/api/v2/permissions/manage_asset.json"
+		}],
+		"user_is_manager": true
 	}]
 }

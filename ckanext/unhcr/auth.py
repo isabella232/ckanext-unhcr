@@ -6,6 +6,7 @@ from ckanext.saml2auth.helpers import is_default_login_enabled
 from ckan.logic.auth import get_resource_object
 import ckanext.datastore.logic.auth as auth_datastore_core
 from ckanext.unhcr import helpers
+from ckanext.unhcr.kobo.api import KoBoAPI
 from ckanext.unhcr.models import AccessRequest, USER_REQUEST_TYPE_NEW, USER_REQUEST_TYPE_RENEWAL
 from ckanext.unhcr.utils import get_module_functions, is_saml2_user
 log = logging.getLogger(__name__)
@@ -188,6 +189,21 @@ def package_update(next_auth, context, data_dict):
     # Regular dataset
     return next_auth(context, data_dict)
 
+def package_kobo_update(context, data_dict):
+    """ Check if current user is manager of the KoBo survey """
+    kobo_asset_id = data_dict.get('kobo_asset_id')
+    if not kobo_asset_id:
+        return {'success': False, 'msg': 'No kobo_asset_id provided'}
+    user_obj = model.User.get(context['user'])
+    plugin_extras = {} if user_obj.plugin_extras is None else user_obj.plugin_extras
+    kobo_token = plugin_extras.get('unhcr', {}).get('kobo_token')
+    kobo_url = toolkit.config.get('ckanext.unhcr.kobo_url', 'https://kobo.unhcr.org')
+    kobo_api = KoBoAPI(kobo_token, kobo_url)
+    survey = kobo_api.get_asset(kobo_asset_id)
+    if survey['user_is_manager']:
+        return {'success': True}
+    else:
+        return {'success': False, 'msg': 'Not authorized to update the survey'}
 
 def package_internal_activity_list(context, data_dict):
     try:

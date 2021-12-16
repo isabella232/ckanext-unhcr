@@ -22,7 +22,11 @@
 {% endblock %}
 
 {% block content_action %}
-  {% if pkg.kobo_asset_id and h.check_access('package_update', {'id':pkg.id }) %}
+  {% if 
+    pkg.kobo_asset_id
+    and h.check_access('package_update', {'id':pkg.id }) 
+    and h.check_access('package_kobo_update', {'kobo_asset_id':pkg.kobo_asset_id }) 
+  %}
     <button 
         class="btn btn-default kobo-pkg-update-resources"
         data-kobo-asset-id="{{ pkg.kobo_asset_id }}"
