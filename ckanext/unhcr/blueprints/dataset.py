@@ -109,6 +109,7 @@ def publish_microdata(package_type, dataset_id):
         )
     except (toolkit.NotAuthorized, RuntimeError) as exception:
         error = str(exception)
+        log.error(error)
 
     # Show flash message and redirect
     if not error:

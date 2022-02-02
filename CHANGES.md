@@ -1,6 +1,8 @@
 # RIDL Changelog
 
 ## v3.1.6f - 2022-02-XX
+Bug fixes:
+ - Fix publish to Microdata Library POST params [#781](https://github.com/okfn/ckanext-unhcr/pull/781)
 New features:
  - Minimum search for `geographies` to 2 characters [#779](https://github.com/okfn/ckanext-unhcr/pull/779)
 

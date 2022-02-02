@@ -139,7 +139,9 @@ def package_publish_microdata(context, data_dict):
         url = 'https://microdata.unhcr.org/index.php/api/datasets/create/survey/%s' % idno
         response = requests.post(url, headers=headers, json=survey).json()
         if response.get('status') != 'success':
-            raise RuntimeError(str(response.get('errors', default_error)))
+            error_msg = str(response.get('errors', default_error))
+            error = "Error creating Microdata survey dataset: {}. Payload: {}".format(error_msg, survey)
+            raise RuntimeError(error)
         template = 'https://microdata.unhcr.org/index.php/catalog/%s'
         survey['url'] = template % response['dataset']['id']
         survey['resources'] = []
@@ -157,7 +159,10 @@ def package_publish_microdata(context, data_dict):
                 response = requests.post(
                     resouce_url, headers=headers, json=md_resource).json()
                 if response.get('status') != 'success':
-                    raise RuntimeError(str(response.get('errors', default_error)))
+                    error_msg = str(response.get('errors', default_error))
+                    error = "Error creating Microdata survey resource: {}. Payload: {}".format(error_msg, md_resource)
+                    raise RuntimeError(error)
+
                 survey['resources'].append(response['resource'])
 
                 # file
@@ -182,7 +187,10 @@ def package_publish_microdata(context, data_dict):
                 if not isinstance(response, dict):
                     continue
                 if response.get('status') != 'success':
-                    raise RuntimeError(str(response.get('errors', default_error)))
+                    error_msg = str(response.get('errors', default_error))
+                    error = "Error creating Microdata survey resource file: {}. File: {}".format(error_msg, file)
+                    raise RuntimeError(error)
+
                 survey['files'].append(response)
 
     except requests.exceptions.HTTPError as exception:

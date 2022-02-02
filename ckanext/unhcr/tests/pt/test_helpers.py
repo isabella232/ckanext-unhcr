@@ -424,7 +424,7 @@ class TestMicrodataHelpers(object):
         survey = helpers.convert_dataset_to_microdata_survey(dataset, nation='nation', repoid='repoid')
         assert survey == {
             'repositoryid': 'REPOID',
-            'access_policy': 'na',
+            'access_policy': 'data_na',
             'published': 0,
             'overwrite': 'no',
             'study_desc': {
@@ -495,7 +495,7 @@ class TestMicrodataHelpers(object):
         survey = helpers.convert_dataset_to_microdata_survey(dataset, nation='nation', repoid='repoid')
         assert survey == {
             'repositoryid': 'REPOID',
-            'access_policy': 'na',
+            'access_policy': 'data_na',
             'published': 0,
             'overwrite': 'no',
             'study_desc': {

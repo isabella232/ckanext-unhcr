@@ -842,10 +842,14 @@ def curation_activity_message(activity):
 # Publishing
 
 def convert_dataset_to_microdata_survey(dataset, nation, repoid):
+    """ Check MDL survey specs 
+        https://microdata.unhcr.org/api-documentation/catalog-admin/index.html#operation/createSurvey
+        VALID_ACCESS_POLICIES = ["direct", "open", "public", "licensed", "remote", "data_na"]
+        """
 
     # general
     survey = {
-      'access_policy': 'na',
+      'access_policy': 'data_na',
       'published': 0,
       'overwrite': 'no',
       'study_desc': {
@@ -981,6 +985,9 @@ def convert_resource_to_microdata_resource(resource):
         'sampling_methodology': 'doc/oth',
         'infographics': 'doc/oth',
         'attachment': 'doc/oth',
+        'script': 'doc/oth',
+        'concept note': 'doc/oth',
+        'other': 'doc/oth',
     }
 
     # general
