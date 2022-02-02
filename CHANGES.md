@@ -1,5 +1,9 @@
 # RIDL Changelog
 
+## v3.1.6f - 2022-02-XX
+New features:
+ - Minimum search for `geographies` to 2 characters [#779](https://github.com/okfn/ckanext-unhcr/pull/779)
+
 ## v3.1.6e - 2021-12-16
 New features:
  - Check for orphaned containers after removing users. Define fallback adminis [#756](https://github.com/okfn/ckanext-unhcr/pull/756)
