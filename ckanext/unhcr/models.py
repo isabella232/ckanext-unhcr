@@ -77,7 +77,7 @@ COUNTRY = {
 }
 POC = {
     'layer_name': 'wrl_prp_p_unhcr_PoC',
-    'display_name': 'Pop. of Concern',
+    'display_name': 'Pop. of Concern Location',
 }
 PRP = {
     'layer_name': 'wrl_prp_p_unhcr_ALL',

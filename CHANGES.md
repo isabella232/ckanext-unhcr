@@ -1,10 +1,11 @@
 # RIDL Changelog
 
 ## v3.1.6f - 2022-02-XX
+New features:
+ - Update label for _Pop of concern_ to _Pop. of Concern Location_ [#780](https://github.com/okfn/ckanext-unhcr/pull/780)
+ - Minimum search for `geographies` to 2 characters [#779](https://github.com/okfn/ckanext-unhcr/pull/779)
 Bug fixes:
  - Fix publish to Microdata Library POST params [#781](https://github.com/okfn/ckanext-unhcr/pull/781)
-New features:
- - Minimum search for `geographies` to 2 characters [#779](https://github.com/okfn/ckanext-unhcr/pull/779)
 
 ## v3.1.6e - 2021-12-16
 New features:
