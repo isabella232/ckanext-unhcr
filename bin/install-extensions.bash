@@ -16,7 +16,7 @@ git clone --depth 1 --branch v1.0.0 https://github.com/keitaroinc/ckanext-s3file
 git clone --depth 1 --branch v1.2.2 https://github.com/keitaroinc/ckanext-saml2auth
 (cd ckanext-saml2auth && python3 setup.py develop)
 
-git clone --depth 1 --branch v2.0.2 https://github.com/okfn/ckanext-ddi
+git clone --depth 1 --branch v2.0.4 https://github.com/okfn/ckanext-ddi
 (cd ckanext-ddi && python3 setup.py develop && pip install -r requirements.txt)
 
 git clone --depth 1 --branch 0.0.7 https://github.com/ckan/ckanext-pdfview
