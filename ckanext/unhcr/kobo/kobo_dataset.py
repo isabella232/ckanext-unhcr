@@ -118,7 +118,7 @@ class KoboDataset:
             if not kobo_token:
                 raise KoBoUserTokenMissingError()
             kobo_url = toolkit.config.get('ckanext.unhcr.kobo_url', 'https://kobo.unhcr.org')
-            self.kobo_api = KoBoAPI(kobo_token, kobo_url)
+            self.kobo_api = KoBoAPI(kobo_token, kobo_url, cache_prefix=user_obj.name)
 
         return self.kobo_api
 

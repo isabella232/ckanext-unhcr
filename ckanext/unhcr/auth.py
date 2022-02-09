@@ -198,7 +198,7 @@ def package_kobo_update(context, data_dict):
     plugin_extras = {} if user_obj.plugin_extras is None else user_obj.plugin_extras
     kobo_token = plugin_extras.get('unhcr', {}).get('kobo_token')
     kobo_url = toolkit.config.get('ckanext.unhcr.kobo_url', 'https://kobo.unhcr.org')
-    kobo_api = KoBoAPI(kobo_token, kobo_url)
+    kobo_api = KoBoAPI(kobo_token, kobo_url, cache_prefix=user_obj.name)
     survey = kobo_api.get_asset(kobo_asset_id)
     if survey['user_is_manager']:
         return {'success': True}

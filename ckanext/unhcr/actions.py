@@ -1562,7 +1562,7 @@ def user_update(up_func, context, data_dict):
                     if context.get('validate_token', True):
                         # check if the token is valid
                         kobo_url = toolkit.config.get('ckanext.unhcr.kobo_url', 'https://kobo.unhcr.org')
-                        kobo = KoBoAPI(new_kobo_token, kobo_url)
+                        kobo = KoBoAPI(new_kobo_token, kobo_url, cache_prefix=user_obj.name)
                         if not kobo.test_token():
                             raise toolkit.ValidationError({'kobo_token': [
                                 "KoBoToolbox token is not valid"

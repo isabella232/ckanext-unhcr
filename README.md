@@ -74,6 +74,9 @@ ckanext.unhcr.external_accounts_notify_delta=30
 
 # Max size (MB) for a file to be analyzed with ClamAV
 ckan.clamav_max_resource_size=10
+
+# Redis cache in seconds for KoBo get requests. Use 0 to disable cache
+ckanext.unhcr.kobo_cache_seconds=600
 ```
 
 

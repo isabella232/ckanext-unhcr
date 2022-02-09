@@ -4,6 +4,7 @@
 New features:
  - Update label for _Pop of concern_ to _Pop. of Concern Location_ [#780](https://github.com/okfn/ckanext-unhcr/pull/780)
  - Minimum search for `geographies` to 2 characters [#779](https://github.com/okfn/ckanext-unhcr/pull/779)
+ - Cache KoBo requests [#787](https://github.com/okfn/ckanext-unhcr/pull/787)
 Bug fixes:
  - Fix publish to Microdata Library POST params [#781](https://github.com/okfn/ckanext-unhcr/pull/781)
 

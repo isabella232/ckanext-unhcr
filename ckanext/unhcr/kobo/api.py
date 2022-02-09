@@ -1,8 +1,12 @@
+import base64
 import json
 import logging
 import os
 import requests
+from redis import Redis, ConnectionPool
+from redis.exceptions import ConnectionError
 from requests.exceptions import ConnectionError, HTTPError, Timeout
+from ckan.common import config
 from ckanext.unhcr.kobo.exceptions import KoboApiError, KoBoSurveyError
 
 
@@ -13,17 +17,45 @@ class KoBoAPI:
     """ About KoBo API
         https://support.kobotoolbox.org/api.html
     """
-    def __init__(self, token, kobo_url):
+    def __init__(self, token, kobo_url, cache_prefix):
         self.token = token
         self.kobo_url = kobo_url
         self.base_url = '{}/api/v2/'.format(kobo_url)
         self.surveys = None
         self._user = None
+        # We use RIDL user name as prefix because we call same URL for different users
+        self.cache_prefix = cache_prefix
+        self.cache_seconds = int(config.get('ckanext.unhcr.kobo_cache_seconds', '600'))
+        redis_url = config.get('ckan.redis.url', 'redis://localhost:6379/0')
+        if self.cache_seconds == 0:
+            self.cache = None
+        else:
+            try:
+                redis_pool = ConnectionPool.from_url(redis_url)
+                self.cache = Redis(connection_pool=redis_pool)
+            except ConnectionError:
+                logger.error('Error connecting to Redis cache: {} {} {}'.format(redis_url))
+                self.cache = None
 
-    def _get(self, resource_url, return_json=True):
-        """ Get any api/v2 resource in JSON format (or base response) """
+    def _get(self, resource_url, return_json=True, force=False):
+        """ Get any api/v2 resource in JSON format (or base response)
+            For JSON responses we use a Redis cache to avoid hitting KoBoToolbox too often
+            Force=True to skip cache
+            """
         url = resource_url if resource_url.startswith('http') else self.base_url + resource_url
         logger.info('Getting KoBoToolbox resource: {}'.format(resource_url))
+        if return_json:
+            if self.cache and not force:
+                # Different users calls the same URLs so we need to use the users as a part of the cache key
+                cache_name = '{}__{}'.format(self.cache_prefix, url)
+                cache_key = base64.b64encode(cache_name.encode())
+                if self.cache.get(cache_key):
+                    data = json.loads(self.cache.get(cache_key))
+                    logger.info('Using cache for KoBo response: {} :: {}'.format(self.cache_prefix, resource_url))
+                    return data
+
+            logger.info('Resource not cached: {} :: {}'.format(self.cache_prefix, resource_url))
+
         try:
             response = requests.get(url, headers={'Authorization': 'Token ' + self.token})
             response.raise_for_status()
@@ -37,6 +69,8 @@ class KoBoAPI:
             except ValueError:  # includes simplejson.decoder.JSONDecodeError
                 logger.error('Error parsing KoBoToolbox response: \n{}'.format(response.text))
                 raise
+            if self.cache:
+                self.cache.set(cache_key, json.dumps(data), ex=self.cache_seconds)
             return data
         else:
             return response

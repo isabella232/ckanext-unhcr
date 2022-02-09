@@ -264,7 +264,7 @@ def _prepare_kobo_download(resource_id):
     plugin_extras = {} if user_obj.plugin_extras is None else user_obj.plugin_extras
     kobo_token = plugin_extras.get('unhcr', {}).get('kobo_token')
     kobo_url = toolkit.config.get('ckanext.unhcr.kobo_url', 'https://kobo.unhcr.org')
-    kobo_api = KoBoAPI(kobo_token, kobo_url)
+    kobo_api = KoBoAPI(kobo_token, kobo_url, cache_prefix=user_obj.name)
 
     kobo_asset_id = kobo_details['kobo_asset_id']
     kd = KoboDataset(kobo_asset_id)

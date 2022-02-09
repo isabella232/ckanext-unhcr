@@ -107,7 +107,7 @@ def kobo_surveys():
 
     # check if the token is valid
     kobo_url = toolkit.config.get('ckanext.unhcr.kobo_url', 'https://kobo.unhcr.org')
-    kobo = KoBoAPI(token, kobo_url)
+    kobo = KoBoAPI(token, kobo_url, cache_prefix=user_obj.name)
 
     try:
         surveys = kobo.get_surveys()
