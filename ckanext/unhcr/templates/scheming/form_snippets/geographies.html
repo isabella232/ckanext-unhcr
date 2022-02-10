@@ -1,5 +1,5 @@
-<div class="form-group control-full">
-  <label class="control-label" for="field-geographies">Geographies</label>
+<div class="form-group control-full geog-group-field geog-group-field-1">
+  <label class="control-label" for="field-geographies">{{ field.label }}</label>
   <div class="controls">
     <input
       name="geographies"
@@ -14,7 +14,7 @@
       data-module-label="name"
       data-module-minimum-input-length="2"
       value="{{ data[field.field_name]|join(',') }}"
-      placeholder="Select geographies"
+      placeholder="{{ field.form_placeholder }}"
     />
     <div class="info-block ">
       <i class="fa fa-info-circle"></i>

@@ -2319,6 +2319,24 @@ i {
   margin-right: 2px;
 }
 
+.geog-group-field {
+  border-left: 1px solid #ccc;
+  border-right: 1px solid #ccc;
+  padding: 20px;
+}
+
+.geog-group-field-1 {
+  border-top: 1px solid #ccc;
+  margin-bottom: 0px;
+  padding-bottom: 0px;
+  border-radius: 3px 3px 0 0;
+}
+
+.geog-group-field-2 {
+  border-bottom: 1px solid #ccc;
+  border-radius: 0 0 3px 3px;
+}
+
 /* General */
 
 .curation-sidebar .btn {

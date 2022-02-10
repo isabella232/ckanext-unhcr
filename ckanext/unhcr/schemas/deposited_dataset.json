@@ -620,12 +620,6 @@
             "required": false
         },
         {
-            "field_name": "geog_coverage",
-            "label": "Geographic Coverage",
-            "form_placeholder": "eg. National coverage, or name of the area, etc.",
-            "required": false
-        },
-        {
             "field_name": "data_collection_technique",
             "label": "Data collection technique",
             "form_snippet": "select.html",
@@ -713,6 +707,21 @@
         {
             "field_name": "geographies",
             "preset": "geographies",
+            "classes": [
+                "geog-group-field",
+                "geog-group-field-1"
+            ],
+            "required": false
+        },
+        {
+            "field_name": "geog_coverage",
+            "label": "Additional notes for geographic coverage",
+            "classes": [
+                "geog-group-field",
+                "geog-group-field-2"
+            ],
+            "form_placeholder": "eg. National coverage, or name of the area, etc.",
+            "help_text": "To be used as complement for the 'Geographic coverage' field",
             "required": false
         },
         {
