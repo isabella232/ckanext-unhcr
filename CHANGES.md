@@ -7,6 +7,7 @@ New features:
  - Cache KoBo requests [#787](https://github.com/okfn/ckanext-unhcr/pull/787)
 Bug fixes:
  - Fix publish to Microdata Library POST params [#781](https://github.com/okfn/ckanext-unhcr/pull/781)
+ - Disable all Geographies before re-importing them [#782](https://github.com/okfn/ckanext-unhcr/pull/782)
 
 ## v3.1.6e - 2021-12-16
 New features:

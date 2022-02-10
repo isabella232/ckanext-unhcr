@@ -196,7 +196,6 @@ def import_geographies(data={}, verbose=False, **kwargs):
     model.Session.query(
         Geography
     ).filter(
-        Geography.layer==COUNTRY['layer_name'],
         text(kwargs.get('where', 'gis_name IS NOT NULL'))
     ).update(
         {Geography.gis_status: GisStatus.INACTIVE},
