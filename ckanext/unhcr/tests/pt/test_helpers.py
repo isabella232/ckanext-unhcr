@@ -371,6 +371,7 @@ class TestDatasetValidationErrorOrNone(object):
         error = helpers.get_dataset_validation_error_or_none(dataset, context=context)
         assert error.error_summary == {
             'Keywords': 'Select at least one',
+            'Geographies': 'Missing value',
             'Archived': 'Missing value',
             'Data collector': 'Missing value',
             'Unit of measurement': 'Missing value',

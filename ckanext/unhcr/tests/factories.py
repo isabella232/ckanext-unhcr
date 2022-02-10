@@ -3,7 +3,7 @@ import factory
 from ckan import model
 from ckantoolkit.tests import factories
 from ckanext.unhcr.utils import get_internal_domains
-from ckanext.unhcr.models import Geography
+from ckanext.unhcr.models import Geography, DEFAULT_GEOGRAPHY_CODE
 
 
 def _generate_email(user):
@@ -52,6 +52,7 @@ class Dataset(factories.Dataset):
     operational_purpose_of_data = 'cartography'
     visibility = 'public'
     external_access_level = 'open_access'
+    geographies = [DEFAULT_GEOGRAPHY_CODE]
 
 
 class Resource(factories.Resource):

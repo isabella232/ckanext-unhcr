@@ -205,6 +205,7 @@ class UnhcrPlugin(
             'get_linked_datasets_for_display': helpers.get_linked_datasets_for_display,
             # Geography
             'get_geographies_for_display': helpers.get_geographies_for_display,
+            'get_default_geography': helpers.get_default_geography,
             # Access requests
             'get_pending_requests_total': helpers.get_pending_requests_total,
             'get_existing_access_request': helpers.get_existing_access_request,

@@ -10,7 +10,7 @@ from ckanext.unhcr.helpers import convert_deposited_dataset_to_regular_dataset
 from ckanext.unhcr.plugin import ALLOWED_ACTIONS
 from ckanext.unhcr.tests import factories
 from ckanext.unhcr.utils import get_module_functions
-
+from ckanext.unhcr.models import DEFAULT_GEOGRAPHY_CODE
 
 @pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
 class TestAuthUI(object):
@@ -441,6 +441,7 @@ class TestAuthUnit(object):
             'data_collector': ['acf'],
             'data_collection_technique': 'f2f',
             'external_access_level': 'open_access',
+            'geographies': [DEFAULT_GEOGRAPHY_CODE]
         })
         deposited_dataset = helpers.call_action(
             'package_update',

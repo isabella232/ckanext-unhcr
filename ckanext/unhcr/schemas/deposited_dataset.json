@@ -707,11 +707,11 @@
         {
             "field_name": "geographies",
             "preset": "geographies",
+            "required": false,
             "classes": [
                 "geog-group-field",
                 "geog-group-field-1"
-            ],
-            "required": false
+            ]
         },
         {
             "field_name": "geog_coverage",

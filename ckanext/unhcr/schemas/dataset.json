@@ -665,6 +665,7 @@
         {
             "field_name": "geographies",
             "preset": "geographies",
+            "required": true,
             "classes": ["geog-group-field", "geog-group-field-1"]
         },
         {

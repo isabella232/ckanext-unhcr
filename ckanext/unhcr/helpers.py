@@ -19,7 +19,7 @@ from ckanext.scheming.helpers import (
     scheming_get_dataset_schema, scheming_field_by_name, scheming_get_organization_schema
 )
 from ckanext.unhcr import __VERSION__
-from ckanext.unhcr.models import AccessRequest, USER_REQUEST_TYPE_NEW
+from ckanext.unhcr.models import AccessRequest, USER_REQUEST_TYPE_NEW, DEFAULT_GEOGRAPHY_CODE
 from ckanext.unhcr.kobo.exceptions import KoboApiError
 from ckanext.unhcr.kobo.kobo_dataset import KoboDataset
 
@@ -390,6 +390,9 @@ def get_geographies_for_display(value):
     geogs = sorted(geogs, key=lambda k: k['name'])
     return geogs
 
+
+def get_default_geography():
+    return DEFAULT_GEOGRAPHY_CODE
 
 # Access requests
 

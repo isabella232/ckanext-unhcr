@@ -347,7 +347,7 @@ class TestClamAVActions(object):
         with mock.patch('ckan.plugins.toolkit.get_action', action_call):
             action({'user': self.sysadmin['name']}, new_resource_dict)
 
-        action_call.assert_called_once_with('scan_submit')
+        action_call.assert_called_with('scan_submit')
 
     def test_after_kobo_resource_create_scan_submit_hook_not_called(self):
 
@@ -376,7 +376,8 @@ class TestClamAVActions(object):
             }
             action(ctx, new_resource_dict)
 
-        action_call.assert_not_called()
+        mock_calls = [fn[0][0] for fn in action_call.call_args_list]
+        assert 'scan_submit' not in mock_calls
 
     def test_after_kobo_resource_create_scan_submit_hook_called(self):
 
@@ -405,4 +406,5 @@ class TestClamAVActions(object):
             action(ctx, new_resource_dict)
 
         action_call.assert_called()
-        assert 'scan_submit' == action_call.call_args_list[0][0][0]
+        mock_calls = [fn[0][0] for fn in action_call.call_args_list]
+        assert 'scan_submit' in mock_calls

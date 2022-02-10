@@ -1,11 +1,23 @@
 <div class="form-group control-full geog-group-field geog-group-field-1">
+  
+  {% if h.scheming_field_required(field) %}
+    <span title="{{ _("This field is required") }}" class="control-required">*</span>
+  {% endif %}
+
   <label class="control-label" for="field-geographies">{{ field.label }}</label>
-  <div class="controls">
+
+  {% set unspecified = [h.get_default_geography()] == data[field.field_name] %}
+  
+  <div class="controls {% if unspecified %}unspecified-geo-div{% endif %}">
+    {% if unspecified %}
+      <span class="unspecified-geo-span">Please provide at least country-level geographic coverage</span>
+    {% endif %}
+
     <input
       name="geographies"
       id="field-geographies"
       multiple="multiple"
-      style="width: 100%"
+      style="width: 100%;"
       data-module="autocomplete",
       data-module-source="/api/2/util/geography/autocomplete?q=?"
       data-module-tags="true"
@@ -14,7 +26,7 @@
       data-module-label="name"
       data-module-minimum-input-length="2"
       value="{{ data[field.field_name]|join(',') }}"
-      placeholder="{{ field.form_placeholder }}"
+      placeholder="{% if unspecified %}Please provide at least country-level geographic coverage{% else %}{{ field.form_placeholder }}{% endif %}"
     />
     <div class="info-block ">
       <i class="fa fa-info-circle"></i>

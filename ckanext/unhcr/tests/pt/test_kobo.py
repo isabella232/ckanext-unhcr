@@ -6,6 +6,7 @@ import tempfile
 from ckan import model
 from ckan.plugins import toolkit
 from ckanext.unhcr.jobs import download_kobo_export
+from ckanext.unhcr.models import DEFAULT_GEOGRAPHY_CODE
 from ckanext.unhcr.tests import factories, mocks
 
 
@@ -228,6 +229,7 @@ class TestKoBo(object):
             'external_access_level': 'not_available',
             'original_id': 'some_kobo_id',
             'data_collector': 'ACF,UNHCR',
+            'geographies': DEFAULT_GEOGRAPHY_CODE,
             'keywords': 9,
             'unit_of_measurement': 'meters',
             'geog_coverage': '',

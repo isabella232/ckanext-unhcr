@@ -24,7 +24,8 @@ from ckanext.unhcr.kobo.exceptions import KoboMissingAssetIdError, KoBoEmptySurv
 from ckanext.unhcr.kobo.kobo_dataset import KoboDataset
 from ckanext.unhcr.models import (
     AccessRequest, Geography, GisStatus, LAYER_TO_DISPLAY_NAME,
-    USER_REQUEST_TYPE_NEW, USER_REQUEST_TYPE_RENEWAL
+    USER_REQUEST_TYPE_NEW, USER_REQUEST_TYPE_RENEWAL,
+    DEFAULT_GEOGRAPHY_CODE
 )
 from ckanext.unhcr.utils import is_saml2_user
 
@@ -101,6 +102,10 @@ def package_create(up_func, context, data_dict):
                 log.error('Country not found {}'.format(country_code))
             else:
                 geographies.append(geog.pcode)
+
+        # If all geographies from DDI are not found, use the default one
+        if len(geographies) == 0:
+            geographies = [DEFAULT_GEOGRAPHY_CODE]
         data_dict['geographies'] = ','.join(geographies)
 
     # Create dataset

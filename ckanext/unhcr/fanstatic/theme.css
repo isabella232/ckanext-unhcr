@@ -2337,6 +2337,17 @@ i {
   border-radius: 0 0 3px 3px;
 }
 
+.unspecified-geo-div {
+  background-color:#99222211;
+  padding:20px 50px 5px;
+  border: 2px solid #99222299;
+}
+
+.unspecified-geo-span {
+  color: #992222;
+  font-weight: bold;
+}
+
 /* General */
 
 .curation-sidebar .btn {

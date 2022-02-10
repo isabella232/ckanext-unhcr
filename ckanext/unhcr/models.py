@@ -87,6 +87,9 @@ LAYER_TO_DISPLAY_NAME = {
     l['layer_name']: l['display_name'] for l in [COUNTRY, ADMIN1, ADMIN2, POC, PRP]
 }
 
+# Since 'geographies' field is required, we need at least one Geography
+# for DDI, tests and other purposes.
+DEFAULT_GEOGRAPHY_CODE = 'UNSPECIFIED'
 
 class Geography(Base):
     __tablename__ = u'geography'

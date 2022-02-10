@@ -6,6 +6,7 @@ from ckan import model
 from ckan.plugins import toolkit
 from ckan.tests import helpers as core_helpers
 from ckantoolkit.tests import factories as core_factories
+from ckanext.unhcr.models import DEFAULT_GEOGRAPHY_CODE
 from ckanext.unhcr.tests import factories
 
 
@@ -155,6 +156,7 @@ class TestDepositedDatasetController(object):
             'data_collector': ['acf'],
             'data_collection_technique': 'f2f',
             'external_access_level': 'open_access',
+            'geographies': [DEFAULT_GEOGRAPHY_CODE],
         })
 
         # Approve dataset
@@ -180,6 +182,7 @@ class TestDepositedDatasetController(object):
             'data_collector': ['acf'],
             'data_collection_technique': 'f2f',
             'external_access_level': 'open_access',
+            'geographies': [DEFAULT_GEOGRAPHY_CODE],
         })
 
         # Approve dataset
@@ -258,6 +261,7 @@ class TestDepositedDatasetController(object):
             'data_collector': ['acf'],
             'data_collection_technique': 'f2f',
             'external_access_level': 'open_access',
+            'geographies': [DEFAULT_GEOGRAPHY_CODE],
         })
 
         # Approve dataset
@@ -283,6 +287,7 @@ class TestDepositedDatasetController(object):
             'data_collector': ['acf'],
             'data_collection_technique': 'f2f',
             'external_access_level': 'open_access',
+            'geographies': [DEFAULT_GEOGRAPHY_CODE],
         })
 
         # Approve dataset
@@ -524,6 +529,7 @@ class TestDepositedDatasetController(object):
             'data_collector': ['acf'],
             'data_collection_technique': 'f2f',
             'external_access_level': 'open_access',
+            'geographies': [DEFAULT_GEOGRAPHY_CODE],
         })
 
         # Request changes
@@ -571,6 +577,7 @@ class TestDepositedDatasetController(object):
             'data_collector': ['acf'],
             'data_collection_technique': 'f2f',
             'external_access_level': 'open_access',
+            'geographies': [DEFAULT_GEOGRAPHY_CODE],
         })
 
         # Request review
@@ -597,6 +604,7 @@ class TestDepositedDatasetController(object):
             'data_collector': ['acf'],
             'data_collection_technique': 'f2f',
             'external_access_level': 'open_access',
+            'geographies': [DEFAULT_GEOGRAPHY_CODE],
         })
 
         # Request review
@@ -623,6 +631,7 @@ class TestDepositedDatasetController(object):
             'data_collector': ['acf'],
             'data_collection_technique': 'f2f',
             'external_access_level': 'open_access',
+            'geographies': [DEFAULT_GEOGRAPHY_CODE],
         })
 
         # Request review
@@ -923,6 +932,7 @@ class TestDepositedDatasetController(object):
             'data_collector': ['acf'],
             'data_collection_technique': 'f2f',
             'external_access_level': 'open_access',
+            'geographies': [DEFAULT_GEOGRAPHY_CODE],
         })
 
         self.make_request('approve', user='sysadmin', status=200)

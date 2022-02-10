@@ -4,6 +4,7 @@ import pytest
 import mock
 from ckan.plugins import toolkit
 from ckantoolkit.tests import factories as core_factories
+from ckanext.unhcr.models import DEFAULT_GEOGRAPHY_CODE
 from ckanext.unhcr.tests import factories, mocks
 
 
@@ -39,6 +40,7 @@ class TestHooks(object):
             'title': 'test',
             'owner_org': self.container['id'],
             'state': 'active',
+            'geographies': DEFAULT_GEOGRAPHY_CODE,
         }
         self.new_resource_dict = {
             'package_id': self.dataset['id'],

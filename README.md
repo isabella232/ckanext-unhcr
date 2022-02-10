@@ -195,7 +195,9 @@ pip install -r scripts/requirements.txt
 
 ## Generate deposited-dataset schema
 
-We maintain the `dataset` schema (https://github.com/okfn/ckanext-unhcr/blob/master/ckanext/unhcr/schemas/dataset.json ) manually. The `deposited_dataset` schema (https://github.com/okfn/ckanext-unhcr/blob/master/ckanext/unhcr/schemas/deposited_dataset.json ) should not be edited by hand. It is the output of running.
+We maintain the `dataset` [schema](/ckanext/unhcr/schemas/dataset.json) manually.  
+The `deposited_dataset` [schema](/ckanext/unhcr/schemas/deposited_dataset.json) 
+should not be edited by hand. It is the output of running.
 
 ```
 $ python scripts/generate_deposited_dataset_schema.py

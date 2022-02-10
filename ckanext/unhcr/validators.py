@@ -54,7 +54,7 @@ def geographies(value, context):
         try:
             toolkit.get_action('geography_show')(context, {'id': id_})
         except toolkit.ObjectNotFound:
-            raise Invalid('Invalid Geography {}'.format('id_'))
+            raise Invalid('Invalid Geography: {}'.format(id_))
     return values
 
 

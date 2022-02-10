@@ -48,7 +48,7 @@ def test_importer():
         ).all()
     }
 
-    assert 3 == totals['wrl_polbnd_int_1m_a_unhcr']
+    assert 4 == totals['wrl_polbnd_int_1m_a_unhcr']
     assert 3 == totals['wrl_polbnd_adm1_a_unhcr']
     assert 3 == totals['wrl_polbnd_adm2_a_unhcr']
 
@@ -119,7 +119,7 @@ def test_flaky_api_recovery():
         func.count(Geography.pcode).label('count')
     ).all()
 
-    assert 13 == total[0].count
+    assert 14 == total[0].count
 
 
 @pytest.mark.usefixtures('clean_db', 'unhcr_migrate')
