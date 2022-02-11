@@ -1,6 +1,6 @@
 # RIDL Changelog
 
-## v3.1.6f - 2022-02-XX
+## v3.1.6f - 2022-02-11
 New features:
  - Make `geographies` field required [#777](https://github.com/okfn/ckanext-unhcr/pull/777)
  - Update label for _Pop of concern_ to _Pop. of Concern Location_ [#780](https://github.com/okfn/ckanext-unhcr/pull/780)

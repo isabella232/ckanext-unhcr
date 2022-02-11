@@ -30,7 +30,7 @@ def upgrade():
     # update all datasets to have the default UNSPECIFIED geography
     op.execute(
         "UPDATE package_extra "
-        "SET value = 'UNSPECIFIED' "
+        "SET value = '{UNSPECIFIED}' "
         "WHERE key = 'geographies' "
         "AND (value is NULL or value = '')"
     )
@@ -42,5 +42,5 @@ def downgrade():
         "UPDATE package_extra "
         "SET value = '' "
         "WHERE key = 'geographies' "
-        "AND value = 'UNSPECIFIED'"
+        "AND value = '{UNSPECIFIED}'"
     )
