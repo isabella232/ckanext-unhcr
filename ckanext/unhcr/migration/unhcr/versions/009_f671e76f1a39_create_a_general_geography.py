@@ -31,7 +31,7 @@ def upgrade():
     op.execute(
         "UPDATE package_extra "
         "SET value = 'UNSPECIFIED' "
-        "WHERE key = 'geog_coverage' "
+        "WHERE key = 'geographies' "
         "AND (value is NULL or value = '')"
     )
 
@@ -41,6 +41,6 @@ def downgrade():
     op.execute(
         "UPDATE package_extra "
         "SET value = '' "
-        "WHERE key = 'geog_coverage' "
+        "WHERE key = 'geographies' "
         "AND value = 'UNSPECIFIED'"
     )

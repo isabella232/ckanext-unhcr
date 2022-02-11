@@ -38,7 +38,9 @@ class TestGeographyAutoComplete:
             {'q': 'mos'}
         )
 
-        assert ['Mosul', 'Mosul'] == [r['gis_name'] for r in results[0]['children']]
+        assert results['count'] == 2
+        results_list = results['results']
+        assert ['Mosul', 'Mosul'] == [r['gis_name'] for r in results_list[0]['children']]
 
     def test_only_active(self):
         factories.Geography(
@@ -54,7 +56,9 @@ class TestGeographyAutoComplete:
             {'q': 'mos'}
         )
 
-        assert ['Mosul', 'Mosul'] == [r['gis_name'] for r in results[0]['children']]
+        assert results['count'] == 2
+        results_list = results['results']
+        assert ['Mosul', 'Mosul'] == [r['gis_name'] for r in results_list[0]['children']]
 
     def test_missing_q(self):
         with pytest.raises(toolkit.ValidationError):

@@ -221,6 +221,8 @@ def add_access_request_actioned_by_column():
     model.Session.commit()
 
 def create_tables():
+    model.Session.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
+    model.Session.commit()
     if not TimeSeriesMetric.__table__.exists():
         TimeSeriesMetric.__table__.create()
         log.info(u'TimeSeriesMetric database table created')

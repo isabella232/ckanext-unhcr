@@ -5,7 +5,7 @@ import logging
 import requests
 from urllib.parse import urljoin
 from dateutil.parser import parse as parse_date
-from sqlalchemy import and_, desc, or_, select, not_
+from sqlalchemy import and_, desc, or_, select, not_, text
 from sqlalchemy.dialects.postgresql import array
 from sqlalchemy.orm import aliased
 from ckan import model
@@ -1374,34 +1374,56 @@ def geography_autocomplete(context, data_dict):
     limit = data_dict.get('limit', 100)
 
     toolkit.check_access('geography_autocomplete', context, data_dict)
-
+    
     query = m.Session.query(
-        Geography
+        Geography,
+        "similarity(gis_name, '{}') AS simil".format(q.replace("'", "''"))
     ).filter(
-        or_(
-            Geography.gis_name.ilike(f'%{q}%'),
-            Geography.pcode.ilike(f'%{q}%')
-        )
-    ).filter(
-        Geography.gis_status == GisStatus.ACTIVE
+        Geography.gis_status == GisStatus.ACTIVE,
+        text("similarity(gis_name, '{}') > 0.3".format(q.replace("'", "''")))
     ).order_by(
-        Geography.layer,
-        Geography.gis_name,
+        text('simil desc'),
     ).limit(
         limit
     )
 
-    # Ensure groups ordered
-    groups = {v: [] for k, v in LAYER_TO_DISPLAY_NAME.items()}
-    for geog in query.all():
+    total_results = query.count()
+
+    log.info(str(query))
+    # Ensure groups ordered by layer
+    # If we have many results, we want a new group for "Best matches"
+    all_groups = {
+        'best_matches': 'Best matches',  # Some results are much better and we want to show them at the top.
+        **LAYER_TO_DISPLAY_NAME,
+        'more_results': 'More Results ...',  # Some results are worse and we show them at the end.
+    }
+    groups = {v: [] for k, v in all_groups.items()}
+    
+    c = 1
+    for geog, simil in query.all():
         geo = _dictize_geography(geog)
-        groups[geo['layer_nice_name']].append(geo)
+        geo['similarity'] = simil
+        # Show the "best matches" group only if we have +15 results
+        if c < 6 and total_results > 15:
+            geo['name'] = "{} [{}]".format(geo['name'], geo['layer_nice_name'])
+            groups['Best matches'].append(geo)
+        # leave worst result to the end
+        elif total_results > 15 and simil < 0.35:
+            geo['name'] = "{} [{}]".format(geo['name'], geo['layer_nice_name'])
+            groups['More Results ...'].append(geo)
+        else:
+            groups[geo['layer_nice_name']].append(geo)
+        c += 1
 
     ret = []
     for group_name, elements in groups.items():
         if len(elements) > 0:
             ret.append({'name': group_name, 'children': elements})
-    return ret
+    results = {
+        'count': total_results,
+        'results': ret,
+    }
+    return results
 
 
 @toolkit.side_effect_free

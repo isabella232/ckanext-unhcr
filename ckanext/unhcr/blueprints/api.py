@@ -27,7 +27,13 @@ def geography_autocomplete(ver=API_REST_DEFAULT_VERSION):
         action = toolkit.get_action('geography_autocomplete')
         geography_dicts = action(context, data_dict)
 
-    return _finish_ok({'ResultSet': {'Result': geography_dicts}})
+    results = {
+        'count': geography_dicts['count'],
+        'ResultSet': {
+            'Result': geography_dicts['results']
+            }
+        }
+    return _finish_ok(results)
 
 
 version_rule = '/<int(min=1, max=2):ver>'
