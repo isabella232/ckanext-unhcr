@@ -21,7 +21,7 @@ depends_on = None
 
 def upgrade():
     print("Adding an index for gis_name")
-    op.execute("""CREATE INDEX idx_geos_trgm_gin_gis_name 
+    op.execute("""CREATE INDEX IF NOT EXISTS idx_geos_trgm_gin_gis_name 
                   ON geography 
                   USING gin(gis_name gin_trgm_ops)""")
 
