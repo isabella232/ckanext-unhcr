@@ -1,12 +1,17 @@
 # RIDL Changelog
 
 ## v3.1.6f - 2022-02-11
+
+CKAN release:
+ - **Started using CKAN 2.9.5**.  
+
 New features:
  - Make `geographies` field required [#777](https://github.com/okfn/ckanext-unhcr/pull/777)
  - Update label for _Pop of concern_ to _Pop. of Concern Location_ [#780](https://github.com/okfn/ckanext-unhcr/pull/780)
  - Minimum search for `geographies` to 2 characters [#779](https://github.com/okfn/ckanext-unhcr/pull/779)
  - Cache KoBo requests [#787](https://github.com/okfn/ckanext-unhcr/pull/787)
  - New UI for `geographies` and `geog_coverage` fields [#778](https://github.com/okfn/ckanext-unhcr/pull/778)
+
 Bug fixes:
  - Fix publish to Microdata Library POST params [#781](https://github.com/okfn/ckanext-unhcr/pull/781)
  - Disable all Geographies before re-importing them [#782](https://github.com/okfn/ckanext-unhcr/pull/782)
