@@ -1,5 +1,9 @@
 # RIDL Changelog
 
+## v3.1.6g - 2022-03-02
+Bug fixes:
+ - Fix fallback Geography always enable [#788](https://github.com/okfn/ckanext-unhcr/pull/788)
+
 ## v3.1.6f - 2022-02-11
 
 CKAN release:
