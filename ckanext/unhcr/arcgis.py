@@ -15,7 +15,14 @@ from ckanext.unhcr.models import (
     COUNTRY,
     POC,
     PRP,
+    DEFAULT_GEOGRAPHY_CODE,
 )
+
+
+# we have custom geographies that must be active
+CUSTOM_GEOGRAPHIES = [
+    DEFAULT_GEOGRAPHY_CODE,
+]
 
 
 def get_gis_status(properties):
@@ -196,7 +203,8 @@ def import_geographies(data={}, verbose=False, **kwargs):
     model.Session.query(
         Geography
     ).filter(
-        text(kwargs.get('where', 'gis_name IS NOT NULL'))
+        text(kwargs.get('where', 'gis_name IS NOT NULL')),
+        Geography.pcode.notin_(CUSTOM_GEOGRAPHIES)
     ).update(
         {Geography.gis_status: GisStatus.INACTIVE},
         synchronize_session=False
