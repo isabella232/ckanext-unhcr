@@ -1,8 +1,9 @@
 # RIDL Changelog
 
-## v3.1.6g - 2022-03-02
+## v3.1.6g - 2022-03-10
 Bug fixes:
  - Fix fallback Geography always enable [#788](https://github.com/okfn/ckanext-unhcr/pull/788)
+ - Change help texts and placeholders [5be2587](https://github.com/okfn/ckanext-unhcr/commit/5be2587f3d305ae3af5e8551e24a47869140fdd5)
 
 ## v3.1.6f - 2022-02-11
 
