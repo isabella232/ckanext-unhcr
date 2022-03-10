@@ -672,7 +672,7 @@
             "field_name": "geog_coverage",
             "label": "Additional notes for geographic coverage",
             "classes": ["geog-group-field", "geog-group-field-2"],
-            "form_placeholder": "eg. National coverage, or name of the area, etc.",
+            "form_placeholder": "E.g. Complete national coverage except population X, etc.",
             "help_text": "To be used as complement for the 'Geographic coverage' field"
         },
         {
