@@ -1427,25 +1427,7 @@ def user_autocomplete(context, data_dict):
 # Geography
 
 def _dictize_geography(geog, include_parents=True):
-    dct = {k:v for k,v in geog.__dict__.items() if not k.startswith('_')}
-    dct['name'] = geog.display_full_name
-    dct['layer_nice_name'] = geog.layer_nice_name
-    # ensure serializable for API calls
-    for k, v in dct.items():
-        if not v or type(v) in [str, int]:
-            continue
-        if type(v) in [datetime.date, datetime.datetime]:
-            dct[k] = v.isoformat()
-        else:
-            dct[k] = str(v)
-    if include_parents:
-        dct['parents'] = [
-            _dictize_geography(parent, include_parents=False)
-            for parent in geog.parents
-            ]
-
-    return dct
-
+    return geog.dictize(include_parents=include_parents)
 
 @core_logic.schema.validator_args
 def unhcr_geography_autocomplete_schema(

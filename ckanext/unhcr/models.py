@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+import json
 import logging
 
+from redis import Redis, ConnectionPool
 from sqlalchemy import Column, DateTime, Integer
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declarative_base
@@ -12,6 +14,7 @@ from sqlalchemy.sql.expression import func, false
 from sqlalchemy.sql.sqltypes import Boolean
 from sqlalchemy.types import Enum, UnicodeText
 
+from ckan.common import config
 from ckan.model.meta import metadata
 import ckan.model as model
 from ckan.model.types import make_uuid
@@ -171,6 +174,43 @@ class Geography(Base):
             Geography.layer == COUNTRY['layer_name']
         ).one_or_none()
 
+    def dictize(self, include_parents=False):
+        cache_key = 'geography__{}_{}'.format(self.pcode, int(include_parents))
+        if self.cache and self.cache.get(cache_key):
+            return json.loads(self.cache.get(cache_key))
+
+        dct = {k:v for k,v in self.__dict__.items() if not k.startswith('_')}
+        dct['name'] = self.display_full_name
+        dct['layer_nice_name'] = self.layer_nice_name
+        # ensure serializable for API calls
+        for k, v in dct.items():
+            if not v or type(v) in [str, int]:
+                continue
+            if type(v) in [datetime.date, datetime.datetime]:
+                dct[k] = v.isoformat()
+            else:
+                dct[k] = str(v)
+        if include_parents:
+            dct['parents'] = [
+                parent.dictize(include_parents=False)
+                for parent in self.parents
+                ]
+
+        if self.cache:
+            self.cache.set(cache_key, json.dumps(dct), ex=3000)
+        return dct
+
+    @property
+    def cache(self):
+        if not hasattr(self, '_cache'):
+            redis_url = config.get('ckan.redis.url', 'redis://localhost:6379/0')
+            try:
+                redis_pool = ConnectionPool.from_url(redis_url)
+                self._cache = Redis(connection_pool=redis_pool)
+            except ConnectionError:
+                self._cache = None
+
+        return self._cache
 
 def create_metric_columns():
     cols = ['datasets_count', 'deposits_count', 'containers_count']
