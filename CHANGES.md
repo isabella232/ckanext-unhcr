@@ -1,5 +1,8 @@
 # RIDL Changelog
 
+## v3.1.7 - 2022-03-14
+Deployment of RIDL v3.1.7 to production environment
+
 ## v3.1.6g - 2022-03-10
 Bug fixes:
  - Fix fallback Geography always enable [#788](https://github.com/okfn/ckanext-unhcr/pull/788)
