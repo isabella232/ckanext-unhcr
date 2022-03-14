@@ -17,10 +17,15 @@
       </i> {{ _('Private') }}
     </span>
     {% endif %}
-    {% if res.kobo_type and h.check_access('package_update', {'id': pkg.id}) %}
+    {% if res.kobo_type and can_edit %}
       {% set kobo_status = h.get_kobo_import_process_real_status(res.id) %}
       {% if kobo_status %}
-        <span class="kobo-resource-status kobo-resource-{{ kobo_status }}" data-resource-id="{{ res.id }}" data-status="{{ kobo_status }}">
+        <span 
+          class="kobo-resource-status kobo-resource-{{ kobo_status }}"
+          data-resource-id="{{ res.id }}"
+          data-status="{{ kobo_status }}"
+          id="kobo-resource-status-{{ res.id }}"
+        >
           sync {{ kobo_status }} 
           {% if kobo_status != 'complete'%} 
            <i class="fa fa-caret-down" style="margin-left: 5px;"></i>
@@ -36,7 +41,7 @@
       {{ h.markdown_extract(h.get_translated(res, 'description'), extract_length=80) }}
     {% endif %}
 
-    {% if res.kobo_type and res.kobo_details and h.check_access('package_update', {'id': pkg.id}) %}
+    {% if res.kobo_type and res.kobo_details and can_edit %}
     <div id="kobo-item-info-{{ res.id }}" class="kobo-item-info kobo-resource-{{ kobo_status }}">
       <ul>
         {% if kobo_status == 'error' %}
@@ -90,4 +95,16 @@
     </a>
   </li>
   {% endif %}
+
+  {% if res.kobo_type and can_edit %}
+  <li>
+    <button
+        class="btn kobo-update-resource"
+        data-kobo-resource-id="{{ res.id }}"
+        data-kobo-update-endpoint="{% url_for 'unhcr_kobo.enqueue_survey_resource_update' %}"
+        ><i class="fa fa-refresh"></i> <span class="update-kobo-button-text">{{ _('Update KoBo resource') }}</span>
+    </button>
+  </li>
+  {% endif %}
+
 {% endblock %}

@@ -2,7 +2,7 @@ import copy
 from flask import Blueprint, make_response
 import ckan.plugins.toolkit as toolkit
 from ckanext.unhcr.utils import require_editor_user
-from ckanext.unhcr.jobs import update_pkg_kobo_resources
+from ckanext.unhcr.jobs import update_pkg_kobo_resources, update_kobo_resource
 from ckanext.unhcr.kobo.api import KoBoAPI, KoBoSurvey
 from ckanext.unhcr.kobo.exceptions import KoboApiError, KoboMissingAssetIdError, KoBoUserTokenMissingError
 from ckanext.unhcr.kobo.kobo_dataset import KoboDataset
@@ -121,10 +121,6 @@ def kobo_surveys():
         pkg = kd.get_package(raise_multiple_error=False)
         survey['ridl_package'] = pkg
         if pkg:
-            # check if there are new submissions
-            old_submission_count = kd.get_submission_count()
-            new_submission_count = survey['deployment__submission_count']
-            survey['new_submissions'] = new_submission_count - old_submission_count
             download_statuses = [res.get('kobo_details', {}).get('kobo_download_status') for res in pkg['resources']]
             survey['update_is_running'] = 'pending' in download_statuses
 
@@ -135,13 +131,12 @@ def kobo_surveys():
 
 
 @require_editor_user
-def enqueue_survey_update():
-    """ Check for updates and if new submissions were found, starts a job to update.
-        Return an API dict response """
+def enqueue_survey_package_update():
+    """ Update all survey resources
+        Returns an API dict response """
     user_obj = toolkit.c.userobj
 
     kobo_asset_id = toolkit.request.form.get('kobo_asset_id')
-    force = toolkit.asbool(toolkit.request.form.get('force', False))
 
     if not kobo_asset_id:
         message = 'Missing KoBoToolbox asset ID.'
@@ -149,43 +144,34 @@ def enqueue_survey_update():
 
     kd = KoboDataset(kobo_asset_id)
     try:
-        old_submission_count = kd.get_submission_count()
+        import_status = kd.get_import_status()
     except KoboMissingAssetIdError:
         message = 'Dataset not found for this KoBoToolbox asset ID.'
         return _make_json_response(status_int=404, error_msg=message)
 
     # check if an update is "pending" (but not stalled)
-    if kd.get_import_status() == 'pending':
+    if import_status == 'pending':
         message = 'There is a pending update for this survey.'
         return _make_json_response(status_int=400, error_msg=message)
 
-    if force:
-        extra_data = {'forced': True}
-        run_job = True
-    else:
-        # check if there are new submissions
-        try:
-            kobo_api = kd.get_kobo_api(user_obj)
-        except KoBoUserTokenMissingError:
-            profile_url = toolkit.url_for('unhcr_kobo.index')
-            profile_link = '<a href="{}">user profile page</a>'.format(profile_url)
-            message = 'Missing API token. Please provide a valid KoBo Toolbox API token on your {}'.format(profile_link)
-            return _make_json_response(status_int=403, error_msg=message)
-        survey = KoBoSurvey(kobo_asset_id, kobo_api)
+    job = toolkit.enqueue_job(update_pkg_kobo_resources, [kobo_asset_id, user_obj.id], title='Enqueue survey update')
+    return _make_json_response(msg="Job started {}".format(job.id))
 
-        new_submission_count = survey.get_total_submissions()
-        new_submissions = new_submission_count - old_submission_count
 
-        extra_data = {'new_submissions': new_submissions, 'forced': False}
-        run_job = new_submissions > 0
-        if new_submissions == 0:
-            message = "There are no new submissions"
+@require_editor_user
+def enqueue_survey_resource_update():
+    """ Update all survey resources
+        Returns an API dict response """
+    user_obj = toolkit.c.userobj
 
-    if run_job:
-        job = toolkit.enqueue_job(update_pkg_kobo_resources, [kobo_asset_id, user_obj.id], title='Enqueue survey update')
-        message = "Job started {}".format(job.id),
+    resource_id = toolkit.request.form.get('kobo_resource_id')
 
-    return _make_json_response(msg=message, extra_data=extra_data)
+    if not resource_id:
+        message = 'Missing resource ID.'
+        return _make_json_response(status_int=404, error_msg=message)
+
+    job = toolkit.enqueue_job(update_kobo_resource, [resource_id, user_obj.id], title='Preparing to update kobo resource')
+    return _make_json_response(msg="Job started {}".format(job.id))
 
 
 unhcr_kobo_blueprint.add_url_rule(
@@ -217,8 +203,15 @@ unhcr_kobo_blueprint.add_url_rule(
 )
 
 unhcr_kobo_blueprint.add_url_rule(
-    rule=u'/enqueue-survey-update',
-    view_func=enqueue_survey_update,
+    rule=u'/enqueue-survey-package-update',
+    view_func=enqueue_survey_package_update,
+    methods=['POST'],
+    strict_slashes=False,
+)
+
+unhcr_kobo_blueprint.add_url_rule(
+    rule=u'/enqueue-survey-resource-update',
+    view_func=enqueue_survey_resource_update,
     methods=['POST'],
     strict_slashes=False,
 )

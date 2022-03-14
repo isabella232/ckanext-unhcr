@@ -1,0 +1,170 @@
+
+  <div style="background-color: #91823422; padding: 15px;">
+    <p>You are about to create a RIDL dataset using a KoBoToolbox Survey as data resources</p>
+    <p>The defaults are generally fine but you can <b>change the survey import settings</b> expanding the section below.</p>
+
+  <h2 
+    id="kobo-import-settings-title">
+    Survey import settings 
+    <i class="fa fa-caret-down" style="margin-left: 5px;"></i> 
+  </h2>
+  
+  <div class="form-group control-medium" id="kobo-import-settings" style="display: none;">
+
+    <div class="row">
+      <div class="col-md-4">
+
+        <h3>Basic survey information</h3>
+    <p>
+        <ul>
+        <li>Survey name: <b>{{ kobo_survey.name}}</b></li>
+        <li>Survey owner: <b>{{ kobo_survey.owner__username}}</b></li>
+        <li>Submission count: {{ kobo_survey.deployment__submission_count }}</li>
+        </ul>
+    </p>
+    <label class="control-label" for="include_questionnaire">Include questionnaire as resource</label>
+    <div class="controls ">
+      <select name="include_questionnaire" id="include_questionnaire" class="form-control">
+        <option selected value="true">Yes</option>
+        <option value="false">No</option>
+      </select>
+    </div>
+    <div class="info-block ">
+      <i class="fa fa-info-circle"></i>
+      Excel file with the questionnaire. Filters are not applied here.
+    </div>
+
+    <label class="control-label" for="fields_from_all_versions">Include fields from all versions</label>
+    <div class="controls">
+      <select name="fields_from_all_versions" id="fields_from_all_versions" class="form-control">
+        <option selected value="true">Yes</option>
+        <option value="false">No</option>
+      </select>
+      <div class="info-block ">
+        <i class="fa fa-info-circle"></i>
+        <b>Required</b>. To specify whether fields from all form versions will be included in the export. 
+        Default is <b>Yes</b>.
+      </div>
+    </div>
+
+    <label class="control-label" for="multiple_select">Multiple select</label>
+    <div class="controls">
+      <select name="multiple_select" id="multiple_select" class="form-control">
+        <option selected value="both">Both</option>
+        <option value="summary">Summary</option>
+        <option value="details">Details</option>
+      </select>
+      <div class="info-block ">
+        <i class="fa fa-info-circle"></i>
+        <b>Required</b> To specify the display of <i>multiple_select</i>-type responses
+        Default is <b>Both</b>.
+      </div>
+    </div>
+  
+    <label class="control-label" for="hierarchy_in_labels">Hierarchy in labels</label>
+    <div class="controls">
+      <select name="hierarchy_in_labels" id="hierarchy_in_labels" class="form-control">
+        <option selected value="true">Yes</option>
+        <option value="false">No</option>
+      </select>
+      <div class="info-block ">
+        <i class="fa fa-info-circle"></i>
+        <b>Required</b> To specify whether the group hierarchy will be displayed in labels. 
+        Default is <b>Yes</b>.
+      </div>
+    </div>
+
+    <label class="control-label" for="group_sep">Group separator</label>
+    <div class="controls ">
+      <input type="text" name="group_sep" size="15" maxlength="1" class="form-control"
+          value="/"
+          placeholder="To separate the names in a hierarchy of groups" />
+      <div class="info-block ">
+        <i class="fa fa-info-circle"></i>
+        <b>Required</b> Value used to separate the names in a hierarchy of groups
+        Default is <b>/</b>.
+      </div>
+    </div>
+
+
+  </div>
+
+
+    <div class="col-md-8">
+  
+      <label class="control-label">Formats for resources</label>
+    <div class="controls">
+      
+      {# Default formats #}
+      {% set formats = ['csv', 'xls'] %}
+      {% for format, info in h.get_kobo_all_formats().items() %}
+      <label class="checkbox"><input type="checkbox" 
+        {% if format in formats %}checked{% endif %}
+        name="formats" value="{{ format }}">{{ info }}</label>
+      {% endfor %}
+      
+      <div class="info-block ">
+        <i class="fa fa-info-circle"></i>
+        <b>At least one Required</b>. To specify whether fields from all form versions will be included in the export. 
+        Default is <b>Yes</b>.
+      </div>
+      
+    </div>
+  
+      <label class="control-label togglable" data-toggle-id="fields-to-include-div">Fields to include</label>
+    <div class="controls">
+      <div id="fields-to-include-div">
+      {# SURVEY FIELDS #}
+
+      {% if kobo_survey.content %}
+      {% for field in kobo_survey.content.survey %}
+        {# TODO double check the field type, not all should be shown #}
+        {% set label = field['$autoname'] if not field.label else field.label.0 %}
+        <label class="checkbox">
+          <input 
+            type="checkbox"
+            name="fields" 
+            value="{{ field['$autoname'] }}"
+          >
+          {{ label }} (type: {{ field.type }}, internal name: {{ field['$autoname'] }})
+        </label>
+      {% endfor %}
+      {% endif %}
+
+      {# FIXED FIELDS #}
+      {% for field in h.get_kobo_fixed_fields_export() %}
+        <label class="checkbox"><input type="checkbox" name="fields"
+          value="{{ field }}">{{ field }}</label>
+      {% endfor %}
+      <div class="info-block ">
+        <i class="fa fa-info-circle"></i>
+        <b>At least one Required</b>. To specify whether fields from all form versions will be included in the export. 
+        Default is <b>Yes</b>.
+      </div>
+    </div>
+  </div>
+
+    <label class="control-label" for="group_sep">Mongo query</label>
+    <div class="controls">
+      
+      <textarea name="query" id="query" cols="60" rows="7"
+          style="font-family: 'Courier New', Courier, monospace;"
+          placeholder='A valid Mongo DB query.
+{
+ "$and": [
+  {"_submission_time": {"$gte": "2022-01-01"}},
+  {"_submission_time": {"$lte": "2022-02-01"}}
+ ]
+}'></textarea>
+      <div class="info-block ">
+        <i class="fa fa-info-circle"></i>
+        <b>Optional</b> A JSON object containing a Mongo filter query for filtering exported submissions
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+  </div>
+</div>

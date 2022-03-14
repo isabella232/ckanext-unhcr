@@ -13,6 +13,7 @@ from ckanext.unhcr.kobo.exceptions import (
     KoBoEmptySurveyError,
     KoBoUserTokenMissingError
 )
+from ckanext.unhcr.kobo.filters import process_pkg_kobo_filters
 
 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,8 @@ DOWNLOAD_PENDING_MSG = 'The resource is pending download.'
 
 class KoboDataset:
     def __init__(self, kobo_asset_id, package_dict=None):
+        if not kobo_asset_id:
+            raise KoboMissingAssetIdError('Missing kobo_asset_id')
         self.kobo_asset_id = kobo_asset_id
         self.package_dict = package_dict
         self.kobo_api = None  # the KoBoAPI object
@@ -165,7 +168,7 @@ class KoboDataset:
 
         return starting_notes
 
-    def create_kobo_resources(self, context, pkg_dict, user_obj):
+    def create_kobo_resources(self, context, pkg_dict, user_obj, kobo_filters):
         """ After KoBo pkg created we need to create basic resources.
             Uses context from the package_create call and the created dataset """
 
@@ -180,16 +183,20 @@ class KoboDataset:
         if survey.get_total_submissions() == 0:
             raise KoBoEmptySurveyError('KoBoToolbox survey has no submissions')
 
-        # Create a resource for the questionnaire
-        self.create_questionnaire_resource(context, pkg_dict, survey)
+        # create the export for the expected formats (this starts an async process at KoBo)
+        final_kobo_filters = process_pkg_kobo_filters(kobo_filters)
+        
+        if final_kobo_filters['include_questionnaire']:
+            # Create a resource for the questionnaire
+            self.create_questionnaire_resource(context, pkg_dict)
 
         # Create JSON, CSV and XLS data resources
-        self.create_data_resources(context, pkg_dict, survey)
+        self.create_data_resources(context, pkg_dict, survey, final_kobo_filters)
         return
 
-    def create_questionnaire_resource(self, context, pkg_dict, survey):
+    def create_questionnaire_resource(self, context, pkg_dict):
         """ Create a resource for the questionnaire """
-        from ckanext.unhcr.jobs import download_kobo_export
+        from ckanext.unhcr.jobs import download_kobo_file
 
         # create empty resources to be updated later
         f = tempfile.NamedTemporaryFile()
@@ -217,13 +224,13 @@ class KoboDataset:
         resource = action(context, resource)
 
         # Start a job to download the questionnaire
-        toolkit.enqueue_job(download_kobo_export, [resource['id']], title='Download KoBoToolbox questionnaire')
+        toolkit.enqueue_job(download_kobo_file, [resource['id']], title='Download KoBoToolbox questionnaire')
 
         return resource
 
-    def create_data_resources(self, context, pkg_dict, survey):
+    def create_data_resources(self, context, pkg_dict, survey, kobo_filters):
         """ Create multiple resources for the survey data """
-        from ckanext.unhcr.jobs import download_kobo_export
+        from ckanext.unhcr.jobs import download_kobo_file
 
         date_range_start, date_range_end = survey.get_submission_times()
         if date_range_start is None:
@@ -240,11 +247,17 @@ class KoboDataset:
         # create empty resources to be updated later
         f = tempfile.NamedTemporaryFile()
 
-        for data_resource_format in ['json', 'csv', 'xls']:
+        logger.info('Kobo filters: {}'.format(kobo_filters))
+        for data_resource_format in kobo_filters['formats']:
             # JSON do not require an export
             if data_resource_format != 'json':
-                # create the export for the expected format (this starts an async process at KoBo)
-                export = survey.create_export(dformat=data_resource_format)
+
+                params = kobo_filters.copy()
+                params['dformat'] = data_resource_format
+                params.pop('include_questionnaire')
+                params.pop('formats')
+                logger.info('Preparing export {}'.format(params))
+                export = survey.create_export(**params)
                 export_id = export['uid']
             else:
                 export_id = None
@@ -271,9 +284,14 @@ class KoboDataset:
                     'kobo_asset_id': self.kobo_asset_id,
                     'kobo_download_status': 'pending',
                     'kobo_download_attempts': 0,
-                    # To detect new submissions
-                    'kobo_submission_count': survey.get_total_submissions(),
-                    'kobo_last_updated': datetime.datetime.utcnow().isoformat()
+                    'kobo_last_updated': datetime.datetime.utcnow().isoformat(),
+                    # keep track on filters to show and to be able to update the resource in the future
+                    'kobo_filter_fields_from_all_versions': kobo_filters['fields_from_all_versions'],
+                    'kobo_filter_group_sep': kobo_filters['group_sep'],
+                    'kobo_filter_fields': kobo_filters['fields'],
+                    'kobo_filter_query': kobo_filters['query'],
+                    'kobo_filter_multiple_select': kobo_filters['multiple_select'],
+                    'kobo_filter_hierarchy_in_labels': kobo_filters['hierarchy_in_labels'],
                 }
             }
 
@@ -283,7 +301,7 @@ class KoboDataset:
             resources.append(resource)
 
             # Start a job to download the file
-            toolkit.enqueue_job(download_kobo_export, [resource['id']], title='Download KoBoToolbox survey {} data'.format(data_resource_format))
+            toolkit.enqueue_job(download_kobo_file, [resource['id']], title='Download KoBoToolbox survey {} data'.format(data_resource_format))
 
         return resources
 
@@ -309,7 +327,7 @@ class KoboDataset:
         )
         return resource
 
-    def update_resource(self, resource_dict, local_file, user_name, submission_count=None):
+    def update_resource(self, resource_dict, local_file, user_name):
         """ Update the resource with real data """
         logger.info('Updating resource {} from file {}'.format(resource_dict['id'], local_file))
         context = {'user': user_name, 'job': True}
@@ -322,8 +340,6 @@ class KoboDataset:
 
         kobo_details['kobo_download_status'] = 'complete'
         kobo_details['kobo_download_attempts'] = kobo_download_attempts + 1
-        if submission_count:
-            kobo_details['kobo_submission_count'] = submission_count
         kobo_details['kobo_last_updated'] = datetime.datetime.utcnow().isoformat()
 
         resource = toolkit.get_action('resource_patch')(
@@ -339,98 +355,22 @@ class KoboDataset:
         logger.info('Resource {} updated {}'.format(resource_dict['id'], kobo_details['kobo_last_updated']))
         return resource
 
-    def get_submission_count(self):
-        """ Get the amount of submissions in the current local package """
-
-        kobo_package = self.get_package(raise_none_error=True)
-
-        # analyze all resources, check for the smallest one
-        # we expect all resources to have the same number of submissions
-        min_submission_count = 0
-        for resource in kobo_package['resources']:
-            # only data resources have submission count
-            if resource.get('kobo_type') != 'data':
-                continue
-            kobo_details = resource.get('kobo_details')
-            if not kobo_details:
-                continue
-            submission_count = kobo_details.get('kobo_submission_count')
-            if not submission_count or submission_count == 0:
-                logger.warning('No submission count found for resource {}'.format(resource['id']))
-                continue
-            if min_submission_count == 0 or submission_count < min_submission_count:
-                min_submission_count = submission_count
-
-        return min_submission_count
-
-    def check_new_submissions(self, user_obj):
-        """ Check for updates in the survey (new submissions).
-            Return the amount of new submissions """
-
-        min_submission_count = self.get_submission_count()
-
-        kobo_api = self.get_kobo_api(user_obj)
-        survey = KoBoSurvey(self.kobo_asset_id, kobo_api)
-
-        new_submission_count = survey.get_total_submissions()
-        if new_submission_count == 0:
-            return 0
-
-        # check if the submission count has changed
-        return new_submission_count - min_submission_count
-
-    def update_all_resources(self, user_obj):
+    def update_all_resources(self, user_id):
         """ update all resources (and questionnaire) in the package with new submissions """
-        from ckanext.unhcr.jobs import download_kobo_export
+        from ckanext.unhcr.jobs import download_kobo_file, update_kobo_resource
 
         kobo_package = self.get_package(raise_none_error=True)
-
         logger.info('Updating all resources for package {}'.format(kobo_package['name']))
-        kobo_api = self.get_kobo_api(user_obj)
-        survey = KoBoSurvey(self.kobo_asset_id, kobo_api)
-        date_range_start, date_range_end = survey.get_submission_times()
 
         # update each resource
         for resource in kobo_package['resources']:
             if resource.get('kobo_type') == 'questionnaire':
-                toolkit.enqueue_job(download_kobo_export, [resource['id']], title='Preparing to update questionnaire resource')
+                toolkit.enqueue_job(download_kobo_file, [resource['id']], title='Preparing to update questionnaire resource')
                 continue
             if resource.get('kobo_type') != 'data':
                 continue
             kobo_details = resource.get('kobo_details')
             if not kobo_details:
                 continue
-            # this is a kobo resource
-            logger.info('Updating {} resources {} for package {}'.format(
-                resource['format'],
-                resource['id'],
-                kobo_package['name'])
-            )
-            dformat = resource['format'].lower()
-            if dformat != 'json':
-                # create the export for the expected format (this starts an async process at KoBo)
-                export = survey.create_export(dformat=dformat)
-                export_id = export['uid']
-            else:
-                export_id = ''
-
-            # prepare the update
-            kobo_details = resource['kobo_details']
-            patch_resource = {
-                'id': resource['id'],
-                'date_range_start': date_range_start,
-                'date_range_end': date_range_end,
-                'kobo_details': kobo_details
-            }
-            patch_resource['kobo_details']['kobo_export_id'] = export_id
-            patch_resource['kobo_details']['kobo_download_status'] = 'pending'
-            patch_resource['kobo_details']['kobo_download_attempts'] = 0
-            patch_resource['kobo_details']['kobo_last_updated'] = datetime.datetime.utcnow().isoformat()
-
-            toolkit.get_action('resource_patch')(
-                {'user': user_obj.name, 'job': True},
-                patch_resource,
-            )
-
-            # send this job to queue
-            toolkit.enqueue_job(download_kobo_export, [resource['id']], title='Preparing to update {} resource'.format(dformat))
+            # this is a kobo resource we want to update
+            toolkit.enqueue_job(update_kobo_resource, [resource['id'], user_id], title='Preparing to update data resource')

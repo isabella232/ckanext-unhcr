@@ -7,6 +7,7 @@ from redis import Redis, ConnectionPool
 from redis.exceptions import ConnectionError
 from requests.exceptions import ConnectionError, HTTPError, Timeout
 from ckan.common import config
+from ckanext.unhcr.kobo import VALID_KOBO_EXPORT_FORMATS
 from ckanext.unhcr.kobo.exceptions import KoboApiError, KoBoSurveyError
 
 
@@ -79,7 +80,7 @@ class KoBoAPI:
         """ POST to KoBo API """
         url = resource_url if resource_url.startswith('http') else self.base_url + resource_url
         try:
-            response = requests.post(url, data=data, headers={'Authorization': 'Token ' + self.token})
+            response = requests.post(url, json=data, headers={'Authorization': 'Token ' + self.token})
             response.raise_for_status()
         except (ConnectionError, HTTPError, Timeout) as e:
             logger.error('Error posting KoBoToolbox {}: {}'.format(resource_url, e))
@@ -107,9 +108,11 @@ class KoBoAPI:
         return self.surveys
 
     def get_asset(self, asset_id):
+        """ get a single asset """
         resource_url = 'assets/{}.json'.format(asset_id)
         asset = self._get(resource_url)
         asset['user_is_manager'] = self._detect_manager_permission(asset)
+
         return asset
 
     @property
@@ -192,9 +195,9 @@ class KoBoSurvey:
 
         return file_path
 
-    def download_json_data(self, destination_path):
+    def download_json_data(self, destination_path, resource_name):
         """ Download JSON survey data (do not require export) """
-        file_name = '{}_data.json'.format(self.asset_id)
+        file_name = '{}__{}_data.json'.format(resource_name, self.asset_id)
         file_path = os.path.join(destination_path, file_name)
 
         data = self.load_data()
@@ -203,19 +206,20 @@ class KoBoSurvey:
 
         return file_path
 
-    def download_data(self, destination_path, dformat, url):
+    def download_data(self, destination_path, resource_name, dformat, url):
         """ Download survey data (require previous export) """
-        if dformat.lower() not in ['xls', 'csv']:
+        if dformat.lower() not in VALID_KOBO_EXPORT_FORMATS.keys():
             raise KoBoSurveyError('Invalid format: {}'.format(dformat))
 
-        file_name = '{}_data.{}'.format(self.asset_id, dformat)
+        extension = 'zip' if dformat.lower() == 'spss_labels' else dformat.lower()
+        file_name = '{}__{}_data.{}'.format(resource_name, self.asset_id, extension)
         file_path = os.path.join(destination_path, file_name)
         # require private download
         response = self.kobo_api._get(url, return_json=False)
-        if dformat.lower() == 'xls':
+        if dformat.lower() in ['xls', 'spss_labels']:
             final_data = response.content
             open(file_path, 'wb').write(final_data)
-        elif dformat.lower() == 'csv':
+        else:  # csv and geojson are text files
             final_data = response.text
             open(file_path, 'w').write(final_data)
 
@@ -234,61 +238,44 @@ class KoBoSurvey:
 
         return first_submission['_submission_time'], last_submission['_submission_time']
 
-    def create_export(self, dformat='csv'):
+    def create_export(
+        self,
+        dformat='csv',
+        fields_from_all_versions=True,
+        group_sep='/',
+        hierarchy_in_labels=True,
+        lang='_default',
+        multiple_select='both',
+        flatten=True,
+        fields=None,
+        query=None
+    ):
         """ Create a data dump. Check https://kobo.unhcr.org/exports/ """
 
         if dformat.lower() not in ['csv', 'xls', 'geojson', 'spss_labels']:
             raise KoBoSurveyError('Invalid export format: {}'.format(dformat))
 
-        # Check if the user has permission to download data before
-        # TODO
-        source_url = '{}assets/{}/'.format(self.kobo_api.base_url, self.asset_id)
         payload = {
-            "source": source_url,
-            "fields_from_all_versions": "true",
-            "group_sep": "/",
-            "hierarchy_in_labels": "true",
-            "lang": "_default",
-            "multiple_select": "both",
+            "fields_from_all_versions": fields_from_all_versions,
+            "group_sep": group_sep,
+            "hierarchy_in_labels": hierarchy_in_labels,
+            "lang": lang,
+            "multiple_select": multiple_select,
             "type": dformat.lower(),
-            "flatten": "true"
+            "flatten": flatten,
         }
 
-        export_post_url = '{}/exports/?format=json'.format(self.kobo_api.kobo_url)
+        if query:
+            payload["query"] = query
+
+        if fields:
+            payload["fields"] = fields
+
+        # To use the Query param is required to use /assets/ASSSET_ID
+        # The simpler URL /exports require source and do not allow querying
+        export_post_url = '{}assets/{}/exports/?format=json'.format(self.kobo_api.base_url, self.asset_id)
         response = self.kobo_api._post(export_post_url, payload)
 
-        """
-        sample response
-        {
-            'uid': 'eTynYph8kZpeu4bvGS2cSX',
-            'url': 'https://kobo.unhcr.org/exports/eTynYph8kZpeu4bvGS2cSX/',
-            'status': 'processing'
-        }
-
-        and then we expect
-
-        {
-            "url": "https://kobo.unhcr.org/exports/SOME_EXPORT_ID/",
-            "status": "complete",
-            "messages": {},
-            "uid": "ekXzzguVxBfJErts6MvCib",
-            "date_created": "2021-08-06T16:29:38.061023Z",
-            "last_submission_time": "2019-10-04T13:36:39Z",
-            "result": "https://kobo.unhcr.org/private-media/avazquez/exports/SURVEY_NAME_-_all_versions_-_labels_-_2021-08-06-16-29-38.csv",
-            "data": {
-                "lang": "_default",
-                "name": null,
-                "type": "csv",
-                "fields": [],
-                "source": "https://kobo.unhcr.org/api/v2/assets/ASSET_ID/",
-                "group_sep": "/",
-                "multiple_select": "both",
-                "hierarchy_in_labels": false,
-                "processing_time_seconds": 1.808768,
-                "fields_from_all_versions": true
-            }
-        }
-        """
         data = response.json()
         logger.info('KoBoToolbox Export created {}'.format(data))
         return data

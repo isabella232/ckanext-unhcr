@@ -5,7 +5,7 @@ import pytest
 import tempfile
 from ckan import model
 from ckan.plugins import toolkit
-from ckanext.unhcr.jobs import download_kobo_export
+from ckanext.unhcr.jobs import download_kobo_file
 from ckanext.unhcr.models import DEFAULT_GEOGRAPHY_CODE
 from ckanext.unhcr.tests import factories, mocks
 
@@ -171,10 +171,12 @@ class TestKoBo(object):
         assert 'kobo_token' not in userobj.plugin_extras['unhcr']
 
     @mock.patch('ckan.lib.helpers.helper_functions.get_kobo_initial_dataset')
-    def test_create_pkg_frm_asset_error(self, initial, app):
+    @mock.patch('ckan.lib.helpers.helper_functions.get_kobo_survey')
+    def test_create_pkg_frm_asset_error(self, kobo_survey, initial, app):
         """ Try to import from invalid asset_id"""
 
         initial.return_value = {}, {'kobo_dataset': ['Some error']}
+        kobo_survey.return_value = {}
         environ = {
             'REMOTE_USER': self.internal_editor_user['name']
         }
@@ -185,10 +187,13 @@ class TestKoBo(object):
         assert "Some error" in resp.body
 
     @mock.patch('ckan.lib.helpers.helper_functions.get_kobo_initial_dataset')
-    def test_create_pkg_frm_valid_asset(self, initial, app):
+    @mock.patch('ckan.lib.helpers.helper_functions.get_kobo_survey')
+    def test_create_pkg_frm_valid_asset(self, kobo_survey, initial, app):
         """ Try to import from valid asset_id"""
 
         initial.return_value = {'title': 'KoBoToolbox Survey Name XX'}, {}
+        kobo_survey.return_value = {}
+        
         environ = {
             'REMOTE_USER': self.internal_editor_user['name']
         }
@@ -235,6 +240,8 @@ class TestKoBo(object):
             'geog_coverage': '',
             'data_collection_technique': 'nf',
             'archived': 'False',
+            # kobo filters
+            'include_questionnaire': 'true',
             'save': '',
         }
 
@@ -249,10 +256,76 @@ class TestKoBo(object):
         submissions.assert_called()
         create_export.assert_called()
         sub_times.assert_called()
-        # download_kobo_export should be called for all data surveys (JSON, CSV and XLS)
+        # download_kobo_file should be called 2 times
+        # One for the default CSV format and the other for the questionnaire
         mock_calls = [fn[0][0].__name__ for fn in mock_hook.call_args_list]
-        assert mock_calls.count('download_kobo_export') == 4
+        assert mock_calls.count('download_kobo_file') == 2
+        mock_titles = [fn[1].get('title') for fn in mock_hook.call_args_list]
+        assert 'Download KoBoToolbox questionnaire' in mock_titles
+        assert 'Download KoBoToolbox survey csv data' in mock_titles
 
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
+    @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.get_submission_times')
+    @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.create_export')
+    @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.get_total_submissions')
+    def test_post_new_pkg_multiple_formats_from_kobo_starts_jobs(self, submissions, create_export, sub_times,mock_hook, app):
+        """ Try to import KoBo resource """
+
+        submissions.return_value = 1
+        create_export.return_value = {'uid': 'kobo_export_id'}
+        sub_times.return_value = ['2021-01-01', '2021-02-01']
+        mock_hook.return_value = None
+
+        environ = {
+            'REMOTE_USER': self.kobo_user['name']
+        }
+        data = {
+            '_ckan_phase': 'dataset_new_1',
+            'pkg_name': '',
+            'kobo_asset_id': 'some_kobo_id',
+            'title': 'Some Survey',
+            'name': 'some-survey',
+            'notes': 'Dataset imported from KoBoToolbox, bla, bla',
+            'tag_string': '',
+            'url': '',
+            'owner_org': self.data_container['name'],
+            'external_access_level': 'not_available',
+            'original_id': 'some_kobo_id',
+            'data_collector': 'ACF,UNHCR',
+            'geographies': DEFAULT_GEOGRAPHY_CODE,
+            'keywords': 9,
+            'unit_of_measurement': 'meters',
+            'geog_coverage': '',
+            'data_collection_technique': 'nf',
+            'archived': 'False',
+            # kobo filters
+            'include_questionnaire': 'true',
+            'formats': ['csv', 'spss_labels', 'xls', 'geojson'],
+            'save': '',
+        }
+
+        url = toolkit.url_for('dataset.new')
+        app.post(
+            url,
+            data=data,
+            extra_environ=environ,
+            follow_redirects=True
+        )
+
+        submissions.assert_called()
+        create_export.assert_called()
+        sub_times.assert_called()
+        # download_kobo_file should be called 5 times
+        # One for the questionnaire and then the 4 formats
+        mock_calls = [fn[0][0].__name__ for fn in mock_hook.call_args_list]
+        assert mock_calls.count('download_kobo_file') == 5
+
+        mock_titles = [fn[1].get('title') for fn in mock_hook.call_args_list]
+        assert 'Download KoBoToolbox questionnaire' in mock_titles
+        assert 'Download KoBoToolbox survey csv data' in mock_titles
+        assert 'Download KoBoToolbox survey spss_labels data' in mock_titles
+        assert 'Download KoBoToolbox survey xls data' in mock_titles
+        assert 'Download KoBoToolbox survey geojson data' in mock_titles
 
 @pytest.mark.usefixtures('clean_db', 'unhcr_migrate', 'with_request_context')
 class TestKoBoJobs(object):
@@ -295,7 +368,6 @@ class TestKoBoJobs(object):
                 'kobo_asset_id': self.kobo_test_asset_id,
                 'kobo_download_status': 'pending',
                 'kobo_download_attempts': 1,
-                'kobo_submission_count': 3,
                 'kobo_last_updated': datetime.datetime.utcnow().isoformat(),
             }
         )
@@ -353,8 +425,8 @@ class TestKoBoJobs(object):
     @mock.patch('ckanext.unhcr.kobo.kobo_dataset.KoboDataset.update_kobo_details')
     @mock.patch('ckan.plugins.toolkit.enqueue_job')
     @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.get_total_submissions')
-    def test_pending_download_kobo_export(self, get_total_submissions, enqueue_job, update_kobo_details, get_export):
-        """ test download_kobo_export job function to update a resource"""
+    def test_pending_download_kobo_file(self, get_total_submissions, enqueue_job, update_kobo_details, get_export):
+        """ test download_kobo_file job function to update a resource"""
         get_total_submissions.return_value = 5  # any, > 0
         get_export.return_value = {
             'uid': 'new_export_uid',
@@ -363,21 +435,21 @@ class TestKoBoJobs(object):
         }
         update_kobo_details.return_value = {}
 
-        download_kobo_export(self.kobo_resource['id'])
+        download_kobo_file(self.kobo_resource['id'])
 
         # test we update the download_attempts counter
         assert update_kobo_details.call_args_list[0][0][2]['kobo_download_attempts'] == 2
 
-        # assert we call again to download_kobo_export function
+        # assert we call again to download_kobo_file function
         jobs_called = [fn[0][0].__name__ for fn in enqueue_job.call_args_list]
-        assert 'download_kobo_export' in jobs_called
+        assert 'download_kobo_file' in jobs_called
 
     @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.get_export')
     @mock.patch('ckanext.unhcr.kobo.kobo_dataset.KoboDataset.update_kobo_details')
     @mock.patch('ckan.plugins.toolkit.enqueue_job')
     @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.get_total_submissions')
-    def test_failed_download_kobo_export(self, get_total_submissions, enqueue_job, update_kobo_details, get_export):
-        """ test download_kobo_export failed after 5 attempts """
+    def test_failed_download_kobo_file(self, get_total_submissions, enqueue_job, update_kobo_details, get_export):
+        """ test download_kobo_file failed after 5 attempts """
         get_total_submissions.return_value = 5  # any, > 0
         get_export.return_value = {
             'uid': 'new_export_uid',
@@ -386,12 +458,12 @@ class TestKoBoJobs(object):
         }
         update_kobo_details.return_value = {}
 
-        download_kobo_export(self.kobo_resource_last_attempt['id'])
+        download_kobo_file(self.kobo_resource_last_attempt['id'])
 
         # test we update the download_attempts counter
         print(update_kobo_details.call_args_list[0][0][2])
         assert update_kobo_details.call_args_list[0][0][2]['kobo_download_status'] == 'error'
 
-        # assert we DON'T call again to download_kobo_export function
+        # assert we DON'T call again to download_kobo_file function
         jobs_called = [fn[0][0].__name__ for fn in enqueue_job.call_args_list]
-        assert 'download_kobo_export' not in jobs_called
+        assert 'download_kobo_file' not in jobs_called

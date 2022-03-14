@@ -1,5 +1,6 @@
 from ckanext.unhcr.kobo.exceptions import KoboApiError
 from functools import wraps
+import datetime
 import logging
 import time
 
@@ -7,6 +8,7 @@ from ckan import model
 from ckan.authz import get_group_or_org_admin_ids
 from ckanext.unhcr import utils
 from ckanext.unhcr.helpers import get_random_sysadmin
+from ckanext.unhcr.kobo.filters import process_resource_kobo_filters
 import ckan.plugins.toolkit as toolkit
 
 
@@ -219,8 +221,64 @@ def update_pkg_kobo_resources(kobo_asset_id, user_id):
     """ update all resources with new submissions for a KoBo dataset """
     from ckanext.unhcr.kobo.kobo_dataset import KoboDataset
     kd = KoboDataset(kobo_asset_id)
+    kd.update_all_resources(user_id)
+
+
+def update_kobo_resource(resource_id, user_id):
+    """ Update a kobo resource
+        For data resources: create an export and download the data in a new job
+        For custom json resources: Just downloads the data
+        For questionnaires: Donwload the questionnaire file and update the resource
+        """
+
+    log.info('Updating {} resource'.format(resource_id))
+    _, survey, resource, _ = _prepare_kobo_download(resource_id)
+    if resource.get('kobo_type') == 'questionnaire':
+        log.info('Updating questionnaire')
+        return toolkit.enqueue_job(
+            download_kobo_file,
+            [resource['id']],
+            title='Preparing to update questionnaire resource'
+        )
+
     user_obj = model.User.get(user_id)
-    kd.update_all_resources(user_obj)
+
+    dformat = resource['format'].lower()
+    if dformat != 'json':
+        export_params = process_resource_kobo_filters(resource['kobo_details'])
+        # create the export for the expected format (this starts an async process at KoBo)
+        log.info('Preparing export {}'.format(export_params))
+        export_params['dformat'] = dformat
+        export = survey.create_export(**export_params)
+        export_id = export['uid']
+    else:
+        export_id = ''
+
+    # prepare the update
+    kobo_details = resource['kobo_details']
+    date_range_start, date_range_end = survey.get_submission_times()
+    patch_resource = {
+        'id': resource['id'],
+        'date_range_start': date_range_start,
+        'date_range_end': date_range_end,
+        'kobo_details': kobo_details
+    }
+    patch_resource['kobo_details']['kobo_export_id'] = export_id
+    patch_resource['kobo_details']['kobo_download_status'] = 'pending'
+    patch_resource['kobo_details']['kobo_download_attempts'] = 0
+    patch_resource['kobo_details']['kobo_last_updated'] = datetime.datetime.utcnow().isoformat()
+
+    toolkit.get_action('resource_patch')(
+        {'user': user_obj.name, 'job': True},
+        patch_resource,
+    )
+
+    # send this job to queue
+    return toolkit.enqueue_job(
+        download_kobo_file,
+        [resource['id']],
+        title='Preparing to update {} resource'.format(dformat)
+    )
 
 
 def _kobo_job_error(kd, resource, user_obj, error):
@@ -273,9 +331,8 @@ def _prepare_kobo_download(resource_id):
 
 
 @kobo_job_exception_handler
-def download_kobo_export(resource_id):
-    """ Job for download pending data from a KoBo export.
-        JSON data requires a paginated download """
+def download_kobo_file(resource_id):
+    """ Job for download pending data from a KoBo. """
 
     kd, survey, resource, user_obj = _prepare_kobo_download(resource_id)
     kobo_details = resource.get('kobo_details')
@@ -289,16 +346,17 @@ def download_kobo_export(resource_id):
         kd.update_resource(resource, local_file, user_obj.name)
         return
 
-    # Update the submission count
-    new_submission_count = survey.get_total_submissions()
     if resource['format'].lower() == 'json':
         try:
-            local_file = survey.download_json_data(destination_path=kd.upload_path)
+            local_file = survey.download_json_data(
+                destination_path=kd.upload_path,
+                resource_name=resource.get('name', 'unnamed-resource')
+            )
         except (KoboApiError, ValueError) as e:
             _kobo_job_error(kd, resource, user_obj, 'Error downloading json kobo data {}'.format(e))
             return
 
-        kd.update_resource(resource, local_file, user_obj.name, new_submission_count)
+        kd.update_resource(resource, local_file, user_obj.name)
         return
 
     # CSV and XLS require export and download
@@ -316,12 +374,17 @@ def download_kobo_export(resource_id):
         data_url = export['result']
 
         try:
-            local_file = survey.download_data(destination_path=kd.upload_path, dformat=resource['format'], url=data_url)
+            local_file = survey.download_data(
+                destination_path=kd.upload_path,
+                resource_name=resource.get('name', 'unnamed-resource'),
+                dformat=resource['format'],
+                url=data_url
+            )
         except (KoboApiError, ValueError) as e:
             _kobo_job_error(kd, resource, user_obj, 'Error downloading kobo data {}'.format(e))
             return
 
-        kd.update_resource(resource, local_file, user_obj.name, new_submission_count)
+        kd.update_resource(resource, local_file, user_obj.name)
 
     elif export['status'] in ['processing', 'created']:
         # wait and re-schedule
@@ -334,7 +397,7 @@ def download_kobo_export(resource_id):
             kd.update_kobo_details(resource, user_obj.name, {"kobo_download_attempts": kobo_download_attempts})
             time.sleep(30 * kobo_download_attempts)
             toolkit.enqueue_job(
-                download_kobo_export,
+                download_kobo_file,
                 [resource['id']],
                 title='Re-scheduling KoBoToolbox download: {}'.format(kobo_download_attempts)
             )

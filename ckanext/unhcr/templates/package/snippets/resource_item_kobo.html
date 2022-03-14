@@ -12,6 +12,16 @@
       <li>Date range <b>{{res.date_range_start}} - {{res.date_range_end}}</b></li>
       <li>Process status: <b>{{ h.get_resource_value_label('process_status', res) }}</b></li>
       <li>Identifiability: <b>{{ h.get_resource_value_label('identifiability', res) }}</b></li>
+      {% if res.kobo_details %}
+      <li>KoBo filters
+        <ul>
+          {% if res.kobo_details.kobo_filter_query %}
+          <li>Query: {{ res.kobo_details.kobo_filter_query }}</li>
+          {% endif %}
+          <li>Fields: {{ res.kobo_details.kobo_filter_fields }}</li>
+        </ul>
+      </li>
+      {% endif %}
   {% endif %}
   </ul>
 {% endblock %}
@@ -25,6 +35,6 @@
       {{ _('Edit') }}
     </a>
 </div>
-  {% endif %}
+{% endif %}
 
 {% endblock %}

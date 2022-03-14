@@ -20,6 +20,7 @@ from ckanext.scheming.helpers import (
 )
 from ckanext.unhcr import __VERSION__
 from ckanext.unhcr.models import AccessRequest, USER_REQUEST_TYPE_NEW, DEFAULT_GEOGRAPHY_CODE
+from ckanext.unhcr.kobo import ALL_KOBO_EXPORT_FORMATS, FIXED_FIELDS_KOBO_EXPORT
 from ckanext.unhcr.kobo.exceptions import KoboApiError
 from ckanext.unhcr.kobo.kobo_dataset import KoboDataset
 
@@ -277,6 +278,14 @@ def get_kobo_url():
     return toolkit.config.get('ckanext.unhcr.kobo_url', 'https://kobo.unhcr.org')
 
 
+def get_kobo_all_formats():
+    return ALL_KOBO_EXPORT_FORMATS
+
+
+def get_kobo_fixed_fields_export():
+    return FIXED_FIELDS_KOBO_EXPORT
+
+
 def get_kobo_initial_dataset(kobo_asset_id):
     """ Get package init data from KoBo asset (survey)
         Return pkd_dict, errors """
@@ -298,6 +307,11 @@ def get_kobo_initial_dataset(kobo_asset_id):
         }
 
     return initial_data, errors
+
+def get_kobo_survey(kobo_asset_id):
+    kd = KoboDataset(kobo_asset_id)
+    kobo_api = kd.get_kobo_api(toolkit.c.userobj)
+    return kobo_api.get_asset(kobo_asset_id)
 
 
 def get_kobo_import_process_real_status(resource_id):

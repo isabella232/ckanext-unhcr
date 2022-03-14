@@ -258,6 +258,8 @@ To define where the KoBo instance lives you can configure the `ckanext.unhcr.kob
 You can read a RIDL integration with KoBo tutorial [here](docs/kobo.md).  
 Technical details about the KoBo integration are available [here](docs/kobo-technical.md).  
 
+KoBo status: https://kobo.unhcr.org/service_health/
+
 ## Microdata library
 
 Datasets could be published to the [UNHCR Microdata Library](https://microdata.unhcr.org/index.php/home) which uses the [NADA](http://www.ihsn.org/nada) software.  

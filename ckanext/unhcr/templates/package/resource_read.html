@@ -111,11 +111,15 @@
           <th scope="row">{{ _('KoBoToolbox export ID') }}</th>
           <td>{{ res.kobo_details.kobo_export_id }}</td>
         </tr>
+        {% for key, value in res.kobo_details.items() %}
+        {% if "kobo_filter_" in key %}
         <tr>
-          <th scope="row">{{ _('Submission count') }}</th>
-          <td>{{ res.kobo_details.kobo_submission_count }}</td>
+          <th scope="row" class="dataset-label">Filter <i>{{ key | replace('kobo_filter_', '') }}</i></th>
+          <td class="dataset-details">{{ value }}</td>
         </tr>
         {% endif %}
+      {% endfor %}
+      {% endif %}
         {% if res.kobo_details %}
         <tr>
           <th scope="row">{{ _('Last resource update') }}</th>

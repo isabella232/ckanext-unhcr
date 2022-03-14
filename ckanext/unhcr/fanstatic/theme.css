@@ -2348,6 +2348,22 @@ i {
   font-weight: bold;
 }
 
+.toggle-caret {
+  margin-right: 10px;
+  color:#992222;
+  font-size: 1.3em;
+}
+
+.kobo-update-resource {
+  border: 0;
+  margin-left: 7px;
+  font-weight: normal;
+}
+
+.kobo-update-resource:hover {
+  background-color: #0072BC99;
+}
+
 /* General */
 
 .curation-sidebar .btn {

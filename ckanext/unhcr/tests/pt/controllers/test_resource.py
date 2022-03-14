@@ -6,6 +6,7 @@ import ckan.model as model
 from ckan.plugins import toolkit
 from ckan.tests import helpers as core_helpers
 from ckantoolkit.tests import factories as core_factories
+from ckanext.unhcr.actions import _validate_kobo_filters
 from ckanext.unhcr.tests import factories, mocks
 
 
@@ -19,7 +20,6 @@ class TestResourceViews(object):
         self.user1 = core_factories.User(name='user1', id='user1')
         self.user2 = core_factories.User(name='user2', id='user2')
         self.user3 = core_factories.User(name='user3', id='user3')
-        self.kobo_user = factories.InternalKoBoUser(name='kobo_user', id='kobo_user')
 
         # Containers
         self.container1 = factories.DataContainer(
@@ -249,12 +249,28 @@ class TestResourceViews(object):
         assert 'The form contains invalid entries:' in resp.body
         assert 'All data resources require an uploaded file' in resp.body
 
+@pytest.mark.usefixtures('clean_db', 'unhcr_migrate', 'with_request_context')
+class TestKoboResources:
+
     @mock.patch('ckanext.unhcr.kobo.kobo_dataset.KoboDataset.create_kobo_resources')
     @mock.patch('ckanext.unhcr.kobo.api.KoBoSurvey.get_total_submissions')
-    def test_edit_kobo_resource_must_preserve_upload(self, submissions, create_kobo_resources, app):
+    def setup(self, submissions, create_kobo_resources):
 
         # required to create KoBo dataset
         submissions.return_value = 1
+
+        # Users
+        self.sysadmin = core_factories.Sysadmin(name='sysadmin', id='sysadmin')
+        self.kobo_user = factories.InternalKoBoUser(name='kobo_user', id='kobo_user')
+
+        # Containers
+        self.container1 = factories.DataContainer(
+            name='container1',
+            id='container1',
+            users=[
+                {'name': self.kobo_user['name'], 'capacity': 'admin'},
+            ],
+        )
 
         self.kobo_dataset = factories.Dataset(
             name='kobo-dataset',
@@ -274,15 +290,25 @@ class TestResourceViews(object):
             visibility='restricted',
             upload=mocks.FakeFileStorage(),
             url='original-file.csv',
-            kobo_type='data'
+            kobo_type='data',
+            kobo_details={
+                'kobo_filter_fields_from_all_versions': True,
+                'kobo_filter_group_sep' : '/',
+                'kobo_filter_fields': ['field1', 'field2'],
+                'kobo_filter_query': {'a': 1},
+                'kobo_filter_multiple_select': 'both',
+                'kobo_filter_hierarchy_in_labels': True,
+            }
         )
 
+    def test_edit_kobo_resource_must_preserve_upload(self, app):
+        
         url = toolkit.url_for(
             'resource.edit',
             id=self.kobo_dataset['id'],
             resource_id=self.kobo_resource['id']
         )
-        env = {'REMOTE_USER': self.sysadmin['name'].encode('ascii')}
+        env = {'REMOTE_USER': self.kobo_user['name']}
 
         # Mock a resource edit payload
         form_data = {
@@ -296,6 +322,15 @@ class TestResourceViews(object):
 
             'url': 'different-file.csv',
             'clear_upload': '',
+
+            'kobo_filter_fields_from_all_versions': 'true',
+            'kobo_filter_group_sep' : '/',
+            'kobo_filter_fields': '',
+            'kobo_filter_query': '',
+            'kobo_filter_multiple_select': 'both',
+            'kobo_filter_hierarchy_in_labels': 'true',
+            'kobo_filter_formats': 'csv',
+
             'save': ''
 
         }
@@ -304,3 +339,114 @@ class TestResourceViews(object):
 
         assert 'The form contains invalid entries:' in resp.body
         assert 'You cannot update a KoBoToolbox data file directly, please re-import the data instead' in resp.body
+
+    def test_edit_data_kobo_resource_detect_no_changes(self, app):
+        """ Updating a KoBo resource with no filter changes """
+
+        original_dict = self.kobo_resource.copy()
+        # Mock a resource edit payload
+        original_dict.update({
+            'kobo_filter_fields_from_all_versions': 'true',
+            'kobo_filter_fields': ['field1', 'field2'],
+            'kobo_filter_query': "{'a': 1}",
+            'kobo_filter_multiple_select': 'both',
+            'kobo_filter_hierarchy_in_labels': 'true',
+            'kobo_filter_formats': 'csv',
+            'kobo_filter_group_sep': '/',
+        })
+        changes = _validate_kobo_filters(original_dict)
+        print(changes)
+        assert len(changes) == 0
+
+    def test_edit_data_kobo_resource_detect_no_query_changes(self, app):
+        """ Updating the query to a KoBo resource with no changes """
+
+        original_dict = self.kobo_resource.copy()
+        # Mock a resource edit payload
+        original_dict.update({
+            'kobo_filter_fields_from_all_versions': 'true',
+            'kobo_filter_fields': ['field1', 'field2'],
+            'kobo_filter_query': "{'a': 1}",
+            'kobo_filter_multiple_select': 'both',
+            'kobo_filter_hierarchy_in_labels': 'true',
+            'kobo_filter_formats': 'csv',
+            'kobo_filter_group_sep': '/',
+        })
+        changes = _validate_kobo_filters(original_dict)
+        print(changes)
+        assert len(changes) == 0
+
+    def test_edit_data_kobo_resource_detect_changed_fields(self, app):
+        """ Updating a KoBo resource must detect filter changes """
+
+        original_dict = self.kobo_resource.copy()
+        # Mock a resource edit payload
+        original_dict.update({
+            # only changed field
+            'kobo_filter_fields_from_all_versions': 'false',
+
+            'kobo_filter_fields': ['field1', 'field2'],
+            'kobo_filter_query': "{'a': 1}",
+            'kobo_filter_multiple_select': 'both',
+            'kobo_filter_hierarchy_in_labels': 'true',
+            'kobo_filter_formats': 'csv',
+            'kobo_filter_group_sep': '/',
+        })
+        
+        changes = _validate_kobo_filters(original_dict)
+        print(changes)
+        assert 'kobo_filter_fields_from_all_versions' in changes
+        assert len(changes) == 1
+
+    @mock.patch('ckan.plugins.toolkit.enqueue_job')
+    @mock.patch('ckan.lib.helpers.helper_functions.datastore_dictionary')
+    def test_edit_data_kobo_resource_filters_must_trigger_sync(self, dd, enqueue_job, app):
+        """ Updating a KoBo resource and changing some filters should trigger a kobo resource sync """
+        """ 
+        #TODO datastore_dictionary uses the datastore_test db which is not ready
+        It seems the "ckan datastore set-permissions" command only runs for main datastore db
+        ERROR if removed:
+        sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedTable) relation "_table_metadata" does not exist
+        """
+
+        url = toolkit.url_for(
+            'resource.edit',
+            id=self.kobo_dataset['id'],
+            resource_id=self.kobo_resource['id']
+        )
+        env = {'REMOTE_USER': self.sysadmin['name'].encode('ascii')}
+
+        # Mock a resource edit payload
+        form_data = {
+            'id': self.kobo_resource['id'],
+            'name': self.kobo_resource['name'],
+            'type': self.kobo_resource['type'],
+            'description': 'updated',
+            'format': self.kobo_resource['format'],
+            'file_type': self.kobo_resource['file_type'],
+            'date_range_start': self.kobo_resource['date_range_start'],
+            'date_range_end': self.kobo_resource['date_range_end'],
+            'version': self.kobo_resource['version'],
+            'process_status': self.kobo_resource['process_status'],
+            'identifiability': self.kobo_resource['identifiability'],
+            'visibility': self.kobo_resource['visibility'],
+            'url': self.kobo_resource['url'],
+            'cache_last_updated': '',
+
+            'kobo_type': 'data',
+            'kobo_filter_fields_from_all_versions': 'true',
+            'kobo_filter_group_sep' : '/',
+            'kobo_filter_fields': ['field1', 'field2'],
+            'kobo_filter_query': "{'a': 1}",
+            'kobo_filter_multiple_select': 'both',
+            # changed
+            'kobo_filter_hierarchy_in_labels': 'false',
+
+            'clear_upload': '',
+            'save': 'go-metadata'
+
+        }
+        data = dict(self.kobo_resource, **form_data)
+        resp = app.post(url, data=data, extra_environ=env, status=200)
+        jobs_called = [fn[0][0].__name__ for fn in enqueue_job.call_args_list]
+        assert 'update_kobo_resource' in jobs_called
