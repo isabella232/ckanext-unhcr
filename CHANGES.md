@@ -1,6 +1,6 @@
 # RIDL Changelog
 
-## v3.1.7 - 2022-03-14
+## v3.1.7 - 2022-03-14 - STABLE PRODUCTION RELEASE
 Deployment of RIDL v3.1.7 to production environment
 
 ## v3.1.6g - 2022-03-10
