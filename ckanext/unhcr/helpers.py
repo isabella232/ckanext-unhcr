@@ -559,7 +559,9 @@ def get_deposited_dataset_user_curation_status(dataset, user_id):
     :rtype: dict
     '''
     deposit = get_data_deposit()
-    context = {'user': user_id, 'model': model, 'session': model.Session}
+    user = model.User.get(user_id)
+    context = {'user': user.name, 'model': model, 'session': model.Session}
+
 
     # General
     status = {}
