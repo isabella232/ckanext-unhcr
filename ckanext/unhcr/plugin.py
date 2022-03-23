@@ -150,6 +150,7 @@ class UnhcrPlugin(
 
         facets_dict['vocab_data_collector'] = _('Data Collector')
         facets_dict['vocab_keywords'] = _('Keywords')
+        facets_dict['vocab_geo_name'] = _('Geographic coverage')
         facets_dict['vocab_sampling_procedure'] = _('Sampling Procedure')
         facets_dict['vocab_operational_purpose_of_data'] = _(
             'Operational purpose of data')
@@ -298,17 +299,21 @@ class UnhcrPlugin(
                 # Index geo info (names and pcodes)
                 elif field == 'geographies':
                     if pkg_dict.get('geographies'):
-                        vocab_geos = []
+                        vocab_geo_names = []
+                        vocab_geo_pcodes = []
                         ids = helpers.normalize_list(pkg_dict['geographies'])
                         for id_ in ids:
                             geog = model.Session.query(Geography).get(id_)
                             if geog:
-                                vocab_geos.extend([geog.gis_name, geog.pcode])
+                                vocab_geo_names.append(geog.gis_name)
+                                vocab_geo_pcodes.append(geog.pcode)
 
                                 for parent in geog.parents:
-                                    vocab_geos.extend([parent.gis_name, parent.pcode])
+                                    vocab_geo_names.append(parent.gis_name)
+                                    vocab_geo_pcodes.append(parent.pcode)
 
-                        pkg_dict['vocab_geo'] = vocab_geos
+                        pkg_dict['vocab_geo_name'] = vocab_geo_names
+                        pkg_dict['vocab_geo_pcodes'] = vocab_geo_pcodes
 
                 # Select values: ["value1","value2"]
                 else:

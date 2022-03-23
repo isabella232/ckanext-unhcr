@@ -2,6 +2,7 @@
 
 ## v3.1.7.1 - 2022-03-XX
 New features:
+ - Add facets for `geographies` field [#792](https://github.com/okfn/ckanext-unhcr/pull/792)
  - Add cache for Geographies (250k records) [#793](https://github.com/okfn/ckanext-unhcr/pull/793)
  - KoBo mayor upgrade [#765](https://github.com/okfn/ckanext-unhcr/pull/765)
    - Allow selecting formats and filters for KoBo resources before creating a new Dataset from KoBo.
