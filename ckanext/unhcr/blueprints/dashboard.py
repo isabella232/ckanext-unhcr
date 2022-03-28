@@ -94,7 +94,52 @@ def requests():
     return toolkit.render('user/dashboard_requests.html', template_vars)
 
 
+@require_user
+def requests_history():
+    """ A list of requests which this user can see.
+        This is a full list, not only pending requests. """
+
+    user_obj = toolkit.c.userobj
+    
+    context = {
+        'model': model,
+        'session': model.Session,
+        'user': toolkit.c.user,
+        'auth_user_obj': toolkit.c.userobj,
+        'for_view': True,
+    }
+    template_vars = _extra_template_variables(
+        context,
+        {'id': toolkit.c.userobj.id, 'user_obj': toolkit.c.userobj, 'offset': 0}
+    )
+
+    # All requests for this user
+    access_requests = toolkit.get_action('access_request_list_for_user')(
+            {'user': user_obj.name},
+            {'status': 'all'}
+        )
+
+    user_names = {}
+    for request in access_requests:
+        if request['actioned_by']:
+            if request['actioned_by'] not in user_names:
+                user_names[request['actioned_by']] = model.User.get(request['actioned_by']).display_name
+            request['actioned_by_name'] = user_names[request['actioned_by']]
+
+    template_vars['access_requests'] = access_requests
+
+    return toolkit.render('user/dashboard_requests_history.html', template_vars)
+
+
 unhcr_dashboard_blueprint.add_url_rule(
     u'/requests',
-    view_func=requests
+    view_func=requests,
+    strict_slashes=False,
+)
+
+
+unhcr_dashboard_blueprint.add_url_rule(
+    u'/requests/history',
+    view_func=requests_history,
+    strict_slashes=False,
 )

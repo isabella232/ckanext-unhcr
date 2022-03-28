@@ -359,6 +359,16 @@ class TestAccessRequestListForUser(object):
         )
 
         self.container3 = factories.DataContainer()
+        self.container4_curator = core_factories.User()
+        self.container4_admin = core_factories.User()
+        self.container4 = factories.DataContainer(
+            users=[
+                {"name": self.multi_container_admin["name"], "capacity": "admin"},
+                {"name": self.container4_admin["name"], "capacity": "admin"},
+                {"name": self.container4_curator["name"], "capacity": "editor"},
+                {"name": self.multi_container_curator["name"], "capacity": "editor"},
+            ]
+        )
 
         requests = [
             # These requests all have the default status of 'requested'
@@ -398,10 +408,18 @@ class TestAccessRequestListForUser(object):
             AccessRequest(
                 user_id=self.requesting_user["id"],
                 object_id=self.container3["id"],
-                object_type="package",
+                object_type="organization",
                 message="",
                 role="member",
                 status="approved",
+            ),
+            AccessRequest(
+                user_id=self.requesting_user["id"],
+                object_id=self.container4["id"],
+                object_type="organization",
+                message="",
+                role="member",
+                status="rejected",
             ),
         ]
         for req in requests:
@@ -422,6 +440,21 @@ class TestAccessRequestListForUser(object):
             context, {"status": "approved"}
         )
         assert 1 == len(access_requests)
+
+        # ..and if we pass "status": "rejected", they can see that one too
+        access_requests = toolkit.get_action("access_request_list_for_user")(
+            context, {"status": "rejected"}
+        )
+        assert 1 == len(access_requests)
+
+    def test_full_access_request_list_for_user_sysadmin(self):
+        context = {"model": model, "user": self.sysadmin["name"]}
+
+        # sysadmin can see all the access requests (even closed ones)
+        access_requests = toolkit.get_action("access_request_list_for_user")(
+            context, {"status": "all"}
+        )
+        assert 6 == len(access_requests)
 
     def test_access_request_list_for_user_container_admins(self):
         # container admins can only see access requests for their own container(s)
@@ -446,6 +479,12 @@ class TestAccessRequestListForUser(object):
             {"model": model, "user": self.multi_container_admin["name"]}, {}
         )
         assert 4 == len(access_requests)
+
+        access_requests = toolkit.get_action("access_request_list_for_user")(
+            {"model": model, "user": self.multi_container_admin["name"]},
+            {"status": "all"},
+        )
+        assert 5 == len(access_requests)
 
     def test_access_request_list_for_container_curators(self):
         # container curators can't see access requests for their container(s)

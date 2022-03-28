@@ -986,7 +986,7 @@ def access_request_list_for_user(context, data_dict):
     m = context.get('model', model)
     user_id = toolkit.get_or_bust(context, "user")
     status = data_dict.get("status", "requested")
-    if status not in ['requested', 'approved', 'rejected']:
+    if status not in ['requested', 'approved', 'rejected', 'all']:
         raise toolkit.ValidationError('Invalid status {}'.format(status))
 
     user = m.User.get(user_id)
@@ -1033,9 +1033,11 @@ def access_request_list_for_user(context, data_dict):
         )
     ).order_by(
         desc(access_requests_table.c.timestamp)
-    ).where(
-        access_requests_table.c.status == status
     )
+    if status != 'all':
+        sql = sql.where(
+            access_requests_table.c.status == status
+        )
 
     if user.sysadmin:
         return [dictize_access_request(req) for req in m.Session.execute(sql).fetchall()]

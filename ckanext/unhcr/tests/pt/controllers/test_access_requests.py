@@ -14,6 +14,7 @@ class TestAccessRequests(object):
     def setup(self):
         self.sysadmin = core_factories.Sysadmin()
         self.requesting_user = core_factories.User()
+        self.requesting_user2 = core_factories.User()
         self.standard_user = core_factories.User()
 
         self.container1_admin = core_factories.User()
@@ -21,7 +22,6 @@ class TestAccessRequests(object):
             users=[{"name": self.container1_admin["name"], "capacity": "admin"}]
         )
         self.container2 = factories.DataContainer()
-
         self.pending_user = factories.ExternalUser(
             state=model.State.PENDING,
             focal_point='test-point',
@@ -68,9 +68,36 @@ class TestAccessRequests(object):
             role="member",
             data={'default_containers': [self.container2["id"]]},
         )
+        self.dataset_request2 = AccessRequest(
+            user_id=self.requesting_user2["id"],
+            object_id=self.dataset1["id"],
+            object_type="package",
+            message="",
+            role="member",
+            status="rejected",
+        )
+        self.container1_request2 = AccessRequest(
+            user_id=self.requesting_user2["id"],
+            object_id=self.container1["id"],
+            object_type="organization",
+            message="",
+            role="member",
+        )
+        self.container2_request2 = AccessRequest(
+            user_id=self.requesting_user2["id"],
+            object_id=self.container2["id"],
+            object_type="organization",
+            message="",
+            role="member",
+            status="approved",
+        )
+        
         model.Session.add(self.container1_request)
+        model.Session.add(self.container1_request2)
         model.Session.add(self.container2_request)
+        model.Session.add(self.container2_request2)
         model.Session.add(self.dataset_request)
+        model.Session.add(self.dataset_request2)
         model.Session.add(self.user_request_container1)
         model.Session.add(self.user_request_container2)
         model.Session.commit()
@@ -85,6 +112,12 @@ class TestAccessRequests(object):
 
     def make_list_request(self, app, user=None, **kwargs):
         url = '/dashboard/requests'
+        env = {'REMOTE_USER': user.encode('ascii')} if user else {}
+        resp = app.get(url=url, extra_environ=env, **kwargs)
+        return resp
+
+    def make_list_request_history(self, app, user=None, **kwargs):
+        url = '/dashboard/requests/history'
         env = {'REMOTE_USER': user.encode('ascii')} if user else {}
         resp = app.get(url=url, extra_environ=env, **kwargs)
         return resp
@@ -201,6 +234,48 @@ class TestAccessRequests(object):
             '/access-requests/approve/{}'.format(self.user_request_container2.id)
             in resp.body
         )
+
+    def test_requests_history_list_sysadmin(self, app):
+        resp = self.make_list_request_history(app, user=self.sysadmin['name'], status=200)
+        # sysadmin can see all the requests history
+        ids = [
+            self.container1_request.id,
+            self.container1_request2.id,
+            self.container2_request.id,
+            self.dataset_request.id,
+            self.user_request_container1.id,
+            self.user_request_container2.id,
+            # Also finished requests
+            self.dataset_request2.id,
+            self.container2_request2.id,
+        ]
+        for req_id in ids:
+            assert (
+                '#req-data-{}'.format(req_id)
+                in resp.body
+            )
+
+    def test_requests_history_list_user(self, app):
+        resp = self.make_list_request_history(app, user=self.container1_admin['name'], status=200)
+        # users can see theirs related requests history, not all
+        ids = [
+            self.container1_request.id,
+            self.container1_request2.id,
+            self.user_request_container1.id,
+            self.dataset_request.id,
+            self.dataset_request2.id,
+        ]
+        for req_id in ids:
+            print(req_id)
+            assert '#req-data-{}'.format(req_id) in resp.body
+
+        not_ids = [
+            self.container2_request.id,
+            self.container2_request2.id,
+            self.user_request_container2.id,
+        ]
+        for req_id in not_ids:
+            assert '#req-data-{}'.format(req_id) not in resp.body
 
     def test_access_requests_list_container_admin(self, app):
         resp = self.make_list_request(app, user=self.container1_admin['name'], status=200)
