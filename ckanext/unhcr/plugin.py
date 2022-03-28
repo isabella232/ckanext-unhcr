@@ -247,6 +247,7 @@ class UnhcrPlugin(
             'get_resource_value_label': helpers.get_resource_value_label,
             'get_kobo_import_process_real_status': helpers.get_kobo_import_process_real_status,
             'get_system_activities': helpers.get_system_activities,
+            'get_bool_arg_value': helpers.get_bool_arg_value,
         }
 
     # IPackageController
@@ -363,16 +364,21 @@ class UnhcrPlugin(
 
         return pkg_dict
 
-    # Always include sub-containers to container_read search
     def before_search(self, search_params):
-        blueprints = ('organization', 'data-container')
-
         try:
             blueprint, view = toolkit.get_endpoint()
         except (TypeError, RuntimeError):
             return search_params
 
-        if blueprint in blueprints and view != 'edit':
+        if blueprint in ['dataset', 'package']:
+            search_extras = search_params.get('extras', {})
+            ext_include_deleted = search_extras.pop('ext_include_deleted', None)
+            include_deleted = toolkit.asbool(ext_include_deleted)    
+            if include_deleted:
+                search_params['include_deleted'] = True
+
+        elif blueprint in ['organization', 'data-container'] and view != 'edit':
+            # Always include sub-containers to container_read search
             toolkit.c.include_children_selected = True
 
             # helper function

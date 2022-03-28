@@ -1248,3 +1248,8 @@ def get_system_activities():
     ).limit(limit).all()
 
     return activities
+
+
+def get_bool_arg_value(args, arg_name, default=False):
+    """ Booleanize a value from a dict"""
+    return toolkit.asbool(args.get(arg_name, default))

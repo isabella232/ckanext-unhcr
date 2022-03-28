@@ -8,6 +8,7 @@ New features:
    - Allow selecting formats and filters for KoBo resources before creating a new Dataset from KoBo.
    - Triggers a resource update If it changes its kobo filters (each resource can change filters and sync with KoBo independently)
    - Moved KoBo information from packages to the resource level. Now we can handle the relationship with KoBo within a resource.
+ - Start showing deleted datasets in the search results [#757](https://github.com/okfn/ckanext-unhcr/pull/757)
  - Add audit page for access requests [#796](https://github.com/okfn/ckanext-unhcr/pull/796)
  - Production hotfix for context user ´name´ vs ´id´ [#799](https://github.com/okfn/ckanext-unhcr/pull/799)
 

@@ -30,6 +30,7 @@ module.exports = function(grunt) {
       dist: {
         src: [
           'ckanext/unhcr/src/js/main.js',
+          'ckanext/unhcr/src/js/checkbox-switcher.js',
           'ckanext/unhcr/src/js/curation.js',
           'ckanext/unhcr/src/js/hierarchy.js',
           'ckanext/unhcr/src/js/data-collector.js',

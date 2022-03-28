@@ -12,6 +12,19 @@ $( document ).ready(function() {
 
 });
 
+this.ckan.module('checkbox-switcher', {                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                     
+    initialize: function () {                                                                                                                                                                                                                                                          
+      var _this = this;                                                                                                                                                                                                                                                                
+                                                                                                                                                                                                                                                                                       
+      var form = this.el.closest('form');                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                       
+      this.el.on('change', function () {                                                                                                                                                                                                                                               
+        form.submit();                                                                                                                                                                                                                                                                 
+      });                                                                                                                                                                                                                                                                              
+    }                                                                                                                                                                                                                                                                                  
+  });
+  
 // Header
 $(document).ready(function() {
   var sidebar = $('.curation-data-deposit');
