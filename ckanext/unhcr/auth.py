@@ -197,6 +197,8 @@ def package_kobo_update(context, data_dict):
     user_obj = model.User.get(context['user'])
     plugin_extras = {} if user_obj.plugin_extras is None else user_obj.plugin_extras
     kobo_token = plugin_extras.get('unhcr', {}).get('kobo_token')
+    if not kobo_token:
+        return {'success': False, 'msg': 'KoBo token is not defined'}
     kobo_url = toolkit.config.get('ckanext.unhcr.kobo_url', 'https://kobo.unhcr.org')
     kobo_api = KoBoAPI(kobo_token, kobo_url, cache_prefix=user_obj.name)
     survey = kobo_api.get_asset(kobo_asset_id)
