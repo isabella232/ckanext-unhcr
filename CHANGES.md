@@ -1,8 +1,9 @@
 # RIDL Changelog
 
-## v3.1.7.2 - 2022-04-XX
+## v3.1.7.2 - 2022-05-XX
 Bug Fixes
  - Add mising query for `geographies` field [#803](https://github.com/okfn/ckanext-unhcr/pull/803)
+ - Error showing KoBo datasets for non-KoBo users. [#810](https://github.com/okfn/ckanext-unhcr/pull/810)
 
 ## v3.1.7.1 - 2022-03-29
 
