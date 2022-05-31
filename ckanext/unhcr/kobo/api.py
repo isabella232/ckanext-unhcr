@@ -18,14 +18,12 @@ class KoBoAPI:
     """ About KoBo API
         https://support.kobotoolbox.org/api.html
     """
-    def __init__(self, token, kobo_url, cache_prefix):
+    def __init__(self, token, kobo_url):
         self.token = token
         self.kobo_url = kobo_url
         self.base_url = '{}/api/v2/'.format(kobo_url)
         self.surveys = None
         self._user = None
-        # We use RIDL user name as prefix because we call same URL for different users
-        self.cache_prefix = cache_prefix
         self.cache_seconds = int(config.get('ckanext.unhcr.kobo_cache_seconds', '600'))
         redis_url = config.get('ckan.redis.url', 'redis://localhost:6379/0')
         if self.cache_seconds == 0:
@@ -47,15 +45,15 @@ class KoBoAPI:
         logger.info('Getting KoBoToolbox resource: {}'.format(resource_url))
         if return_json:
             if self.cache and not force:
-                # Different users calls the same URLs so we need to use the users as a part of the cache key
-                cache_name = '{}__{}'.format(self.cache_prefix, url)
+                # Different users calls the same URLs so we need unique cache keys
+                cache_name = '{}__{}'.format(self.token, url)
                 cache_key = base64.b64encode(cache_name.encode())
                 if self.cache.get(cache_key):
                     data = json.loads(self.cache.get(cache_key))
-                    logger.info('Using cache for KoBo response: {} :: {}'.format(self.cache_prefix, resource_url))
+                    logger.info('Using cache for KoBo response: {}'.format(resource_url))
                     return data
 
-            logger.info('Resource not cached: {} :: {}'.format(self.cache_prefix, resource_url))
+            logger.info('Resource not cached: {}'.format(resource_url))
 
         try:
             response = requests.get(url, headers={'Authorization': 'Token ' + self.token})
