@@ -156,11 +156,17 @@ class KoboDataset:
 
         sector = asset['settings'].get('sector')
         if sector:
-            starting_notes += '\nSector: {}'.format(sector['label'])
+            # KoBo "settings" field is a JSON field. We can't be sure in its internal structure
+            # Check https://github.com/okfn/ckanext-unhcr/issues/823
+            if type(sector) == dict:
+                starting_notes += '\nSector: {}'.format(sector['label'])
 
         country = asset['settings'].get('country')
         if country:
-            starting_notes += '\nCountry: {} ({})'.format(country['label'], country['value'])
+            # KoBo "settings" field is a JSON field. We can't be sure in its internal structure
+            # Check https://github.com/okfn/ckanext-unhcr/issues/823
+            if type(country) == dict:
+                starting_notes += '\nCountry: {} ({})'.format(country['label'], country['value'])
 
         original_description = asset['settings'].get('description')
         if original_description:
