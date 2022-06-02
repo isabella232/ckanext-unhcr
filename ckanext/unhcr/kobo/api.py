@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import json
 import logging
 import os
@@ -46,7 +47,9 @@ class KoBoAPI:
         if return_json:
             if self.cache and not force:
                 # Different users calls the same URLs so we need unique cache keys
-                cache_name = '{}__{}'.format(self.token, url)
+                # For security, we don't use the token as is.
+                hashed_token = hashlib.sha256(self.token.encode('utf-8')).hexdigest()
+                cache_name = '{}__{}'.format(hashed_token, url)
                 cache_key = base64.b64encode(cache_name.encode())
                 if self.cache.get(cache_key):
                     data = json.loads(self.cache.get(cache_key))
