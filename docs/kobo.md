@@ -34,10 +34,7 @@ the KoBoToolbox ID for this survey.
 ![kobo import form](imgs/kobo-import-form.png)
 
 After filling all the required fields and continue to next step you will
-automatically see some resources.  
-Those resources are:
- - The XLS base survey
- - The actual data in JSON, CSV and XLS format
+automatically see some resources (dependineg on which format you select on previous step).  
 
 The actual data download process happens in the background.  
 Until the data is downloaded, you will see the legend _"The resource is pending download."_
