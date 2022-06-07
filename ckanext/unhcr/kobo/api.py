@@ -124,8 +124,8 @@ class KoBoAPI:
 
     def _detect_manager_permission(self, survey):
         user_name = self.current_user['username']
-        manager_permission_id = '{}/api/v2/permissions/manage_asset.json'.format(self.kobo_url)
-        user_id = '{}/api/v2/users/{}.json'.format(self.kobo_url, user_name)
+        manager_permission_id = '{}permissions/manage_asset.json'.format(self.base_url)
+        user_id = '{}users/{}.json'.format(self.base_url, user_name)
         permissions = survey.get('permissions', [])
         manage_permissions = [
             p for p in permissions 
