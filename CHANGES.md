@@ -1,5 +1,9 @@
 # RIDL Changelog
 
+## v3.1.7.3 - 2022-06-XX
+New features:
+ - Improve KoBo documentation and add API endpoints list [#827](https://github.com/okfn/ckanext-unhcr/pull/827)
+
 ## v3.1.7a - 2022-05-06 - PRODUCTION HOTFIX
 Single commit applyed to 3.1.7
  - Error showing KoBo datasets for non-KoBo users. [Cherry-pick](https://github.com/okfn/ckanext-unhcr/pull/810/commits/a8244d2fa5f40c31b702651dcd89fbb332e69a58) from [#810](https://github.com/okfn/ckanext-unhcr/pull/810)
