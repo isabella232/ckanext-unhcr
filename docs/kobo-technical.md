@@ -31,14 +31,14 @@ To transform KoBo data to RIDL datasets.
 
 ### KoBo endpoints in use
 
-RIDL uses the following KoBo endpoints:
- - https://kobo.unhcr.org/api/v2/assets.json: To get a list of usres' surveys.
- - https://kobo.unhcr.org/api/v2/assets/{ASSET_ID}.json: To get a survey's data.
- - https://kobo.unhcr.org/api/v2/me: To get a KoBo user's information.
- - https://kobo.unhcr.org/api/v2/permissions/manage_asset.json: To get a KoBo user's permissions.
- - https://kobo.unhcr.org/api/v2//api/v2/users/{KOBO_USER_NAME}.json
- - https://kobo.unhcr.org/api/v2/assets/{ASSET_ID}/data.json: To get a survey's data.
- - https://kobo.unhcr.org/api/v2/assets/{ASSET_ID}/exports/: To get a survey's exports.
- - https://kobo.unhcr.org/api/v2/assets/{ASSET_ID}/exports/{EXPORT_ID}/: To get a survey's export details.
- - https://kobo.unhcr.org/api/v2/assets/{ASSET_ID}.{FORMAT}: To get a survey's questionnaire data in a given format.
- - https://kobo.unhcr.org/api/v2/assets/{ASSET_ID}/exports: **POST** To create a new export.
+RIDL uses the following KoBo endpoints (at https://kobo.unhcr.org):
+ - /api/v2/assets.json: To get a list of usres' surveys.
+ - /api/v2/assets/{ASSET_ID}.json: To get a survey's data.
+ - /me: To get a KoBo user's information.
+ - /api/v2/permissions/manage_asset.json: To get a KoBo user's permissions.
+ - /api/v2/users/{KOBO_USER_NAME}.json
+ - /api/v2/assets/{ASSET_ID}/data.json: To get a survey's data.
+ - /api/v2/assets/{ASSET_ID}/exports/: To get a survey's exports.
+ - /api/v2/assets/{ASSET_ID}/exports/{EXPORT_ID}/: To get a survey's export details.
+ - /api/v2/assets/{ASSET_ID}.{FORMAT}: To get a survey's questionnaire data in a given format.
+ - /api/v2/assets/{ASSET_ID}/exports: **POST** To create a new export.
