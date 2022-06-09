@@ -77,6 +77,11 @@ ckan.clamav_max_resource_size=10
 
 # Redis cache in seconds for KoBo get requests. Use 0 to disable cache
 ckanext.unhcr.kobo_cache_seconds=600
+
+# Submission limit to import KoBo resources
+# Check SUBMISSION_LIST_LIMIT at KoBo source code: https://github.com/kobotoolbox/kpi/blob/master/kobo/settings/base.py
+ckanext.unhcr.kobo_import_limit=30000
+
 ```
 
 

@@ -226,6 +226,7 @@ class UnhcrPlugin(
             # KoBo
             'get_kobo_token': helpers.get_kobo_token,
             'get_kobo_url': helpers.get_kobo_url,
+            'get_kobo_import_limit': helpers.get_kobo_import_limit,
             'get_kobo_initial_dataset': helpers.get_kobo_initial_dataset,
             'get_kobo_survey': helpers.get_kobo_survey,
             'get_kobo_all_formats': helpers.get_kobo_all_formats,

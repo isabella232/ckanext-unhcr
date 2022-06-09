@@ -52,11 +52,11 @@
   {% if not new_kobo_resource and data.kobo_type == 'data' %}
     {% if data.kobo_details %}
     {% set kobo_survey = h.get_kobo_survey(data.kobo_details.kobo_asset_id) %}
-    <div style="background-color: #91823422; padding: 15px; margin-bottom: 20px;">
+    <div class="kobo-resource-import-settings-main">
     <h2 
     id="kobo-import-settings-title">
     KoBoToolbox survey import settings 
-    <i class="fa fa-caret-down" style="margin-left: 5px;"></i> 
+    <i class="fa fa-caret-right" style="margin-left: 5px;"></i> 
   </h2>
   <p>Changing any of these fields will <b>trigger a data resource update</b> from KoBoToolbox</p>
 
@@ -65,7 +65,7 @@
 
     <div class="row">
 
-      <div class="col-md-6">
+      <div class="col-md-4">
         <div class="form-group control-medium control-select">
         <label class="control-label" for="fields_from_all_versions">Include fields from all versions</label>
         <div class="controls ">
@@ -128,9 +128,9 @@
 
       </div>
 
-      <div class="col-md-6">
+      <div class="col-md-8">
 
-        <div class="form-group control-medium">
+      <div class="form-group control-medium fields-to-import">
       <label class="control-label togglable" data-toggle-id="fields-to-include-div">Fields to include</label>
       <div class="controls">
         <div id="fields-to-include-div">
@@ -154,11 +154,15 @@
           {% if field in fields %}checked{% endif %}
           value="{{ field }}">{{ field }}</label>
       {% endfor %}
-        <div class="info-block ">
-          <i class="fa fa-info-circle"></i>
-          A simple list of fields to be included in the KoBoToolbox export
-        </div>
       </div>
+
+      <div class="info-block ">
+        <i class="fa fa-info-circle"></i>
+        Default: <b>all fields</b>.
+        <br>Expand to select which fields will be included in the export
+        <br><b>At least one field required</b>.
+      </div>
+
     </div>
   </div>
 
