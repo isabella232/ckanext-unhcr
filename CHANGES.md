@@ -3,9 +3,11 @@
 ## v3.1.7.3 - 2022-06-XX
 Bug fixes
  - Fix geography field view after dataset form validation error [#822](https://github.com/okfn/ckanext-unhcr/pull/822)
+ - Limit big KoBo imports [#821](https://github.com/okfn/ckanext-unhcr/pull/821)
+ - Fix kobo cache when user changes its token [#818](https://github.com/okfn/ckanext-unhcr/pull/818)
 
 ## v3.1.7a - 2022-05-06 - PRODUCTION HOTFIX
-Single commit applyed to 3.1.7
+Single commit applied to 3.1.7
  - Error showing KoBo datasets for non-KoBo users. [Cherry-pick](https://github.com/okfn/ckanext-unhcr/pull/810/commits/a8244d2fa5f40c31b702651dcd89fbb332e69a58) from [#810](https://github.com/okfn/ckanext-unhcr/pull/810)
 
 ## v3.1.7.2 - 2022-05-05
