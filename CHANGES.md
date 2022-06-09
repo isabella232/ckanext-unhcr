@@ -1,6 +1,10 @@
 # RIDL Changelog
 
-## v3.1.7.3 - 2022-06-XX
+## v3.1.7.4 - 2022-06-XX
+New features:
+Bug Fixes:
+
+## v3.1.7.3 - 2022-06-09
 New features:
  - Clarify KoBo import options [#828](https://github.com/okfn/ckanext-unhcr/pull/828)
  - Improve KoBo documentation and add API endpoints list [#827](https://github.com/okfn/ckanext-unhcr/pull/827)
