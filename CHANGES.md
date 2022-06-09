@@ -1,7 +1,8 @@
 # RIDL Changelog
 
 ## v3.1.7.3 - 2022-06-XX
-Bug Fixes
+Bug fixes
+ - Limit big KoBo imports [#821](https://github.com/okfn/ckanext-unhcr/pull/821)
  - Fix kobo cache when user changes its token [#818](https://github.com/okfn/ckanext-unhcr/pull/818)
 
 ## v3.1.7a - 2022-05-06 - PRODUCTION HOTFIX

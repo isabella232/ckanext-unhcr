@@ -116,6 +116,22 @@ class TestKoBo(object):
         assert 'This KoBoToolbox survey has not been deployed' in resp.body
         assert 'TEST aaZSQ29VRHJmofjGSfDDv4' in resp.body
 
+    @mock.patch('ckanext.unhcr.blueprints.kobo.KoBoAPI.get_surveys')
+    @mock.patch('ckanext.unhcr.blueprints.kobo.KoBoAPI.current_user')
+    def test_kobo_limit_import(self, current_user, kobo_surveys, app):
+        environ = {
+            'REMOTE_USER': self.internal_editor_user['name']
+        }
+
+        asset_list = self.get_assets_list()
+        asset_list[2]['deployment__submission_count'] = 30001
+        kobo_surveys.return_value = asset_list
+        current_user.return_value = {'username': 'avazquez'}
+
+        resp = app.get('/kobo/surveys', extra_environ=environ)
+        assert resp.status_code == 200
+        assert 'Too many submissions' in resp.body
+
     def test_internal_user_setup_token(self, app):
         environ = {
             'REMOTE_USER': self.internal_editor_user['name']
