@@ -32,14 +32,14 @@ To transform KoBo data to RIDL datasets.
 ### KoBo endpoints in use
 
 RIDL uses the following KoBo endpoints (at https://kobo.unhcr.org):
- - /api/v2/assets.json: To get a list of usres' surveys.
- - /api/v2/assets/{ASSET_ID}.json: To get a survey's data.
- - /me: To get a KoBo user's information.
+ - /api/v2/assets.json: To get a list of the user surveys.
+ - /api/v2/assets/{ASSET_ID}.json: To get details from a survey.
+ - /me: To get information about a KoBo user.
  - /api/v2/permissions/manage_asset.json: To get a KoBo user's permissions.
  - /api/v2/users/{KOBO_USER_NAME}.json
- - /api/v2/assets/{ASSET_ID}/data.json: To get a survey's data.
+ - /api/v2/assets/{ASSET_ID}/data.json: To get a survey data.
  - /api/v2/assets/{ASSET_ID}/exports/: **POST** To create a new survey export.
- - /api/v2/assets/{ASSET_ID}/exports/{EXPORT_ID}/: To get a survey's export details.
+ - /api/v2/assets/{ASSET_ID}/exports/{EXPORT_ID}/: To get a survey export details.
  - /api/v2/assets/{ASSET_ID}.{FORMAT}: To get a survey's questionnaire data in a given format.
  - /api/v2/assets/{ASSET_ID}/exports: **POST** To create a new export.
 
