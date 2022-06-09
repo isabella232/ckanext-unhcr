@@ -200,7 +200,7 @@ def package_kobo_update(context, data_dict):
     if not kobo_token:
         return {'success': False, 'msg': 'KoBo token is not defined'}
     kobo_url = toolkit.config.get('ckanext.unhcr.kobo_url', 'https://kobo.unhcr.org')
-    kobo_api = KoBoAPI(kobo_token, kobo_url, cache_prefix=user_obj.name)
+    kobo_api = KoBoAPI(kobo_token, kobo_url)
     survey = kobo_api.get_asset(kobo_asset_id)
     if survey['user_is_manager']:
         return {'success': True}
