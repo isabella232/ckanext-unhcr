@@ -2,6 +2,7 @@
 
 ## v3.1.7.3 - 2022-06-XX
 New features:
+ - Clarify KoBo import options [#828](https://github.com/okfn/ckanext-unhcr/pull/828)
  - Improve KoBo documentation and add API endpoints list [#827](https://github.com/okfn/ckanext-unhcr/pull/827)
  - Improve UI for _fields to include_ before importing from KoBo[#825](https://github.com/okfn/ckanext-unhcr/pull/825)
 Bug Fixes:

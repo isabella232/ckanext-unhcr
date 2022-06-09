@@ -85,9 +85,9 @@
           <label class="control-label" for="multiple_select">Multiple select</label>
           <div class="controls ">
             <select name="kobo_filter_multiple_select" id="multiple_select" class="form-control">
-              <option {% if data.kobo_details.kobo_filter_multiple_select == 'both' %}selected{% endif%} value="both">Both</option>
-              <option {% if data.kobo_details.kobo_filter_multiple_select == 'summary' %}selected{% endif%} value="summary">Summary</option>
-              <option {% if data.kobo_details.kobo_filter_multiple_select == 'details' %}selected{% endif%} value="details">Details</option>
+              <option {% if data.kobo_details.kobo_filter_multiple_select == 'both' %}selected{% endif%} value="both">Both (Single and separate columns)</option>
+              <option {% if data.kobo_details.kobo_filter_multiple_select == 'summary' %}selected{% endif%} value="summary">Summary (Single column)</option>
+              <option {% if data.kobo_details.kobo_filter_multiple_select == 'details' %}selected{% endif%} value="details">Details (Separate columns)</option>
             </select>
             <div class="info-block ">
               <i class="fa fa-info-circle"></i>
