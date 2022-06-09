@@ -6,7 +6,7 @@ VALID_KOBO_EXPORT_FORMATS = {
 }
 
 CUSTOM_KOBO_EXPORT_FORMATS = {
-    "json": "JSON (custom download with all data, no filters will be applyed)"
+    "json": "JSON (custom download with all data, no filters will be applied)"
 }
 
 ALL_KOBO_EXPORT_FORMATS = {

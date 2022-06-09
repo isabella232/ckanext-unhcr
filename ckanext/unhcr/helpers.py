@@ -278,6 +278,9 @@ def get_kobo_url():
     return toolkit.config.get('ckanext.unhcr.kobo_url', 'https://kobo.unhcr.org')
 
 
+def get_kobo_import_limit():
+    return toolkit.config.get('ckanext.unhcr.kobo_import_limit', 30000)
+
 def get_kobo_all_formats():
     return ALL_KOBO_EXPORT_FORMATS
 
