@@ -1,11 +1,11 @@
 
-  <div style="background-color: #91823422; padding: 15px;">
+  <div class="kobo-import-settings-main">
     <p>You are about to create a RIDL dataset using a KoBoToolbox Survey as data resources</p>
     <p>The default settings should work for most cases, but you can <b>change the survey import settings</b> expanding the section below.</p>
   <h2 
     id="kobo-import-settings-title">
     Survey import settings 
-    <i class="fa fa-caret-down" style="margin-left: 5px;"></i> 
+    <i class="fa fa-caret-right" style="margin-left: 5px;"></i> 
   </h2>
   
   <div class="form-group control-medium" id="kobo-import-settings" style="display: none;">
@@ -110,7 +110,8 @@
       
     </div>
   
-      <label class="control-label togglable" data-toggle-id="fields-to-include-div">Fields to include</label>
+    <div class="fields-to-import">
+    <label class="control-label togglable" data-toggle-id="fields-to-include-div">Fields to include</label>
     <div class="controls">
       <div id="fields-to-include-div">
       {# SURVEY FIELDS #}
@@ -135,12 +136,15 @@
         <label class="checkbox"><input type="checkbox" name="fields"
           value="{{ field }}">{{ field }}</label>
       {% endfor %}
-      <div class="info-block ">
-        <i class="fa fa-info-circle"></i>
-        <b>At least one Required</b>. To specify whether fields from all form versions will be included in the export. 
-        Default is <b>Yes</b>.
-      </div>
+      
     </div>
+    <div class="info-block ">
+      <i class="fa fa-info-circle"></i>
+      Default: <b>all fields</b>.
+      <br>Expand to select which fields will be included in the export
+      <br><b>At least one field required</b>.
+    </div>
+  </div>
   </div>
 
     <label class="control-label" for="group_sep">Mongo query</label>

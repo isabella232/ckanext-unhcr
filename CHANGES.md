@@ -1,7 +1,9 @@
 # RIDL Changelog
 
 ## v3.1.7.3 - 2022-06-XX
-Bug fixes
+New features:
+ - Improve UI for _fields to include_ before importing from KoBo[#825](https://github.com/okfn/ckanext-unhcr/pull/825)
+Bug Fixes:
  - Avoid errors on unexpected KoBo "settings" structure [#824](https://github.com/okfn/ckanext-unhcr/pull/824)
  - Fix geography field view after dataset form validation error [#822](https://github.com/okfn/ckanext-unhcr/pull/822)
  - Limit big KoBo imports [#821](https://github.com/okfn/ckanext-unhcr/pull/821)

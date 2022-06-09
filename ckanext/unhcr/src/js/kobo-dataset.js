@@ -129,6 +129,7 @@ $( document ).ready(function() {
   $(document).on("click", "#kobo-import-settings-title", function(){
     $this = $(this);
     $("#kobo-import-settings").toggle();
+    $this.children('i').toggleClass('fa-caret-right fa-caret-down');
   });
 
   // hide all toggables
@@ -138,17 +139,13 @@ $( document ).ready(function() {
     $("#" + selector).hide();
   });
   
-  $togglables.prepend('<i class="fa fa-caret-down toggle-caret"></i>');
+  $togglables.prepend('<i class="fa fa-caret-right toggle-caret"></i>');
   $(document).on("click", ".togglable", function(){
     $this = $(this);
     let selector = $this.data('toggle-id');
     $("#" + selector).toggle();
     let $caret = $this.children('.toggle-caret');
-    if ($caret.hasClass('fa-caret-down')) {
-      $caret.removeClass('fa-caret-down').addClass('fa-caret-up');
-    }else{
-      $caret.removeClass('fa-caret-up').addClass('fa-caret-down');
-    }
+    $caret.toggleClass('fa-caret-right fa-caret-down');
   });
 
 });
