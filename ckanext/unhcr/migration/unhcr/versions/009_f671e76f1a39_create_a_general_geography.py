@@ -34,6 +34,17 @@ def upgrade():
         "WHERE key = 'geographies' "
         "AND (value is NULL or value = '')"
     )
+    # Create new extras for packages without any geography.
+    # THIS REQUIRE A SEARCH INDEX REBUILD to work
+    op.execute(
+        """
+        insert into package_extra ("id", "package_id", "key", "value", "state")
+            select md5(random()::text || clock_timestamp()::text)::uuid, package.id, 'geographies', '{UNSPECIFIED}', 'active' from package
+                left join package_extra on package_extra.package_id = package.id 
+                    and package_extra.key = 'geographies'
+                where package_extra.key IS NULL;
+      """
+    )
 
 
 def downgrade():
