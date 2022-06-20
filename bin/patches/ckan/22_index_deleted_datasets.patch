@@ -1,0 +1,197 @@
+diff --git a/ckan/cli/search_index.py b/ckan/cli/search_index.py
+index 3b4bedc6d..3fa66a1dd 100644
+--- a/ckan/cli/search_index.py
++++ b/ckan/cli/search_index.py
+@@ -41,7 +41,7 @@ def rebuild(
+                 force=force,
+                 refresh=refresh,
+                 defer_commit=(not commit_each),
+-                quiet=quiet)
++                quiet=quiet and not verbose)
+     except Exception as e:
+         tk.error_shout(e)
+     if not commit_each:
+diff --git a/ckan/lib/search/__init__.py b/ckan/lib/search/__init__.py
+index 89b7da807..5b648564d 100644
+--- a/ckan/lib/search/__init__.py
++++ b/ckan/lib/search/__init__.py
+@@ -169,8 +169,12 @@ def rebuild(package_id=None, only_missing=False, force=False, refresh=False,
+             log.info('Indexing just package %r...', pkg_dict['name'])
+             package_index.update_dict(pkg_dict, True)
+     else:
+-        package_ids = [r[0] for r in model.Session.query(model.Package.id).
+-                       filter(model.Package.state != 'deleted').all()]
++        packages = model.Session.query(model.Package.id)
++        if asbool(config.get('ckan.search.remove_deleted_packages', True)):
++            packages = packages.filter(model.Package.state != 'deleted')
++
++        package_ids = [r[0] for r in packages.all()]
++
+         if only_missing:
+             log.info('Indexing only missing packages...')
+             package_query = query_for(model.Package)
+diff --git a/ckan/lib/search/index.py b/ckan/lib/search/index.py
+index e64045e8e..d507aebbf 100644
+--- a/ckan/lib/search/index.py
++++ b/ckan/lib/search/index.py
+@@ -137,9 +137,10 @@ class PackageSearchIndex(SearchIndex):
+         if title:
+             pkg_dict['title_string'] = title
+ 
+-        # delete the package if there is no state, or the state is `deleted`
+-        if (not pkg_dict.get('state') or 'deleted' in pkg_dict.get('state')):
+-            return self.delete_package(pkg_dict)
++        if asbool(config.get('ckan.search.remove_deleted_packages', True)):
++            # delete the package if there is no state, or the state is `deleted`
++            if pkg_dict.get('state') in [None, 'deleted']:
++                return self.delete_package(pkg_dict)
+ 
+         index_fields = RESERVED_FIELDS + list(pkg_dict.keys())
+ 
+diff --git a/ckan/logic/action/get.py b/ckan/logic/action/get.py
+index a8d2ff23d..450fd4367 100644
+--- a/ckan/logic/action/get.py
++++ b/ckan/logic/action/get.py
+@@ -1721,6 +1721,10 @@ def package_search(context, data_dict):
+         sysadmin will be returned all draft datasets. Optional, the default is
+         ``False``.
+     :type include_drafts: bool
++    :param include_deleted: if ``True``, deleted datasets will be included in the
++        results (site configuration "ckan.search.remove_deleted_packages" must
++        be set to False). Optional, the default is ``False``.
++    :type include_deleted: bool
+     :param include_private: if ``True``, private datasets will be included in
+         the results. Only private datasets from the user's organizations will
+         be returned and sysadmins will be returned all private datasets.
+@@ -1846,14 +1850,23 @@ def package_search(context, data_dict):
+         else:
+             data_dict['fl'] = ' '.join(result_fl)
+ 
++        data_dict.setdefault('fq', '')
++
+         # Remove before these hit solr FIXME: whitelist instead
+         include_private = asbool(data_dict.pop('include_private', False))
+         include_drafts = asbool(data_dict.pop('include_drafts', False))
+-        data_dict.setdefault('fq', '')
++        include_deleted = asbool(data_dict.pop('include_deleted', False))
++
+         if not include_private:
+             data_dict['fq'] = '+capacity:public ' + data_dict['fq']
+-        if include_drafts:
+-            data_dict['fq'] += ' +state:(active OR draft)'
++
++        if '+state' not in data_dict['fq']:
++            states = ['active']
++            if include_drafts:
++                states.append('draft')
++            if include_deleted:
++                states.append('deleted')
++            data_dict['fq'] += ' +state:({})'.format(' OR '.join(states))
+ 
+         # Pop these ones as Solr does not need them
+         extras = data_dict.pop('extras', None)
+diff --git a/ckan/templates/admin/snippets/data_type.html b/ckan/templates/admin/snippets/data_type.html
+index b7004a182..6bd088a4a 100644
+--- a/ckan/templates/admin/snippets/data_type.html
++++ b/ckan/templates/admin/snippets/data_type.html
+@@ -12,6 +12,9 @@
+   {% endif %}
+ </button>
+ 
++{# entities list can be of different types #}
++{% set items = [] %}
++
+ <!-- expanded by default to prevent problems with disabled js -->
+ <div id="{{ ent_type }}" class="entities collapse in">
+ 	{% set truncate = truncate or 180 %}
+@@ -19,6 +22,7 @@
+ 	<ul class="{{ ent_type }}-list">
+     {% for entity in entities %}
+       {% set title = entity.title or entity.name %}
++      {% do items.append(title) %}
+         <li>
+           {{ h.link_to(h.truncate(title, truncate_title), h.url_for(entity.type + '.read', id=entity.name)) }}
+         </li>
+@@ -30,7 +34,7 @@
+   </ul>
+ 
+ <!-- show button only if there is entity to purge -->
+-  {% if entities.first() %}
++    {% if items|length > 0 %}
+     <form method="POST" action="{{ h.url_for('admin.trash') }}" id="form-purge-{{ ent_type }}">
+       <input type="hidden" name="action" value="{{ent_type}}">
+       <a href="{{ h.url_for('admin.trash', name=ent_type) }}" 
+diff --git a/ckan/views/admin.py b/ckan/views/admin.py
+index 1b58adbb9..f713ffadb 100644
+--- a/ckan/views/admin.py
++++ b/ckan/views/admin.py
+@@ -141,8 +141,7 @@ class ConfigView(MethodView):
+ 
+ class TrashView(MethodView):
+     def __init__(self):
+-        self.deleted_packages = model.Session.query(
+-            model.Package).filter_by(state=model.State.DELETED)
++        self.deleted_packages = self._get_deleted_datasets()
+         self.deleted_orgs = model.Session.query(model.Group).filter_by(
+             state=model.State.DELETED, is_organization=True)
+         self.deleted_groups = model.Session.query(model.Group).filter_by(
+@@ -173,6 +172,32 @@ class TrashView(MethodView):
+             }
+         }
+ 
++    def _get_deleted_datasets(self):
++        if asbool(config.get('ckan.search.remove_deleted_packages', True)):
++            return self._get_deleted_datasets_from_db()
++        else:
++            return self._get_deleted_datasets_from_search_index()
++
++    def _get_deleted_datasets_from_db(self):
++        return model.Session.query(
++            model.Package
++        ).filter_by(
++            state=model.State.DELETED
++        )
++
++    def _get_deleted_datasets_from_search_index(self):
++        package_search = logic.get_action('package_search')
++        search_params = {
++            'fq': '+state:deleted',
++            'include_private': True,
++        }
++        base_results = package_search(
++            {'ignore_auth': True},
++            search_params
++        )
++
++        return base_results['results']
++
+     def get(self):
+         ent_type = request.args.get(u'name')
+ 
+@@ -208,20 +233,23 @@ class TrashView(MethodView):
+ 
+         for action, deleted_entities in zip(actions, entities):
+             for entity in deleted_entities:
++                ent_id = entity.id if hasattr(entity, 'id') \
++                    else entity['id']  # type: ignore
+                 logic.get_action(action)(
+-                    {u'user': g.user}, {u'id': entity.id}
++                    {u'user': g.user}, {u'id': ent_id}
+                 )
+             model.Session.remove()
+         h.flash_success(_(u'Massive purge complete'))
+ 
+     def purge_entity(self, ent_type):
+         entities = self.deleted_entities[ent_type]
+-        number = entities.count()
++        number = len(entities) if type(entities) == list else entities.count()
+ 
+         for ent in entities:
++            entity_id = ent.id if hasattr(ent, 'id') else ent['id']
+             logic.get_action(self._get_purge_action(ent_type))(
+                 {u'user': g.user},
+-                {u'id': ent.id}
++                {u'id': entity_id}
+             )
+ 
+         model.Session.remove()

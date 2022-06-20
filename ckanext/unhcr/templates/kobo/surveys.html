@@ -46,31 +46,19 @@
         
         {% if survey.user_is_manager %}
         
-            {% if survey.new_submissions > 0 %}
             <div id="update-kobo-resources-container-{{ survey.uid }}" class="update-kobo-resources-container">
             {% if survey.update_is_running %}
-                <p>An update job is running to import {{ survey.new_submissions }} new submissions</p>
+                <p>An update job is running to import</p>
             {% else %}
-                <p>There are {{ survey.new_submissions }} new submissions</p>
                 <button
                     class="btn btn-primary kobo-pkg-update-resources"
                     data-kobo-asset-id="{{ survey.uid }}"
-                    data-force="false"
-                    data-kobo-update-endpoint="{% url_for 'unhcr_kobo.enqueue_survey_update' %}"
+                    data-kobo-update-endpoint="{% url_for 'unhcr_kobo.enqueue_survey_package_update' %}"
                     ><i class="fa fa-refresh"></i> <span class="update-kobo-button-text">Update KoBo data</span>
                 </button>
             </div>
             {% endif %}
-            {% else %}
-            <p>No new submissions</p>
-            <button
-                    class="btn btn-primary kobo-pkg-update-resources"
-                    data-kobo-asset-id="{{ survey.uid }}"
-                    data-force="true"
-                    data-kobo-update-endpoint="{% url_for 'unhcr_kobo.enqueue_survey_update' %}"
-                    ><i class="fa fa-refresh"></i> <span class="update-kobo-button-text">Force update KoBo data</span>
-                </button>
-            {% endif %}
+
         {% else %}
             <p>You do not have permission to update this survey</p>
         {% endif %}
@@ -81,7 +69,9 @@
     {% elif not survey.user_is_manager %}
         <p>You do not have permission to import this survey</p>
     {% else %}
-        <a role="button" class="btn btn-primary" href="{% url_for 'dataset.new', kobo_asset_id=survey.uid %}">Import</a>
+        <a role="button" class="btn btn-primary" 
+            href="{% url_for 'dataset.new', kobo_asset_id=survey.uid %}"
+        >Import</a>
     {% endif %}
     </td>
 </tr>

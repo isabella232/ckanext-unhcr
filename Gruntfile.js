@@ -30,6 +30,7 @@ module.exports = function(grunt) {
       dist: {
         src: [
           'ckanext/unhcr/src/js/main.js',
+          'ckanext/unhcr/src/js/checkbox-switcher.js',
           'ckanext/unhcr/src/js/curation.js',
           'ckanext/unhcr/src/js/hierarchy.js',
           'ckanext/unhcr/src/js/data-collector.js',
@@ -42,6 +43,7 @@ module.exports = function(grunt) {
           'ckanext/unhcr/src/js/plugins/fancyTable.min.js',  // from https://github.com/myspace-nu/jquery.fancyTable
           'ckanext/unhcr/src/js/geographies.js',
           'ckanext/unhcr/src/js/activities-list.js',
+          'ckanext/unhcr/src/js/requests-history-list.js',
         ],
         dest: 'ckanext/unhcr/fanstatic/theme.js',
       },

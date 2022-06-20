@@ -1,3 +1,4 @@
+import ast
 import copy
 import datetime
 import json
@@ -18,9 +19,13 @@ from ckan.lib.search import index_for, commit
 import ckan.logic as core_logic
 import ckan.lib.dictization.model_dictize as model_dictize
 from ckanext.unhcr import helpers, mailer, utils
-from ckanext.unhcr.jobs import process_last_admin_on_delete
+from ckanext.unhcr.jobs import process_last_admin_on_delete, update_kobo_resource
 from ckanext.unhcr.kobo.api import KoBoAPI, KoBoSurvey
-from ckanext.unhcr.kobo.exceptions import KoboMissingAssetIdError, KoBoEmptySurveyError
+from ckanext.unhcr.kobo.exceptions import (
+    KoboApiError,
+    KoboMissingAssetIdError,
+    KoBoEmptySurveyError,
+)
 from ckanext.unhcr.kobo.kobo_dataset import KoboDataset
 from ckanext.unhcr.models import (
     AccessRequest, Geography, GisStatus, LAYER_TO_DISPLAY_NAME,
@@ -91,6 +96,27 @@ def package_create(up_func, context, data_dict):
         if survey.get_total_submissions() == 0:
             raise toolkit.ValidationError({'kobo-survey': ['The selected KoBoToolbox survey has no submissions']})
 
+        # Add KoBo import filters
+        kobo_filters = {
+            'kobo_filter_fields_from_all_versions': data_dict.get('fields_from_all_versions', 'true'),
+            'kobo_filter_group_sep': data_dict.get('group_sep', '/'),
+            'kobo_filter_fields': data_dict.get('fields', []),
+            'kobo_filter_query': data_dict.get('query'),
+            'kobo_filter_multiple_select': data_dict.get('multiple_select', 'both'),
+            'kobo_filter_hierarchy_in_labels': data_dict.get('hierarchy_in_labels', 'true'),
+            'kobo_filter_formats': data_dict.get('formats', ['csv']),
+            'kobo_filter_include_questionnaire': data_dict.get('include_questionnaire', 'true'),
+        }
+
+        # validate Mongo query
+        if data_dict.get('query'):
+            try:
+                ast.literal_eval(data_dict['query'])
+            except ValueError as e:
+                raise toolkit.ValidationError(
+                    {'kobo_filter_query': ['The query for KoBoToolbox is not JSON valid {}'.format(e)]}
+                )
+
     # check if we have some geographies from DDI fields
     if data_dict.get('country_codes'):
         # this is a list of ISO3 country codes
@@ -113,8 +139,15 @@ def package_create(up_func, context, data_dict):
 
     if kobo_asset_id:
         # create basic resources
-        kd.create_kobo_resources(context, dataset, user_obj)
-
+        try:
+            kd.create_kobo_resources(context, dataset, user_obj, kobo_filters)
+        except (KoboApiError, KoBoEmptySurveyError, KoboMissingAssetIdError) as e:
+            errors = [
+                {'kobo-survey': [str(e)]}
+            ]
+            raise toolkit.ValidationError(errors)
+            # TODO: we don't expect this to happend.
+            # Dataset should be deleted if it fails to create resources
     return dataset
 
 
@@ -825,6 +858,52 @@ def resource_create(up_func, context, data_dict):
     return resource
 
 
+def _validate_kobo_filters(data_dict):
+    """ Validate KoBo filters.
+        Cleans data_dict and move filters to kobo_details key
+        Detect filter changes (to raise a data update job) 
+        and returns a list of changed filter fields """
+
+    kobo_details = data_dict['kobo_details']
+    new_filters = {k: v for k, v in data_dict.items() if k.startswith('kobo_filter_')}
+    log.info('Validating kobo filters for resource {}'.format(new_filters))
+    changed_fields = []
+
+    field_list = data_dict.get('kobo_filter_fields', [])
+    if sorted(field_list) != sorted(kobo_details.get('kobo_filter_fields', [])):
+        changed_fields.append('kobo_filter_fields')
+        kobo_details['kobo_filter_fields'] = field_list
+
+    # boolean values
+    for key in ['kobo_filter_fields_from_all_versions', 'kobo_filter_hierarchy_in_labels']:
+        real_value = toolkit.asbool(data_dict.pop(key))
+        if real_value != kobo_details.get(key):
+            changed_fields.append(key)
+            kobo_details[key] = real_value
+
+    # string values
+    for key in ['kobo_filter_multiple_select', 'kobo_filter_group_sep']:
+        value = data_dict.pop(key)
+        if value != kobo_details.get(key):
+            changed_fields.append(key)
+            kobo_details[key] = value
+
+    query = data_dict.pop('kobo_filter_query')
+    if not query:
+        query = None
+    else:
+        try:
+            query = ast.literal_eval(query)
+        except ValueError as e:
+            raise toolkit.ValidationError(
+                    {'kobo_filter_query': ['The query for KoBoToolbox is not JSON valid {}'.format(e)]}
+                )
+    if query != kobo_details.get('kobo_filter_query'):
+        changed_fields.append('kobo_filter_query')
+        kobo_details['kobo_filter_query'] = query
+
+    return changed_fields
+
 @toolkit.chained_action
 def resource_update(up_func, context, data_dict):
     toolkit.check_access('resource_update', context, data_dict)
@@ -840,7 +919,15 @@ def resource_update(up_func, context, data_dict):
     data_dict['kobo_type'] = old_resource.get('kobo_type')
     data_dict['kobo_details'] = old_resource.get('kobo_details')
 
+    changed_filters = []
     if data_dict.get('kobo_type'):
+        # ensure kobo_filters are not missing from kobo data resources
+        if data_dict['kobo_type'] == 'data':
+            changed_filters = _validate_kobo_filters(data_dict)
+            if changed_filters:
+                data_dict['kobo_details']['kobo_download_status'] = 'pending'
+                data_dict['kobo_details']['kobo_last_updated'] = datetime.datetime.utcnow().isoformat()
+
         original_url = data_dict.pop('original_url', None)
         upload_changed = original_url and data_dict.get('url') != original_url
         # if the users try to change a "kobo data file" (extra) resource with a file,
@@ -853,6 +940,12 @@ def resource_update(up_func, context, data_dict):
     resource = up_func(context, data_dict)
     if has_upload:
         toolkit.get_action('scan_submit')(context, {'id': resource['id']})
+
+    # if filters changed, trigger a kobo data update action
+    if changed_filters:
+        log.info(f'Data update job triggered because of filter changes {changed_filters}')
+        toolkit.enqueue_job(update_kobo_resource, [resource['id'], context['user']], title='Preparing to update data resource')
+
     return resource
 
 
@@ -893,7 +986,7 @@ def access_request_list_for_user(context, data_dict):
     m = context.get('model', model)
     user_id = toolkit.get_or_bust(context, "user")
     status = data_dict.get("status", "requested")
-    if status not in ['requested', 'approved', 'rejected']:
+    if status not in ['requested', 'approved', 'rejected', 'all']:
         raise toolkit.ValidationError('Invalid status {}'.format(status))
 
     user = m.User.get(user_id)
@@ -940,9 +1033,11 @@ def access_request_list_for_user(context, data_dict):
         )
     ).order_by(
         desc(access_requests_table.c.timestamp)
-    ).where(
-        access_requests_table.c.status == status
     )
+    if status != 'all':
+        sql = sql.where(
+            access_requests_table.c.status == status
+        )
 
     if user.sysadmin:
         return [dictize_access_request(req) for req in m.Session.execute(sql).fetchall()]
@@ -1334,25 +1429,7 @@ def user_autocomplete(context, data_dict):
 # Geography
 
 def _dictize_geography(geog, include_parents=True):
-    dct = {k:v for k,v in geog.__dict__.items() if not k.startswith('_')}
-    dct['name'] = geog.display_full_name
-    dct['layer_nice_name'] = geog.layer_nice_name
-    # ensure serializable for API calls
-    for k, v in dct.items():
-        if not v or type(v) in [str, int]:
-            continue
-        if type(v) in [datetime.date, datetime.datetime]:
-            dct[k] = v.isoformat()
-        else:
-            dct[k] = str(v)
-    if include_parents:
-        dct['parents'] = [
-            _dictize_geography(parent, include_parents=False)
-            for parent in geog.parents
-            ]
-
-    return dct
-
+    return geog.dictize(include_parents=include_parents)
 
 @core_logic.schema.validator_args
 def unhcr_geography_autocomplete_schema(

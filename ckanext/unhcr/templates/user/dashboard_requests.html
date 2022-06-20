@@ -4,6 +4,9 @@
 {% endblock %}
 
 {% block primary_content_inner %}
+  <a class="btn btn-primary" href="{% url_for 'unhcr_dashboard.requests_history' %}">{{ _('Requests history') }}</a>
+
+  <hr>
   <h2><i class="fa fa-plus"></i>{{ _('Requests for new Data Containers') }}</h2>
   <hr>
   {% if new_container_requests.containers %}

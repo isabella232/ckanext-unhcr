@@ -1,7 +1,6 @@
 {% ckan_extends %}
 
 {% set kobo_resource = pkg_dict and pkg_dict.kobo_asset_id %}
-{% set kobo_auto_resource = data and data.kobo_type %}
 {% set draft_kobo_resource = kobo_resource and pkg_dict.state == 'draft' %}
 {% set new_kobo_resource = kobo_resource and not data %}
 
@@ -49,6 +48,151 @@
   
   {{ super() }}
 
+  {# allow updating kobo filters (a kobo sync will be required) #}
+  {% if not new_kobo_resource and data.kobo_type == 'data' %}
+    {% if data.kobo_details %}
+    {% set kobo_survey = h.get_kobo_survey(data.kobo_details.kobo_asset_id) %}
+    <div style="background-color: #91823422; padding: 15px; margin-bottom: 20px;">
+    <h2 
+    id="kobo-import-settings-title">
+    KoBoToolbox survey import settings 
+    <i class="fa fa-caret-down" style="margin-left: 5px;"></i> 
+  </h2>
+  <p>Changing any of these fields will <b>trigger a data resource update</b> from KoBoToolbox</p>
+
+  <div class="form-group control-medium" id="kobo-import-settings" style="display: none;">
+  
+
+    <div class="row">
+
+      <div class="col-md-6">
+        <div class="form-group control-medium control-select">
+        <label class="control-label" for="fields_from_all_versions">Include fields from all versions</label>
+        <div class="controls ">
+          <select name="kobo_filter_fields_from_all_versions" id="fields_from_all_versions" class="form-control">
+            <option {% if data.kobo_details.kobo_filter_fields_from_all_versions %}selected{% endif%} value="true">Yes</option>
+            <option {% if not data.kobo_details.kobo_filter_fields_from_all_versions %}selected{% endif%} value="false">No</option>
+          </select>
+          <div class="info-block ">
+            <i class="fa fa-info-circle"></i>
+            To specify whether fields from all form versions will be included in the export. 
+            Default is <b>Yes</b>.
+          </div>
+        </div>
+        </div>
+
+        <div class="form-group control-medium control-select">
+          <label class="control-label" for="multiple_select">Multiple select</label>
+          <div class="controls ">
+            <select name="kobo_filter_multiple_select" id="multiple_select" class="form-control">
+              <option {% if data.kobo_details.kobo_filter_multiple_select == 'both' %}selected{% endif%} value="both">Both</option>
+              <option {% if data.kobo_details.kobo_filter_multiple_select == 'summary' %}selected{% endif%} value="summary">Summary</option>
+              <option {% if data.kobo_details.kobo_filter_multiple_select == 'details' %}selected{% endif%} value="details">Details</option>
+            </select>
+            <div class="info-block ">
+              <i class="fa fa-info-circle"></i>
+              To specify the display of <i>multiple_select</i>-type responses
+              Default is <b>Both</b>.
+            </div>
+          </div>
+          </div>
+
+          <div class="form-group control-medium control-select">
+            <label class="control-label" for="hierarchy_in_labels">Hierarchy in labels</label>
+            <div class="controls ">
+              <select name="kobo_filter_hierarchy_in_labels" id="hierarchy_in_labels" class="form-control">
+                <option {% if data.kobo_details.kobo_filter_hierarchy_in_labels %}selected{% endif%} value="true">Yes</option>
+                <option {% if not data.kobo_details.kobo_filter_hierarchy_in_labels %}selected{% endif%} value="false">No</option>
+              </select>
+              <div class="info-block ">
+                <i class="fa fa-info-circle"></i>
+                To specify whether the group hierarchy will be displayed in labels. 
+                Default is <b>Yes</b>.
+              </div>
+            </div>
+            </div>
+
+            <div class="form-group control-medium">
+              <label class="control-label" for="group_sep">Group separator</label>
+              <div class="controls ">
+                <input type="text" name="kobo_filter_group_sep" size="15" maxlength="1" class="form-control"
+                    value="{{ data.kobo_details.kobo_filter_group_sep }}"
+                    placeholder="To separate the names in a hierarchy of groups" />
+                <div class="info-block ">
+                  <i class="fa fa-info-circle"></i>
+                  Value used to separate the names in a hierarchy of groups
+                  Default is <b>/</b>.
+                </div>
+              </div>
+              </div>
+
+      </div>
+
+      <div class="col-md-6">
+
+        <div class="form-group control-medium">
+      <label class="control-label togglable" data-toggle-id="fields-to-include-div">Fields to include</label>
+      <div class="controls">
+        <div id="fields-to-include-div">
+        {# SURVEY FIELDS #}
+      {% set fields = data.kobo_details.kobo_filter_fields %}
+      {% if kobo_survey.content %}
+      {% for field in kobo_survey.content.survey %}
+        {# TODO double check the field type, not all should be shown #}
+        {% set label = field['$autoname'] if not field.label else field.label.0 %}
+        <label class="checkbox">
+          <input type="checkbox" name="kobo_filter_fields" 
+            {% if field['$autoname'] in fields %}checked{% endif %} value="{{ field['$autoname'] }}">
+          {{ label }} (type: {{ field.type }}, internal name: {{ field['$autoname'] }})
+        </label>
+      {% endfor %}
+      {% endif %}
+
+      {# FIXED FIELDS #}
+      {% for field in h.get_kobo_fixed_fields_export() %}
+        <label class="checkbox"><input type="checkbox" name="kobo_filter_fields"
+          {% if field in fields %}checked{% endif %}
+          value="{{ field }}">{{ field }}</label>
+      {% endfor %}
+        <div class="info-block ">
+          <i class="fa fa-info-circle"></i>
+          A simple list of fields to be included in the KoBoToolbox export
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-group control-medium">
+    <label class="control-label" for="group_sep">Mongo query</label>
+    <div class="controls ">
+      <textarea name="kobo_filter_query" id="query" cols="60" rows="7"
+          style="font-family: 'Courier New', Courier, monospace;"
+          class="form-control"
+          placeholder='A valid Mongo DB query.
+      {
+        "$and": [
+            {"_submission_time": {"$gte": "2022-01-01"}},
+            {"_submission_time": {"$lte": "2022-02-01"}}
+        ]
+      }'>{{ data.kobo_details.kobo_filter_query|default('', true) }}</textarea>
+      <div class="info-block ">
+        <i class="fa fa-info-circle"></i>
+        <b>Optional</b> A JSON object containing a Mongo filter query for filtering exported submissions
+      </div>
+    </div>
+    </div>
+
+  </div>
+  
+</div>
+    
+  
+
+
+  </div>
+</div>
+    {% endif %}
+  {% endif %}
 {% endblock %}
 
 {% block metadata_fields %}

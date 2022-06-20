@@ -30,8 +30,7 @@
     <button 
         class="btn btn-default kobo-pkg-update-resources"
         data-kobo-asset-id="{{ pkg.kobo_asset_id }}"
-        data-force="false"
-        data-kobo-update-endpoint="{% url_for 'unhcr_kobo.enqueue_survey_update' %}"
+        data-kobo-update-endpoint="{% url_for 'unhcr_kobo.enqueue_survey_package_update' %}"
     >
     <i class="fa fa-refresh"></i>
     <span class="update-kobo-button-text">Update KoBo data</span>

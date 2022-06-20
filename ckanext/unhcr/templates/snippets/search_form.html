@@ -3,6 +3,19 @@
 {% block search_input %}
     <div class="search-input control-group {{ search_class }}">
       <input type="text" class="search" name="q" value="{{ query }}" autocomplete="off" placeholder="{{ placeholder }}">
+
+      {% if form_id == 'dataset-search-form' %}
+      <div class="control-include_deleted">
+        <input 
+          type="checkbox"
+          name="ext_include_deleted"
+          {% if h.get_bool_arg_value(request.args, "ext_include_deleted") %} checked=checked {% endif %}
+          data-module="checkbox-switcher" 
+          style="width: 20px;"/>
+        <label for="ext_include_deleted">Inlcude deleted datasets</label>
+      </div>       
+      {% endif %}
+
       {% block search_input_button %}
       <button type="submit" value="search" aria-label="{{_('Submit')}}">
         <i class="fa fa-search"></i>

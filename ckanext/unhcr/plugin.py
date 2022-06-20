@@ -150,6 +150,7 @@ class UnhcrPlugin(
 
         facets_dict['vocab_data_collector'] = _('Data Collector')
         facets_dict['vocab_keywords'] = _('Keywords')
+        facets_dict['vocab_geo_name'] = _('Geographic coverage')
         facets_dict['vocab_sampling_procedure'] = _('Sampling Procedure')
         facets_dict['vocab_operational_purpose_of_data'] = _(
             'Operational purpose of data')
@@ -226,6 +227,9 @@ class UnhcrPlugin(
             'get_kobo_token': helpers.get_kobo_token,
             'get_kobo_url': helpers.get_kobo_url,
             'get_kobo_initial_dataset': helpers.get_kobo_initial_dataset,
+            'get_kobo_survey': helpers.get_kobo_survey,
+            'get_kobo_all_formats': helpers.get_kobo_all_formats,
+            'get_kobo_fixed_fields_export': helpers.get_kobo_fixed_fields_export,
             # Misc
             'current_path': helpers.current_path,
             'normalize_list': helpers.normalize_list,
@@ -243,6 +247,7 @@ class UnhcrPlugin(
             'get_resource_value_label': helpers.get_resource_value_label,
             'get_kobo_import_process_real_status': helpers.get_kobo_import_process_real_status,
             'get_system_activities': helpers.get_system_activities,
+            'get_bool_arg_value': helpers.get_bool_arg_value,
         }
 
     # IPackageController
@@ -295,17 +300,21 @@ class UnhcrPlugin(
                 # Index geo info (names and pcodes)
                 elif field == 'geographies':
                     if pkg_dict.get('geographies'):
-                        vocab_geos = []
+                        vocab_geo_names = []
+                        vocab_geo_pcodes = []
                         ids = helpers.normalize_list(pkg_dict['geographies'])
                         for id_ in ids:
                             geog = model.Session.query(Geography).get(id_)
                             if geog:
-                                vocab_geos.extend([geog.gis_name, geog.pcode])
+                                vocab_geo_names.append(geog.gis_name)
+                                vocab_geo_pcodes.append(geog.pcode)
 
                                 for parent in geog.parents:
-                                    vocab_geos.extend([parent.gis_name, parent.pcode])
+                                    vocab_geo_names.append(parent.gis_name)
+                                    vocab_geo_pcodes.append(parent.pcode)
 
-                        pkg_dict['vocab_geo'] = vocab_geos
+                        pkg_dict['vocab_geo_name'] = vocab_geo_names
+                        pkg_dict['vocab_geo_pcodes'] = vocab_geo_pcodes
 
                 # Select values: ["value1","value2"]
                 else:
@@ -355,16 +364,21 @@ class UnhcrPlugin(
 
         return pkg_dict
 
-    # Always include sub-containers to container_read search
     def before_search(self, search_params):
-        blueprints = ('organization', 'data-container')
-
         try:
             blueprint, view = toolkit.get_endpoint()
         except (TypeError, RuntimeError):
             return search_params
 
-        if blueprint in blueprints and view != 'edit':
+        if blueprint in ['dataset', 'package']:
+            search_extras = search_params.get('extras', {})
+            ext_include_deleted = search_extras.pop('ext_include_deleted', None)
+            include_deleted = toolkit.asbool(ext_include_deleted)    
+            if include_deleted:
+                search_params['include_deleted'] = True
+
+        elif blueprint in ['organization', 'data-container'] and view != 'edit':
+            # Always include sub-containers to container_read search
             toolkit.c.include_children_selected = True
 
             # helper function

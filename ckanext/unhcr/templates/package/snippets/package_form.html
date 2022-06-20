@@ -10,9 +10,21 @@
     {% do data.update(kobo_pkg) %}
 {% endif %}
 
+{# We want to define kobo import settings just the first time. #}
+{% if request.args.get('kobo_asset_id') %}
+  {# Before import KoBo resources #}
+  {% set kobo_stage = 'NEW' %}
+{% elif data.id %}
+  {# We are editing an existing dataset #}
+  {% set kobo_stage = 'EDIT' %}
+{% elif data.kobo_asset_id %}
+  {# We returned to the form after some validation error #}
+  {% set kobo_stage = 'ERROR' %}
+{% endif %}
+
 {# If we come from form errors and importing from KoBo asset #}
 {% if data.kobo_asset_id %}
-{% set kobo_asset_id = data.kobo_asset_id %}
+  {% set kobo_asset_id = data.kobo_asset_id %}
 {% endif %}
 
 {% if dataset_type == 'deposited-dataset' and data.id %}
@@ -37,9 +49,12 @@
   {# pkg_name used in 3 stage edit #}
   <input type="hidden" name="pkg_name" value="{{ data.id }}" />
   {% block errors %}{{ form.errors(error_summary) }}{% endblock %}
+  <input type="hidden" value="{{ kobo_asset_id|default('', true) }}" name="kobo_asset_id" />
 
-  {% if kobo_asset_id %}
-  <input type="hidden" value="{{ kobo_asset_id }}" name="kobo_asset_id" />
+  {% if kobo_asset_id and kobo_stage != 'EDIT' %}
+    {% set kobo_survey = h.get_kobo_survey(kobo_asset_id) %}
+
+    {% snippet 'package/snippets/pakage_kobo_import_settings.html', kobo_survey=kobo_survey, pkg=data %}
   {% endif %}
 
   {% block basic_fields %}
