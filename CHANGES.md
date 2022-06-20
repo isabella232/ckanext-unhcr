@@ -4,6 +4,9 @@
 New features:
 Bug Fixes:
 
+## v3.1.8 - 2022-06-20
+UAT Version 3.1.7.3 deployed as 3.1.8 in production
+
 ## v3.1.7.3 - 2022-06-09
 New features:
  - Clarify KoBo import options [#828](https://github.com/okfn/ckanext-unhcr/pull/828)
