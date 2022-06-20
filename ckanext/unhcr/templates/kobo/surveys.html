@@ -68,6 +68,11 @@
         -
     {% elif not survey.user_is_manager %}
         <p>You do not have permission to import this survey</p>
+    {% elif survey.deployment__submission_count > h.get_kobo_import_limit() %}
+        <p>
+            Too many submissions.
+            <b>Unable to import</b>, maximum submissions allowed: {{ h.get_kobo_import_limit() }}
+        </p>
     {% else %}
         <a role="button" class="btn btn-primary" 
             href="{% url_for 'dataset.new', kobo_asset_id=survey.uid %}"

@@ -1,7 +1,23 @@
 # RIDL Changelog
 
+## v3.1.7.4 - 2022-06-XX
+New features:
+Bug Fixes:
+
+## v3.1.7.3 - 2022-06-09
+New features:
+ - Clarify KoBo import options [#828](https://github.com/okfn/ckanext-unhcr/pull/828)
+ - Improve KoBo documentation and add API endpoints list [#827](https://github.com/okfn/ckanext-unhcr/pull/827)
+ - Improve UI for _fields to include_ before importing from KoBo[#825](https://github.com/okfn/ckanext-unhcr/pull/825)
+Bug Fixes:
+ - Avoid errors on unexpected KoBo "settings" structure [#824](https://github.com/okfn/ckanext-unhcr/pull/824)
+ - Fix geography field view after dataset form validation error [#822](https://github.com/okfn/ckanext-unhcr/pull/822)
+ - Limit big KoBo imports [#821](https://github.com/okfn/ckanext-unhcr/pull/821)
+ - Fix kobo cache when user changes its token [#818](https://github.com/okfn/ckanext-unhcr/pull/818)
+ - Fill required `visible_external` field for all data containers [#826](https://github.com/okfn/ckanext-unhcr/pull/826)
+
 ## v3.1.7a - 2022-05-06 - PRODUCTION HOTFIX
-Single commit applyed to 3.1.7
+Single commit applied to 3.1.7
  - Error showing KoBo datasets for non-KoBo users. [Cherry-pick](https://github.com/okfn/ckanext-unhcr/pull/810/commits/a8244d2fa5f40c31b702651dcd89fbb332e69a58) from [#810](https://github.com/okfn/ckanext-unhcr/pull/810)
 
 ## v3.1.7.2 - 2022-05-05

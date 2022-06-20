@@ -7,6 +7,7 @@
   <label class="control-label" for="field-geographies">{{ field.label }}</label>
 
   {% set unspecified = [h.get_default_geography()] == data[field.field_name] %}
+  {% set val = data[field.field_name] if data[field.field_name] is string else data[field.field_name]|join(',') %}
   
   <div class="controls {% if unspecified %}unspecified-geo-div{% endif %}">
     {% if unspecified %}
@@ -25,7 +26,7 @@
       data-module-key="pcode"
       data-module-label="name"
       data-module-minimum-input-length="2"
-      value="{{ data[field.field_name]|join(',') }}"
+      value="{{ val }}"
       placeholder="{% if unspecified %}Please provide at least country-level geographic coverage{% else %}{{ field.form_placeholder }}{% endif %}"
     />
     <div class="info-block ">
