@@ -405,7 +405,7 @@ class UnhcrPlugin(
                     for name in children:
                         if name:
                             search_params['fq'] += ' OR organization:%s' %  name
-
+                    search_params['fq'] = '({})'.format(search_params['fq'])
         return search_params
 
     # IPackageController, IResourceController
