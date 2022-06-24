@@ -1,8 +1,11 @@
 # RIDL Changelog
 
-## v3.1.7.4 - 2022-06-XX
-New features:
-Bug Fixes:
+## v3.1.8b (prod) v3.1.7.4 (UAT) - 2022-06-23
+Hotfix deploys:
+ - Fixed search dataset in data-containers with childs [#845](https://github.com/okfn/ckanext-unhcr/pull/845)
+
+## v3.1.8 - 2022-06-20
+UAT Version 3.1.7.3 deployed as 3.1.8 in production
 
 ## v3.1.7.3 - 2022-06-09
 New features:
